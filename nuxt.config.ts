@@ -10,9 +10,12 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxt/eslint",
     "@nuxt/hints",
+    "@pinia/nuxt",
   ],
   css: ["~/assets/css/main.css"],
-  // runtimeConfig: {
-  //   public: {},
-  // },
+  runtimeConfig: {
+    public: {
+      apiBase: "https://fastapi888.lukeenortaed.site",
+    },
+  },
 });

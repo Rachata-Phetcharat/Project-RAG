@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
+import { useAuthStore } from '~/stores/auth' // เรียกใช้ Store
 
-const items = ref<DropdownMenuItem[][]>([
+const authStore = useAuthStore()
+
+// ** แก้ไข: ใช้ computed ห่อ array ไว้ เพื่อให้ Action ทำงานได้ถูกต้องเสมอ **
+const items = computed(() => [
     [
         {
             label: 'หน้าหลัก',
@@ -18,27 +21,19 @@ const items = ref<DropdownMenuItem[][]>([
         {
             label: 'ออกจากระบบ',
             icon: 'i-lucide-log-out',
-            class: 'cursor-pointer',
-            color: 'error',
-            action: () => {
-                // Logic ออกจากระบบ
+            class: 'text-red-500 dark:text-red-400 cursor-pointer hover:bg-red-100/50 dark:hover:bg-red-900/50',
+            onSelect: async () => {
+                await authStore.logout()
             }
         }
     ]
 ])
-
 </script>
 
 <template>
-    <div class="flex items-center gap-4">
-        <!-- 
-        <ClientOnly>
-            <UContentSearchButton :collapsed="false" :kbds="['alt', 'O']" />
+    <div class="flex items-center gap-4 p-4">
 
-            <LazyUContentSearch v-model:search-term="searchTerm" shortcut="alt_o" :files="files"
-                :navigation="navigation" :fuse="{ resultLimit: 42 }" />
-        </ClientOnly> -->
-
+        <!-- Notification Section (เหมือนเดิม) -->
         <UPopover arrow :popper="{ placement: 'bottom-end' }">
             <UChip text="5" color="error" size="3xl" inset>
                 <UButton class="cursor-pointer" icon="i-lucide-bell" color="neutral" variant="ghost" />
@@ -47,54 +42,31 @@ const items = ref<DropdownMenuItem[][]>([
             <template #content>
                 <div
                     class="flex flex-col w-80 sm:w-96 bg-white dark:bg-gray-900 overflow-hidden rounded-lg shadow-xl ring-1 ring-gray-200 dark:ring-gray-800">
-
                     <div
                         class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
-                            Notifications
-                        </h3>
-                        <span v-if="true" class="text-xs text-gray-500 cursor-pointer hover:text-primary">Clear
-                            all</span>
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Notifications</h3>
+                        <span class="text-xs text-gray-500 cursor-pointer hover:text-primary">Clear all</span>
                     </div>
-
                     <div class="flex flex-col">
-                        <UEmpty v-if="true" icon="i-lucide-bell-off" title="No notifications"
-                            description="You're all caught up!" class="py-8" />
-
-                        <div v-else class="max-h-[320px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
-
-                            <div
-                                class="group px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors relative">
-                                <div class="flex gap-3">
-                                    <div class="mt-1">
-                                        <div class="size-2 rounded-full bg-blue-500"></div>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900 dark:text-white">New Comment</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                                            Somchai commented on your post "Vue.js Tips".
-                                        </p>
-                                        <p class="text-[10px] text-gray-400 mt-1">2 mins ago</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
+                        <UEmpty icon="i-lucide-bell-off" title="No notifications" description="You're all caught up!"
+                            class="py-8" />
                     </div>
-
                 </div>
             </template>
         </UPopover>
 
+        <!-- Theme Switcher -->
         <UColorModeButton class="cursor-pointer" />
 
-        <UButton v-if="false" label="เข้าสู่ระบบ" to="/login" color="info" icon="i-lucide-log-in" />
+        <!-- Auth Logic -->
+        <UButton v-if="!authStore.isLoggedIn" label="เข้าสู่ระบบ" to="/login" color="primary" variant="solid"
+            icon="i-lucide-log-in" />
 
         <UDropdownMenu v-else :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
             :ui="{ content: 'w-48' }">
-            <UUser name="John Doe" description="Software Engineer"
-                :avatar="{ src: 'https://i.pravatar.cc/150?u=john-doe' }" chip size="sm"
-                class="cursor-pointer transition-opacity hover:opacity-80 text-left" />
+            <UUser :name="authStore.displayName" :description="authStore.role"
+                :avatar="{ src: `https://ui-avatars.com/api/?name=${authStore.displayName}&background=random` }" chip
+                size="sm" class="cursor-pointer transition-opacity hover:opacity-80 text-left" />
         </UDropdownMenu>
 
     </div>

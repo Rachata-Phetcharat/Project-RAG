@@ -1,15 +1,22 @@
 <script setup lang="ts">
+
+definePageMeta({
+    middleware: 'guest' // คนล็อกอินแล้วห้ามเข้า (ดีดไปหน้าแรก)
+})
+
 import * as z from 'zod'
 import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
+import { useAuthStore } from '~/stores/auth'
 
 const toast = useToast()
+const authStore = useAuthStore()
+const router = useRouter() // เรียกใช้ router เพื่อเช็ค query param
 const isLoading = ref(false)
 
 const fields: AuthFormField[] = [{
-    // *** เปลี่ยนจาก name: 'email', type: 'email' ***
     name: 'username',
-    type: 'text', // ใช้ 'text' สำหรับรหัสนักศึกษา/Username
-    label: 'ICIT Account', // เปลี่ยน Label ให้สื่อสารชัดเจน
+    type: 'text',
+    label: 'ICIT Account',
     placeholder: 'Enter your ICIT Account',
     required: true
 }, {
@@ -24,10 +31,9 @@ const fields: AuthFormField[] = [{
     type: 'checkbox'
 }]
 
-// *** ปรับปรุง Zod Schema ให้ใช้ 'username' แทน 'email' ***
 const schema = z.object({
-    username: z.string().min(1, 'ICIT Account is required').max(20, 'Too long!'), // กำหนด Validation สำหรับ Username
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    username: z.string().min(1, 'Required'),
+    password: z.string().min(4, 'Min 4 chars'),
     remember: z.boolean().optional()
 })
 
@@ -36,32 +42,32 @@ type Schema = z.output<typeof schema>
 async function onSubmit(event: FormSubmitEvent<Schema>) {
     isLoading.value = true
 
-    // Payload ตอนนี้จะมี event.data.username แทน event.data.email
-    console.log('Submitted Payload:', event.data)
+    // เรียกใช้ function login จาก Store
+    // ** แก้ไข: ส่งแยก parameter (username, password) ตามที่เราแก้ Store ล่าสุด **
+    const result = await authStore.login(event.data.username, event.data.password)
 
-    await new Promise(resolve => setTimeout(resolve, 2000)) // จำลองการส่งข้อมูล (2 วินาที)
-
-    try {
-        // *** ใช้ event.data.username ใน Logic การเข้าระบบจริง ***
-        // เช่น: const response = await loginAPI(event.data.username, event.data.password)
-
+    if (result.success) {
         toast.add({
             title: 'Login Successful!',
             description: `Welcome back, ${event.data.username}`,
             icon: 'i-lucide-check-circle',
             color: 'success'
         })
-        await navigateTo('/', { replace: true })
-    } catch (error) {
+
+        // เช็คว่ามีหน้าปลายทางที่ต้องการไปไหม (เช่น ?redirect=/dashboard) ถ้าไม่มีไปหน้าแรก
+        const redirectPath = (router.currentRoute.value.query.redirect as string) || '/'
+        await navigateTo(redirectPath, { replace: true })
+
+    } else {
         toast.add({
             title: 'Login Failed',
-            description: 'Invalid Student ID or password.',
+            description: result.error, // แสดง error ที่ได้จาก Store
             icon: 'i-lucide-x-circle',
             color: 'error'
         })
-    } finally {
-        isLoading.value = false
     }
+
+    isLoading.value = false
 }
 </script>
 

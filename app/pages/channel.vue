@@ -1,5 +1,9 @@
 <script setup lang="ts">
 
+definePageMeta({
+    middleware: 'auth' // บังคับว่าต้องล็อกอินก่อน
+})
+
 const value = ref(0)
 
 const allChannels = [
