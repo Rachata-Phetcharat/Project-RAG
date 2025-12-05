@@ -34,7 +34,7 @@ const items = computed(() => [
     <div class="flex items-center gap-4 p-4">
 
         <!-- Notification Section (เหมือนเดิม) -->
-        <UPopover arrow :popper="{ placement: 'bottom-end' }">
+        <UPopover v-if="authStore.isLoggedIn" arrow :popper="{ placement: 'bottom-end' }">
             <UChip text="5" color="error" size="3xl" inset>
                 <UButton class="cursor-pointer" icon="i-lucide-bell" color="neutral" variant="ghost" />
             </UChip>
