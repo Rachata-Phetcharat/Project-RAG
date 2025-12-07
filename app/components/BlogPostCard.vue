@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { ref, computed } from 'vue'
 
-// ตรวจสอบให้แน่ใจว่า import ref มาด้วย เนื่องจากมีการใช้งาน
-import { ref } from 'vue'
+// ===== Props =====
+const props = defineProps<{
+    item: {
+        channels_id: number | string
+        title: string
+        description?: string | null
+        status?: string | null
+        created_at?: string | null
+        file_count?: number | null
+    }
+}>()
 
+// ===== เมนู 3 จุด (ยังไม่ผูก event อะไรเพิ่ม ตามที่บอกว่าไม่ต้องยุ่ง UI เยอะ) =====
 const items: DropdownMenuItem[][] = [
     [
         {
@@ -27,27 +38,53 @@ const items: DropdownMenuItem[][] = [
     ]
 ]
 
+// ===== ข้อมูล user ตอนนี้ยังเป็น mock ไว้ก่อน =====
 const testimonial = ref({
     user: {
-        name: 'Evan You',
-        description: 'Author of Vue.js and Vite',
+        name: 'Unknown',
+        description: 'Channel owner',
         avatar: {
-            src: 'https://avatars.githubusercontent.com/u/499550?v=4',
-            alt: 'Evan You'
+            src: 'https://avatars.githubusercontent.com/u/0?v=4',
+            alt: 'User avatar'
         }
     },
-    quote: '“Nuxt on Cloudflare infra with minimal effort - this is huge!”'
+    quote: '“Channel ready to use.”'
+})
+
+// ===== ค่าที่คำนวณจาก props =====
+const cardLink = computed(() => `/channels/${props.item.channels_id}`)
+const cardTitle = computed(() => props.item.title || 'Untitled Channel')
+const cardDescription = computed(
+    () => props.item.description || 'ยังไม่ได้เขียนคำอธิบายแชนแนล'
+)
+
+const badgeLabel = computed(() => {
+    if (!props.item.status) return 'Unknown'
+    if (props.item.status === 'public') return 'Public'
+    if (props.item.status === 'private') return 'Private'
+    return props.item.status
+})
+
+const fileCountLabel = computed(() => {
+    const file = props.item.file_count ?? 0
+    return `${file} ไฟล์`
 })
 </script>
 
 <template>
     <div class="w-full max-w-md mx-auto relative">
-        <UPageCard title="Tailwind CSS"
-            description="Nuxt UI integrates with latest Tailwind CSS v4, bringing significant improvements."
-            to="channels/[id]" variant="subtle" class="w-full">
+        <UPageCard :title="cardTitle" :description="cardDescription" :to="cardLink" variant="subtle"
+            class="w-full cursor-pointer">
             <template #footer>
-                <div class="pb-3 flex items-center justify-between">
-                    <UBadge size="md" variant="subtle">Published</UBadge>
+                <div class="pb-3 flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <UBadge size="md" variant="subtle">
+                            {{ badgeLabel }}
+                        </UBadge>
+                        <span class="text-gray-500 dark:text-gray-400">
+                            {{ fileCountLabel }}
+                        </span>
+                    </div>
                 </div>
                 <UUser v-bind="testimonial.user" />
             </template>

@@ -9,7 +9,12 @@ export const useChannel = () => {
   const fetchChannels = async () => {
     loading.value = true;
     try {
-      return await $fetch(`${apiBase}/channels/list/`);
+      return await $fetch(`${apiBase}/channels/list/`, {
+        method: "GET",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
     } finally {
       loading.value = false;
     }
@@ -17,22 +22,25 @@ export const useChannel = () => {
 
   const createChannel = async (payload: {
     title: string;
-    description: string | (string | null);
+    description: string | null;
   }) => {
     loading.value = true;
     try {
-      const formData = new FormData();
-
-      formData.append("title", payload.title);
-      formData.append("description", payload.description ?? "");
-
-      return await $fetch(`${apiBase}/channels`, {
+      const res: any = await $fetch(`${apiBase}/channels`, {
         method: "POST",
-        body: formData,
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
+          // จริง ๆ ไม่ใส่ก็ได้ $fetch จะใส่ให้เองถ้า body เป็น object
+          "Content-Type": "application/json",
+        },
+        body: {
+          title: payload.title,
+          description: payload.description ?? "",
         },
       });
+
+      // ดึง id ที่ backend ส่งมา
+      return res.channels_id;
     } finally {
       loading.value = false;
     }

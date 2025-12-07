@@ -1,30 +1,36 @@
 <script setup lang="ts">
-const { fetchChannels } = useChannel()
+import { ref, onMounted } from 'vue'
+const { fetchChannels, loading } = useChannel()
 
 definePageMeta({
-    middleware: 'auth' // บังคับว่าต้องล็อกอินก่อน
+    middleware: 'auth'
 })
 
-const value = ref(0)
+const channels = ref<any[]>([])
+const errorMsg = ref('')
 
-const allChannels = [
-    { id: 1, title: 'ห้องนั่งเล่นทั่วไป', type: 'general', isMine: false },
-    { id: 2, title: 'รวมเทคนิค Nuxt.js', type: 'recommended', isMine: true },
-    { id: 3, title: 'ถาม-ตอบ ปัญหาโค้ด', type: 'general', isMine: false },
-    { id: 4, title: 'Vue.js Update', type: 'recommended', isMine: false },
-    { id: 5, title: 'Project ส่วนตัวของฉัน', type: 'general', isMine: true },
-]
+const loadChannels = async () => {
+    errorMsg.value = ''
 
-for (const key in allChannels) {
-    value.value += 1
+    try {
+        const data = await fetchChannels()
+        channels.value = Array.isArray(data) ? data : []
+    } catch (e) {
+        console.error(e)
+        errorMsg.value = 'โหลดข้อมูลแชนแนลไม่สำเร็จ'
+    }
 }
 
+onMounted(() => {
+    loadChannels()
+})
 </script>
+
 
 <template>
     <nav class="flex items-center justify-between py-4">
         <NuxtLink to="/" class="text-xl">จัดการห้องแชนแนล</NuxtLink>
-        <div class="flex items-center">
+        <div class="flex items-center gap-3">
             <ModalMenu>
                 <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid" />
             </ModalMenu>
@@ -35,14 +41,23 @@ for (const key in allChannels) {
 
     <USeparator size="md" />
 
-    <main>
+    <main class="mt-6">
+        <!-- 1) กำลังโหลด -->
+        <div v-if="loading"
+            class="flex-1 flex flex-col items-center justify-center gap-4 px-4 text-center py-20 rounded-lg">
+            <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-gray-400" />
+            <p class="text-gray-500">กำลังโหลดห้องแชนแนล...</p>
+        </div>
 
-        <div v-if="value === 0"
-            class="flex-1 flex flex-col items-center justify-center gap-6 px-4 text-center bg-blue-50 dark:bg-gray-800 py-20 rounded-lg mt-10">
+        <!-- 2) ถ้าไม่มี channel -->
+        <div v-else-if="!channels.length"
+            class="flex-1 flex flex-col items-center justify-center gap-6 px-4 text-center bg-blue-50 dark:bg-gray-800 py-20 rounded-lg">
             <UIcon name="i-lucide-archive-x" class="w-16 h-16 text-gray-400" />
-            <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200">เริ่มต้นการสร้างห้องแชนแนล</h2>
+            <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                เริ่มต้นการสร้างห้องแชนแนล
+            </h2>
             <p class="text-gray-500 max-w-md">
-                เหมือนคุณจะยังไม่เคยสร้างแขนแนลโปรสร้างก่อน
+                เหมือนคุณจะยังไม่เคยสร้างแชนแนล โปรดสร้างแชนแนลแรกของคุณก่อน
             </p>
 
             <ModalMenu>
@@ -50,14 +65,16 @@ for (const key in allChannels) {
             </ModalMenu>
         </div>
 
-        <div v-else class="grid grid-cols-4 gap-4 my-6">
+        <!-- 3) ถ้ามี channel ให้แสดง -->
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+            <!-- การ์ดสร้างแชนแนลใหม่ -->
             <ModalMenu>
                 <button type="button" class="w-full h-full min-h-[200px] bg-white border border-gray-200
-             dark:bg-gray-800 dark:border-gray-800 rounded-2xl flex flex-col
-             items-center justify-center cursor-pointer hover:shadow-md
-             hover:border-blue-300 transition-all group">
+               dark:bg-gray-800 dark:border-gray-800 rounded-2xl flex flex-col
+               items-center justify-center cursor-pointer hover:shadow-md
+               hover:border-blue-300 transition-all group">
                     <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-3
-               group-hover:scale-110 transition-transform">
+                 group-hover:scale-110 transition-transform">
                         <UIcon name="i-heroicons-plus" class="w-7 h-7 text-blue-600" />
                     </div>
 
@@ -67,10 +84,18 @@ for (const key in allChannels) {
                 </button>
             </ModalMenu>
 
-            <div v-for="channel in allChannels" :key="channel.id">
-                <BlogPostCard :item="channel" />
+            <!-- Loop แชนแนล -->
+            <div v-for="ch in channels" :key="ch.channels_id" class="w-full">
+                <BlogPostCard :item="{
+                    channels_id: ch.channels_id,
+                    title: ch.title,
+                    description: ch.description,
+                    status: ch.status,
+                    created_at: ch.created_at,
+                    file_count: ch.file_count
+                }" />
             </div>
-
         </div>
     </main>
+
 </template>
