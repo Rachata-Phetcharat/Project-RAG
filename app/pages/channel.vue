@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { fetchChannels } = useChannel()
 
 definePageMeta({
     middleware: 'auth' // บังคับว่าต้องล็อกอินก่อน

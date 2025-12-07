@@ -1,34 +1,57 @@
-<!-- components/ModalMenu.vue -->
 <script setup lang="ts">
-const onSubmit = () => {
-    // logic สร้างแชนแนล (เดี๋ยวค่อยต่อกับ API)
-    console.log('submit create channel')
+const { createChannel } = useChannel()
+
+const form = reactive<{ title: string; description: string | null }>({
+    title: '',
+    description: null,
+})
+
+// ref ของ UForm
+const channelForm = ref()
+
+async function validate(data: Partial<typeof form>) {
+    const errors = []
+
+    if (!data.title || !data.title.trim().length) {
+        errors.push({ name: 'title', message: 'กรุณากรอกชื่อแชนแนล' })
+    }
+
+    return errors
+}
+
+const onSubmit = async () => {
+    await createChannel({
+        title: form.title,
+        description: form.description
+    })
+    return new Promise<void>(res => setTimeout(res, 1000))
+}
+
+// ฟังก์ชันให้ input เรียกเวลา Enter
+const submitForm = () => {
+    channelForm.value?.submit()
 }
 </script>
 
 <template>
-    <!-- UModal ของ Nuxt UI -->
     <UModal title="สร้างแชนแนลใหม่">
-        <!-- อันนี้คือ "ตัว trigger" -->
-        <!-- อะไรที่ parent ส่งมาใน <slot> จะกลายเป็นปุ่ม/การ์ดที่กดเปิด modal -->
         <slot />
 
-        <!-- เนื้อหาใน modal -->
         <template #body>
-            <form id="channel-form" @submit.prevent="onSubmit">
-                <div class="mb-4">
-                    <div class="text-md">ชื่อแชนแนล</div>
-                    <UInput type="text" size="xl" placeholder="สร้างชื่อแชนแนลของคุณ..." class="w-full pt-2" />
-                </div>
+            <UForm ref="channelForm" :state="form" :validate="validate" @submit.prevent="onSubmit">
+                <UFormField name="title" label="ชื่อแชนแนล" size="xl">
+                    <UInput v-model="form.title" type="text" size="xl" placeholder="สร้างชื่อแชนแนลของคุณ..."
+                        class="w-full pt-2" @keyup.enter="submitForm" />
+                </UFormField>
 
-                <div class="mb-4">
-                    <div class="text-md">รายละเอียดของแชนแนล</div>
-                    <UTextarea size="xl" placeholder="สร้างคำอธิบายของแชนแนลเพื่อให้คนอื่นเข้าใจมากขึ้น..."
-                        class="w-full pt-2" />
-                </div>
+                <UFormField name="description" label="รายละเอียดของแชนแนล" size="xl" class="mt-4">
+                    <UTextarea v-model="form.description" size="xl"
+                        placeholder="สร้างคำอธิบายของแชนแนลเพื่อให้คนอื่นเข้าใจมากขึ้น..." class="w-full pt-2" />
+                </UFormField>
 
-                <UButton label="สร้าง" size="xl" type="submit" color="primary" class="cursor-pointer" />
-            </form>
+                <UButton label="สร้างแชนแนล" size="xl" type="submit" color="primary" class="cursor-pointer mt-4"
+                    loading-auto />
+            </UForm>
         </template>
     </UModal>
 </template>
