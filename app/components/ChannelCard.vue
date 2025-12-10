@@ -19,13 +19,17 @@ const props = defineProps<{
 }>()
 
 // ====== state ไว้เปิด/ปิด ModalDelete ======
-const OpenModal = ref(false)
+const OpenDelete = ref(false)
 const OpenEdit = ref(false)
+const OpenDetail = ref(false)
 const openDelete = () => {
-    OpenModal.value = true
+    OpenDelete.value = true
 }
 const openEdit = () => {
     OpenEdit.value = true
+}
+const openDetail = () => {
+    OpenDetail.value = true
 }
 
 // ====== ข้อมูลโชว์บนการ์ด ======
@@ -48,9 +52,12 @@ const cardCreated_at = computed(() => {
 const items: DropdownMenuItem[][] = [
     [
         {
-            label: 'View',
+            label: 'Detail',
             icon: 'i-lucide-eye',
-            class: 'cursor-pointer'
+            class: 'cursor-pointer',
+            onSelect: () => {
+                openDetail()
+            }
         },
         {
             label: 'Edit',
@@ -136,7 +143,7 @@ const fileCountLabel = computed(() => {
             </UDropdownMenu>
         </div>
 
-        <ModalDelete v-model:open="OpenModal" :item="{ channels_id: props.item.channels_id, title: props.item.title }"
+        <ModalDelete v-model:open="OpenDelete" :item="{ channels_id: props.item.channels_id, title: props.item.title }"
             @deleted="emit('load')" />
 
         <ModalEdit v-model:open="OpenEdit" :item="{
@@ -145,6 +152,14 @@ const fileCountLabel = computed(() => {
             description: props.item.description
         }" @edit="emit('load')" />
 
-
+        <ModalDetail v-model:open="OpenDetail" :item="{
+            channels_id: props.item.channels_id,
+            title: props.item.title,
+            description: props.item.description,
+            status: props.item.status,
+            created_by_name: props.item.created_by_name,
+            created_at: props.item.created_at,
+            file_count: props.item.file_count
+        }" @edit="emit('load')" />
     </div>
 </template>

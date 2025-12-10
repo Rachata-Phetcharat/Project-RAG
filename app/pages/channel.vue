@@ -86,7 +86,7 @@ onMounted(() => {
 
             <!-- Loop แชนแนล -->
             <div v-for="ch in channels" :key="ch.channels_id" class="w-full">
-                <BlogPostCard :item="{
+                <ChannelCard :item="{
                     channels_id: ch.channels_id,
                     title: ch.title,
                     description: ch.description,

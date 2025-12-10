@@ -43,7 +43,7 @@ const filteredChannels = computed(() => {
 
         <div class="grid grid-cols-4 gap-4 my-6">
             <div v-for="channel in filteredChannels" :key="channel.id">
-                <BlogPostCard :item="channel" />
+                <ChannelCard :item="channel" />
             </div>
             <div v-if="filteredChannels.length === 0" class="col-span-4 text-center py-10 text-gray-400">
                 ไม่มีข้อมูล
