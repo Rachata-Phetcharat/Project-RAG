@@ -3,7 +3,6 @@ import { useAuthStore } from '~/stores/auth' // เรียกใช้ Store
 
 const authStore = useAuthStore()
 
-// ** แก้ไข: ใช้ computed ห่อ array ไว้ เพื่อให้ Action ทำงานได้ถูกต้องเสมอ **
 const items = computed(() => [
     [
         {
@@ -17,6 +16,14 @@ const items = computed(() => [
             to: '/channel'
         }
     ],
+    ...(authStore.role === 'admin'
+        ? [[{
+            label: 'คำขอ',
+            icon: 'i-lucide-book-plus',
+            to: '/admin/pending'
+        }]]
+        : []
+    ),
     [
         {
             label: 'ออกจากระบบ',

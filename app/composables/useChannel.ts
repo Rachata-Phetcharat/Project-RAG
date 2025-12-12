@@ -6,6 +6,8 @@ export const useChannel = () => {
   const authStore = useAuthStore();
   const token = authStore.token;
 
+  // const useHeaders = () => {};
+
   const fetchChannels = async () => {
     loading.value = true;
     try {
@@ -97,25 +99,108 @@ export const useChannel = () => {
       ? "admin-forced-public"
       : "admin-forced-private";
 
-    console.log(`Updating status for Channel ID: ${id} to ${action}`);
-
     return await $fetch(`${apiBase}/channels/${id}/${action}`, {
       // 2. ใส่ตัวแปร action ลงใน URL
       method: "POST",
       headers: {
-        // แนะนำให้เรียก authStore.token ตรงนี้เพื่อให้ได้ Token ล่าสุดเสมอ
-        Authorization: authStore.token ? `Bearer ${authStore.token}` : "",
+        Authorization: token ? `Bearer ${token}` : "",
         "Content-Type": "application/json",
       },
       body: {
-        // ⚠️ จุดสังเกต: API แนว "Forced" มักจะต้องการ approve: true เพื่อยืนยันคำสั่งเสมอ
-        // ไม่ว่าจะเป็นการ Force Public หรือ Force Private
-        // ผมจึงตั้งเป็น true ไว้ (เพราะเราเลือก endpoint ที่ถูกต้องแล้ว)
         approve: payload.approve,
-
         reason: payload.reason ?? "",
       },
     });
+  };
+
+  const fetchPendingChannels = async (
+    params: { search?: string; skip?: number; limit?: number } = {}
+  ) => {
+    loading.value = true;
+    try {
+      // อ้างอิงจากรูป API: GET /channels/pending/list/
+      return await $fetch(`${apiBase}/channels/pending/list/`, {
+        method: "GET",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        query: {
+          search_by_name: params.search || undefined, //
+          skip: params.skip ?? 0,
+          limit: params.limit ?? 20,
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const channelRejected = async (
+    id: number,
+    approve: boolean,
+    reason: string = ""
+  ) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/channels/${id}/moderate-public`, {
+        method: "POST",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+        body: {
+          approve: approve,
+          reason: reason,
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const requestPublicChannel = async (id: number) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/channels/${id}/request-public`, {
+        method: "POST",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const cancelRequestPublicChannel = async (id: number) => {
+    loading.value = true;
+    try {
+      // ใช้ endpoint: cancel-request
+      return await $fetch(`${apiBase}/channels/${id}/cancel-request`, {
+        method: "POST",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const ownerSetPrivateChannel = async (id: number) => {
+    loading.value = true;
+    try {
+      // ใช้ endpoint: owner-set-private
+      return await $fetch(`${apiBase}/channels/${id}/owner-set-private`, {
+        method: "POST",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
   };
 
   return {
@@ -124,6 +209,11 @@ export const useChannel = () => {
     updateChannel,
     deleteChannel,
     statusChannel,
+    channelRejected,
+    fetchPendingChannels,
+    requestPublicChannel,
+    cancelRequestPublicChannel,
+    ownerSetPrivateChannel,
     loading,
   };
 };
