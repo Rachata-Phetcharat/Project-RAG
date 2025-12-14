@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 const { fetchPendingChannels, loading } = useChannel()
 
 definePageMeta({
-    middleware: 'auth'
+    middleware: 'admin'
 })
 
 const channels = ref<any[]>([])

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// สมมติว่าใน useChannel มี function channelRejected ที่คุณแปะมาให้แล้ว
-const { channelRejected, loading } = useChannel()
+const { statusChannel, loading } = useChannel()
 const toast = useToast()
 
 const props = defineProps<{
@@ -48,7 +47,7 @@ const handleSubmit = async () => {
 
     try {
         // เรียก API: approve = false, ส่ง reason ไปด้วย
-        await channelRejected(props.item.channels_id, false, form.reason.trim())
+        await statusChannel(props.item.channels_id, false, form.reason.trim())
 
         toast.add({
             title: 'ดำเนินการสำเร็จ',

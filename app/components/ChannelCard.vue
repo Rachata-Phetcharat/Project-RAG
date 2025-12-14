@@ -6,14 +6,14 @@ import { useAuthStore } from '~/stores/auth'
 // composables
 const {
     statusChannel,
-    requestPublicChannel,       // ส่งคำขอ
-    cancelRequestPublicChannel, // ยกเลิกคำขอ (Pending)
-    ownerSetPrivateChannel,     // ยกเลิก Public (Public -> Private)
+    requestPublicChannel,
+    cancelRequestPublicChannel,
+    ownerSetPrivateChannel,
     loading
 } = useChannel()
 
 const authStore = useAuthStore()
-const toast = useToast() // ✅ เพิ่ม Toast สำหรับแจ้งเตือน
+const toast = useToast()
 
 // emit
 const emit = defineEmits<{ (e: 'load'): void }>()
@@ -144,10 +144,14 @@ watch(isPublic, async (val, oldVal) => {
 
     statusLoading.value = true
     try {
-        await statusChannel(props.item.channels_id, {
-            approve: val,
-            reason: ""
-        })
+        if (val) {
+            if (props.item.status === 'private') {
+                await requestPublicChannel(props.item.channels_id)
+            }
+            await statusChannel(props.item.channels_id, true)
+        } else {
+            await ownerSetPrivateChannel(props.item.channels_id)
+        }
         emit('load')
     } catch (err) {
         console.error(err)
@@ -161,6 +165,9 @@ watch(isPublic, async (val, oldVal) => {
 /* Dropdown Menu         */
 /* =============================== */
 // ✅ เปลี่ยนเป็น computed เพื่อให้ตรวจสอบ status ล่าสุดและเปลี่ยนเมนูตามเงื่อนไข
+/* =============================== */
+/* Dropdown Menu                   */
+/* =============================== */
 const items = computed<DropdownMenuItem[][]>(() => {
     const status = props.item.status
     const isAdmin = authStore.role === 'admin'
@@ -185,24 +192,26 @@ const items = computed<DropdownMenuItem[][]>(() => {
     let statusMenu: DropdownMenuItem[] = []
 
     if (isAdmin) {
-        // --- Admin เห็น Switch และปุ่ม Rejected ---
-        statusMenu = [
-            {
-                slot: 'status-switch',
-                onSelect: (e: Event) => e.preventDefault()
-            },
-            {
+        // --- Admin เห็น Switch เสมอ ---
+        statusMenu.push({
+            slot: 'status-switch',
+            onSelect: (e: Event) => e.preventDefault()
+        })
+
+        // ✅ แก้ไขตรงนี้: แสดงปุ่ม Rejected เฉพาะเมื่อสถานะเป็น 'pending' เท่านั้น
+        if (status === 'pending') {
+            statusMenu.push({
                 label: 'Rejected',
                 icon: 'i-lucide-circle-x',
                 class: "cursor-pointer",
                 color: 'error' as const,
                 onSelect: () => openRejected()
-            }
-        ]
+            })
+        }
+
     } else {
-        // --- User ทั่วไป ---
+        // --- User ทั่วไป (Code เดิม) ---
         if (status === 'pending') {
-            // กรณี: รออนุมัติ -> ให้ปุ่ม "ยกเลิกคำขอ"
             statusMenu.push({
                 label: 'ยกเลิกคำขอ',
                 icon: 'i-lucide-x-circle',
@@ -212,7 +221,6 @@ const items = computed<DropdownMenuItem[][]>(() => {
                 onSelect: () => handleCancelRequest()
             })
         } else if (status === 'public') {
-            // กรณี: เป็นสาธารณะแล้ว -> ให้ปุ่ม "ตั้งเป็นส่วนตัว"
             statusMenu.push({
                 label: 'ตั้งเป็นส่วนตัว',
                 icon: 'i-lucide-lock',
@@ -222,7 +230,6 @@ const items = computed<DropdownMenuItem[][]>(() => {
                 onSelect: () => handleSetPrivate()
             })
         } else {
-            // กรณี: เป็นส่วนตัว -> ให้ปุ่ม "ส่งคำขอเป็นสาธารณะ"
             statusMenu.push({
                 label: 'ส่งคำขอเป็นสาธารณะ',
                 icon: 'i-lucide-cloud',
@@ -290,7 +297,7 @@ const testimonial = ref({
                 <template #status-switch>
                     <div class="flex items-center justify-between w-full" @click.stop>
                         <div class="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                            <UIcon name="i-lucide-globe" class="w-4 h-4 text-gray-500" />
+                            <UIcon name="i-lucide-globe" class="w-4.5 h-4.5 text-gray-500" />
                             <span class="truncate">Public Access</span>
                         </div>
 
