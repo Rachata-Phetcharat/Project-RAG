@@ -5,7 +5,6 @@ export const useChannel = () => {
   const loading = ref(false);
 
   // --- Helper Function สำหรับยิง API กลาง ---
-  // ช่วยลด code ซ้ำเรื่อง loading, headers และ baseURL
   const request = async <T = any>(endpoint: string, options: any = {}) => {
     loading.value = true;
     try {
@@ -16,8 +15,6 @@ export const useChannel = () => {
           Authorization: authStore.token ? `Bearer ${authStore.token}` : "",
           ...options.headers,
         },
-        // ถ้าจำเป็นต้องส่ง cookie ให้ uncomment บรรทัดล่าง
-        // credentials: "include",
       });
     } finally {
       loading.value = false;
@@ -26,8 +23,55 @@ export const useChannel = () => {
 
   // --- CRUD Operations ---
 
-  const fetchChannels = () => {
-    return request("/channels/list/", { method: "GET" });
+  /**
+   * ดึงแชนแนลของตัวเอง (My Channels)
+   * GET /channels/list/
+   */
+  const fetchMyChannels = (
+    params: { search?: string; skip?: number; limit?: number } = {}
+  ) => {
+    return request("/channels/list/", {
+      method: "GET",
+      query: {
+        search_by_name: params.search || undefined,
+        skip: params.skip ?? 0,
+        limit: params.limit ?? 20,
+      },
+    });
+  };
+
+  /**
+   * ดึงแชนแนลสาธารณะ (Public Channels)
+   * GET /channels/public/list/
+   */
+  const fetchPublicChannels = (
+    params: { search?: string; skip?: number; limit?: number } = {}
+  ) => {
+    return request("/channels/public/list/", {
+      method: "GET",
+      query: {
+        search_by_name: params.search || undefined,
+        skip: params.skip ?? 0,
+        limit: params.limit ?? 20,
+      },
+    });
+  };
+
+  /**
+   * ดึงแชนแนลทั้งหมด (All Channels - Admin Only)
+   * GET /channels/list/all/
+   */
+  const fetchAllChannels = (
+    params: { search?: string; skip?: number; limit?: number } = {}
+  ) => {
+    return request("/channels/list/all/", {
+      method: "GET",
+      query: {
+        search_by_name: params.search || undefined,
+        skip: params.skip ?? 0,
+        limit: params.limit ?? 20,
+      },
+    });
   };
 
   const createChannel = async (payload: {
@@ -97,10 +141,15 @@ export const useChannel = () => {
 
   return {
     loading,
-    fetchChannels,
+    // ⭐ API Methods ใหม่
+    fetchMyChannels,
+    fetchPublicChannels,
+    fetchAllChannels,
+    // CRUD
     createChannel,
     updateChannel,
     deleteChannel,
+    // Status
     statusChannel,
     fetchPendingChannels,
     requestPublicChannel,

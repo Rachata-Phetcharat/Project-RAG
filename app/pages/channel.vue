@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-const { fetchChannels, loading } = useChannel()
+const { fetchMyChannels, loading } = useChannel()
 
 definePageMeta({
     middleware: 'auth'
@@ -13,7 +13,7 @@ const loadChannels = async () => {
     errorMsg.value = ''
 
     try {
-        const data = await fetchChannels()
+        const data = await fetchMyChannels()
         channels.value = Array.isArray(data) ? data : []
     } catch (e) {
         console.error(e)
@@ -92,6 +92,7 @@ onMounted(() => {
                     description: ch.description,
                     status: ch.status,
                     created_by_name: ch.created_by_name,
+                    created_by_id: ch.created_by_id,
                     created_at: ch.created_at,
                     file_count: ch.file_count
                 }" @load="loadChannels" />

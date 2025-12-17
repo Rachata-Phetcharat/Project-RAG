@@ -1,126 +1,170 @@
 import { defineStore } from "pinia";
 
-// Interface ข้อมูล User
+/* ===============================
+   Interface: User Profile
+================================ */
 export interface UserProfile {
   users_id?: number;
-  id?: number;
   username: string;
   name: string;
   email: string;
   role: string;
-  theme?: string;
 }
 
+/* ===============================
+   Auth Store
+================================ */
 export const useAuthStore = defineStore("auth", () => {
+  /* ---------- Runtime ---------- */
   const config = useRuntimeConfig();
   const apiBase = config.public.apiBase;
   const toast = useToast();
 
-  // === State ===
-  // watch: true สำคัญมาก เพื่อให้ State อัปเดตตาม Cookie อัตโนมัติ
+  /* ===============================
+     State
+  ================================ */
+
+  // Token (Sync กับ Cookie)
   const token = useCookie<string | null>("access_token", {
-    maxAge: 60 * 60 * 24, // 1 วัน
+    maxAge: 60 * 60 * 24, // 1 day
     path: "/",
     sameSite: "lax",
     watch: true,
   });
 
+  // User Profile
   const user = useState<UserProfile | null>("user", () => null);
+
+  // Loading state
   const isLoading = useState<boolean>("authLoading", () => false);
 
-  // === Getters ===
-  const isLoggedIn = computed(() => !!token.value && !!user.value);
-  const role = computed(() => user.value?.role || "guest");
+  /* ===============================
+     Getters
+  ================================ */
 
+  // Login status
+  const isLoggedIn = computed(() => Boolean(token.value && user.value));
+
+  // User role
+  const role = computed(() => user.value?.role ?? "guest");
+
+  // Display name
   const displayName = computed(() => {
     if (!user.value) return "ผู้ใช้งานทั่วไป";
     return user.value.name || user.value.username || "Unknown User";
   });
 
-  // === Actions ===
+  /* ===============================
+     Actions
+  ================================ */
 
-  // 1. Login
-  const login = async (account: string, pass: string) => {
+  /* ---------- Login ---------- */
+  const login = async (username: string, password: string) => {
     isLoading.value = true;
-    try {
-      const params = new URLSearchParams();
-      params.append("username", account);
-      params.append("password", pass);
-      params.append("grant_type", "password");
 
-      const res: any = await $fetch(`${apiBase}/auth/token`, {
-        method: "POST",
-        body: params,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    try {
+      const body = new URLSearchParams({
+        username,
+        password,
+        grant_type: "password",
       });
 
-      const accessToken = res?.access_token || res?.token;
-      if (!accessToken) throw new Error("ไม่ได้รับ Token");
+      const response: any = await $fetch(`${apiBase}/auth/token`, {
+        method: "POST",
+        body,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      const accessToken = response?.access_token || response?.token;
+      if (!accessToken) throw new Error("Token not found");
 
       token.value = accessToken;
       await fetchUser();
 
       return { success: true };
-    } catch (e: any) {
-      logout(false);
+    } catch (error: any) {
+      await logout(false);
+
       return {
         success: false,
-        error: e?.data?.detail || "เข้าสู่ระบบไม่สำเร็จ",
+        error: error?.data?.detail || "เข้าสู่ระบบไม่สำเร็จ",
       };
     } finally {
       isLoading.value = false;
     }
   };
 
-  // 2. Fetch User (แก้ไขจุดบั๊ก รีเฟรชแล้วหลุด)
+  /* ---------- Fetch User ---------- */
   const fetchUser = async () => {
     if (!token.value) return;
-    try {
-      const res: any = await $fetch(`${apiBase}/get/userinfo/bytoken`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token.value}` },
-      });
-      user.value = res;
-    } catch (error: any) {
-      console.error("Fetch User Error:", error);
 
-      // ** แก้ไข: ดีดออกเฉพาะเมื่อ Token หมดอายุ (401) จริงๆ เท่านั้น **
-      if (error.statusCode === 401 || error.response?.status === 401) {
-        logout();
+    try {
+      const response: any = await $fetch(`${apiBase}/get/userinfo/bytoken`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+
+      user.value = response;
+    } catch (error: any) {
+      console.error("Fetch user failed:", error);
+
+      // Logout เฉพาะ token หมดอายุ
+      const isUnauthorized =
+        error?.statusCode === 401 || error?.response?.status === 401;
+
+      if (isUnauthorized) {
+        await logout();
       }
     }
   };
 
-  // 3. Check Session
+  /* ---------- Check Session ---------- */
   const checkSession = async () => {
     if (user.value) return true;
-    if (token.value) await fetchUser();
+
+    if (token.value) {
+      await fetchUser();
+    }
+
     return isLoggedIn.value;
   };
 
-  // 4. Logout (แก้ไขให้ชัวร์ขึ้น)
+  /* ---------- Logout ---------- */
   const logout = async (redirect = true) => {
     token.value = null;
     user.value = null;
 
-    if (redirect) {
-      toast.add({
-        title: "ออกจากระบบสำเร็จ",
-        color: "success",
-        icon: "i-lucide-log-out",
-        duration: 3000,
-      });
-      await navigateTo("/", { replace: true });
-    }
+    if (!redirect) return;
+
+    toast.add({
+      title: "ออกจากระบบสำเร็จ",
+      color: "success",
+      icon: "i-lucide-log-out",
+      duration: 3000,
+    });
+
+    await navigateTo("/", { replace: true });
   };
 
+  /* ===============================
+     Exports
+  ================================ */
   return {
+    // State
     token,
     user,
     isLoading,
+
+    // Getters
     isLoggedIn,
-    displayName,
     role,
+    displayName,
+
+    // Actions
     login,
     fetchUser,
     checkSession,

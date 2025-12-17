@@ -3,7 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
-// composables
+// Composables
 const {
     statusChannel,
     requestPublicChannel,
@@ -15,10 +15,9 @@ const {
 const authStore = useAuthStore()
 const toast = useToast()
 
-// emit
+// Emit & Props
 const emit = defineEmits<{ (e: 'load'): void }>()
 
-// props
 const props = defineProps<{
     item: {
         channels_id: number
@@ -26,121 +25,125 @@ const props = defineProps<{
         description?: string | null
         status?: string | null
         created_by_name: string
+        created_by_id: number
         created_at?: string | null
         file_count?: number | null
     }
 }>()
 
+const isLoggedIn = computed(() => authStore.isLoggedIn)
+const isAdmin = computed(() => authStore.role === 'admin')
+
+const isOwner = computed(() => {
+    if (!authStore.user) return false
+    return authStore.user.users_id === props.item.created_by_id
+})
+
+const isPublicChannel = computed(() => props.item.status === 'public')
+
 /* =============================== */
-/* Actions              */
+/* Modal States                    */
 /* =============================== */
+const modals = ref({
+    delete: false,
+    edit: false,
+    detail: false,
+    rejected: false
+})
 
-// 1. ส่งคำขอ (Private -> Pending)
-const handleRequestPublic = async () => {
-    if (loading.value) return
-    try {
-        await requestPublicChannel(props.item.channels_id)
-        toast.add({ title: 'ส่งคำขอเรียบร้อยแล้ว', color: 'success' })
-        emit('load')
-    } catch (error) {
-        toast.add({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถส่งคำขอได้', color: 'error' })
-    }
-}
-
-// 2. ยกเลิกคำขอ (Pending -> Private)
-const handleCancelRequest = async () => {
-    if (loading.value) return
-    try {
-        await cancelRequestPublicChannel(props.item.channels_id)
-        toast.add({ title: 'ยกเลิกคำขอเรียบร้อยแล้ว', color: 'success' })
-        emit('load')
-    } catch (error) {
-        toast.add({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถยกเลิกคำขอได้', color: 'error' })
-    }
-}
-
-// 3. ตั้งเป็นส่วนตัว (Public -> Private)
-const handleSetPrivate = async () => {
-    if (loading.value) return
-    try {
-        await ownerSetPrivateChannel(props.item.channels_id)
-        toast.add({ title: 'ตั้งค่าเป็นส่วนตัวเรียบร้อยแล้ว', color: 'success' })
-        emit('load')
-    } catch (error) {
-        toast.add({ title: 'เกิดข้อผิดพลาด', description: 'ดำเนินการไม่สำเร็จ', color: 'error' })
-    }
+const openModal = (type: keyof typeof modals.value) => {
+    modals.value[type] = true
 }
 
 /* =============================== */
-/* Modal State          */
+/* Card Information                */
 /* =============================== */
-const OpenDelete = ref(false)
-const OpenEdit = ref(false)
-const OpenDetail = ref(false)
-const OpenRejected = ref(false)
-
-const openDelete = () => (OpenDelete.value = true)
-const openEdit = () => (OpenEdit.value = true)
-const openDetail = () => (OpenDetail.value = true)
-const openRejected = () => (OpenRejected.value = true)
+const cardInfo = computed(() => ({
+    title: props.item.title || 'Untitled Channel',
+    description: props.item.description || 'ยังไม่ได้เขียนคำอธิบายแชนแนล',
+    link: `/channels/${props.item.channels_id}`,
+    fileCount: `${props.item.file_count ?? 0} ไฟล์`,
+    createdBy: props.item.created_by_name,
+    createdAt: props.item.created_at
+        ? new Date(props.item.created_at).toLocaleString('th-TH', {
+            timeZone: 'Asia/Bangkok',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+        : 'ไม่ทราบวันที่'
+}))
 
 /* =============================== */
-/* Card Info           */
+/* Status Badge Configuration      */
 /* =============================== */
-const cardTitle = computed(() => props.item.title || 'Untitled Channel')
-const cardDescription = computed(() => props.item.description || 'ยังไม่ได้เขียนคำอธิบายแชนแนล')
-const cardLink = computed(() => `/channels/${props.item.channels_id}`)
-const fileCountLabel = computed(() => `${props.item.file_count ?? 0} ไฟล์`)
-const cardCreated_by = computed(() => props.item.created_by_name)
+const STATUS_CONFIG = {
+    public: { color: 'success', label: 'Public' },
+    private: { color: 'error', label: 'Private' },
+    pending: { color: 'warning', label: 'Pending' }
+} as const
 
-const cardCreated_at = computed(() => {
-    if (!props.item.created_at) return 'ไม่ทราบวันที่'
-    return new Date(props.item.created_at).toLocaleString('th-TH', {
-        timeZone: 'Asia/Bangkok',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    })
+const statusBadge = computed(() => {
+    const status = props.item.status as keyof typeof STATUS_CONFIG
+    return STATUS_CONFIG[status] || { color: 'neutral', label: status }
 })
 
 /* =============================== */
-/* Status Badge         */
+/* Status Actions                  */
 /* =============================== */
-const badgeColor = computed(() => {
-    const s = props.item.status
-    return s === 'public' ? 'success'
-        : s === 'private' ? 'error'
-            : s === 'pending' ? 'warning'
-                : 'neutral'
-})
+const handleAction = async (
+    action: () => Promise<void>,
+    successMsg: string,
+    errorMsg: string
+) => {
+    if (loading.value) return
 
-const badgeLabel = computed(() => {
-    const s = props.item.status
-    return s === 'public' ? 'Public'
-        : s === 'private' ? 'Private'
-            : s === 'pending' ? 'Pending'
-                : s
-})
+    try {
+        await action()
+        toast.add({ title: successMsg, color: 'success' })
+        emit('load')
+    } catch (error) {
+        toast.add({
+            title: 'เกิดข้อผิดพลาด',
+            description: errorMsg,
+            color: 'error'
+        })
+        console.error(error)
+    }
+}
+
+const handleRequestPublic = () => handleAction(
+    () => requestPublicChannel(props.item.channels_id),
+    'ส่งคำขอเรียบร้อยแล้ว',
+    'ไม่สามารถส่งคำขอได้'
+)
+
+const handleCancelRequest = () => handleAction(
+    () => cancelRequestPublicChannel(props.item.channels_id),
+    'ยกเลิกคำขอเรียบร้อยแล้ว',
+    'ไม่สามารถยกเลิกคำขอได้'
+)
+
+const handleSetPrivate = () => handleAction(
+    () => ownerSetPrivateChannel(props.item.channels_id),
+    'ตั้งค่าเป็นส่วนตัวเรียบร้อยแล้ว',
+    'ดำเนินการไม่สำเร็จ'
+)
 
 /* =============================== */
-/* Status Switch (Admin)      */
+/* Status Switch (Admin)           */
 /* =============================== */
 const isPublic = ref(props.item.status === 'public')
 const statusLoading = ref(false)
 
 watch(() => props.item.status, (newStatus) => {
-    const isNewStatusPublic = newStatus === 'public'
-    if (isPublic.value !== isNewStatusPublic) {
-        isPublic.value = isNewStatusPublic
-    }
+    isPublic.value = newStatus === 'public'
 })
 
 watch(isPublic, async (val, oldVal) => {
-    if (statusLoading.value) return
-    const currentPropIsPublic = props.item.status === 'public'
-    if (val === currentPropIsPublic) return
+    if (statusLoading.value || val === (props.item.status === 'public')) return
 
     statusLoading.value = true
     try {
@@ -156,131 +159,158 @@ watch(isPublic, async (val, oldVal) => {
     } catch (err) {
         console.error(err)
         isPublic.value = oldVal
+        toast.add({
+            title: 'เกิดข้อผิดพลาด',
+            description: 'ไม่สามารถเปลี่ยนสถานะได้',
+            color: 'error'
+        })
     } finally {
         statusLoading.value = false
     }
 })
 
 /* =============================== */
-/* Dropdown Menu         */
-/* =============================== */
-// ✅ เปลี่ยนเป็น computed เพื่อให้ตรวจสอบ status ล่าสุดและเปลี่ยนเมนูตามเงื่อนไข
-/* =============================== */
 /* Dropdown Menu                   */
 /* =============================== */
-const items = computed<DropdownMenuItem[][]>(() => {
-    const status = props.item.status
-    const isAdmin = authStore.role === 'admin'
-
-    // 1. เมนูพื้นฐาน (Detail, Edit)
-    const baseMenu = [
+const dropdownItems = computed<DropdownMenuItem[][]>(() => {
+    /* ---------- ทุกคนเห็น ---------- */
+    const detailMenu: DropdownMenuItem[] = [
         {
             label: 'Detail',
             icon: 'i-lucide-eye',
-            class: "cursor-pointer",
-            onSelect: () => openDetail()
-        },
+            class: 'cursor-pointer',
+            onSelect: () => openModal('detail')
+        }
+    ]
+
+    /* =========================
+       Guest (ยังไม่ login)
+    ========================= */
+    if (!isLoggedIn.value) {
+        return [detailMenu]
+    }
+
+    /* =========================
+       Admin → ทำได้หมด
+    ========================= */
+    if (isAdmin.value) {
+        return [
+            [
+                ...detailMenu,
+                {
+                    label: 'Edit',
+                    icon: 'i-lucide-pencil',
+                    class: 'cursor-pointer',
+                    onSelect: () => openModal('edit')
+                }
+            ],
+            [
+                {
+                    slot: 'status-switch',
+                    onSelect: (e: Event) => e.preventDefault()
+                }
+            ],
+            [
+                {
+                    label: 'Delete',
+                    icon: 'i-lucide-trash',
+                    color: 'error',
+                    class: 'cursor-pointer',
+                    onSelect: () => openModal('delete')
+                }
+            ]
+        ]
+    }
+
+    /* =========================
+       User แต่ไม่ใช่เจ้าของ
+       และเป็น public
+    ========================= */
+    if (!isOwner.value && isPublicChannel.value) {
+        return [detailMenu]
+    }
+
+    /* =========================
+       User เจ้าของแชนแนล
+    ========================= */
+    const ownerMenu: DropdownMenuItem[] = [
+        ...detailMenu,
         {
             label: 'Edit',
             icon: 'i-lucide-pencil',
-            class: "cursor-pointer",
-            onSelect: () => openEdit()
+            class: 'cursor-pointer',
+            onSelect: () => openModal('edit')
         }
     ]
 
-    // 2. เมนูจัดการสถานะ (แยก User / Admin)
-    let statusMenu: DropdownMenuItem[] = []
+    const statusMenu: DropdownMenuItem[] = []
 
-    if (isAdmin) {
-        // --- Admin เห็น Switch เสมอ ---
+    if (props.item.status === 'private') {
         statusMenu.push({
-            slot: 'status-switch',
-            onSelect: (e: Event) => e.preventDefault()
+            label: 'ส่งคำขอเป็นสาธารณะ',
+            icon: 'i-lucide-cloud',
+            onSelect: handleRequestPublic
         })
-
-        // ✅ แก้ไขตรงนี้: แสดงปุ่ม Rejected เฉพาะเมื่อสถานะเป็น 'pending' เท่านั้น
-        if (status === 'pending') {
-            statusMenu.push({
-                label: 'Rejected',
-                icon: 'i-lucide-circle-x',
-                class: "cursor-pointer",
-                color: 'error' as const,
-                onSelect: () => openRejected()
-            })
-        }
-
-    } else {
-        // --- User ทั่วไป (Code เดิม) ---
-        if (status === 'pending') {
-            statusMenu.push({
-                label: 'ยกเลิกคำขอ',
-                icon: 'i-lucide-x-circle',
-                class: "cursor-pointer",
-                color: 'error' as const,
-                disabled: loading.value,
-                onSelect: () => handleCancelRequest()
-            })
-        } else if (status === 'public') {
-            statusMenu.push({
-                label: 'ตั้งเป็นส่วนตัว',
-                icon: 'i-lucide-lock',
-                class: "cursor-pointer",
-                color: 'neutral' as const,
-                disabled: loading.value,
-                onSelect: () => handleSetPrivate()
-            })
-        } else {
-            statusMenu.push({
-                label: 'ส่งคำขอเป็นสาธารณะ',
-                icon: 'i-lucide-cloud',
-                class: "cursor-pointer",
-                disabled: loading.value,
-                onSelect: () => handleRequestPublic()
-            })
-        }
     }
 
-    // 3. เมนู Delete
-    const deleteMenu = [
+    if (props.item.status === 'pending') {
+        statusMenu.push({
+            label: 'ยกเลิกคำขอ',
+            icon: 'i-lucide-x-circle',
+            color: 'error',
+            onSelect: handleCancelRequest
+        })
+    }
+
+    if (props.item.status === 'public') {
+        statusMenu.push({
+            label: 'ตั้งเป็นส่วนตัว',
+            icon: 'i-lucide-lock',
+            onSelect: handleSetPrivate
+        })
+    }
+
+    const deleteMenu: DropdownMenuItem[] = [
         {
             label: 'Delete',
             icon: 'i-lucide-trash',
-            class: "cursor-pointer",
-            color: 'error' as const,
-            onSelect: () => openDelete()
+            color: 'error',
+            class: 'cursor-pointer',
+            onSelect: () => openModal('delete')
         }
     ]
 
-    return [baseMenu, statusMenu, deleteMenu]
+    return [ownerMenu, statusMenu, deleteMenu]
 })
 
 /* =============================== */
-/* Testimonial           */
+/* User Testimonial                */
 /* =============================== */
-const testimonial = ref({
+const testimonial = computed(() => ({
     user: {
-        name: cardCreated_by,
-        description: cardCreated_at,
+        name: cardInfo.value.createdBy,
+        description: cardInfo.value.createdAt,
         avatar: {
             src: 'https://avatars.githubusercontent.com/u/0?v=4',
             alt: 'User avatar'
         }
     }
-})
+}))
 </script>
 
 <template>
     <div class="w-full max-w-md mx-auto relative">
-
-        <UPageCard :title="cardTitle" :description="cardDescription" :to="cardLink" variant="subtle"
+        <UPageCard :title="cardInfo.title" :description="cardInfo.description" :to="cardInfo.link" variant="subtle"
             class="w-full cursor-pointer">
             <template #footer>
                 <div class="pb-3 flex items-center justify-between text-sm">
                     <div class="flex items-center gap-2">
-                        <UBadge :color="badgeColor" size="md" variant="subtle">
-                            {{ badgeLabel }}
+                        <UBadge :color="statusBadge.color" size="md" variant="subtle">
+                            {{ statusBadge.label }}
                         </UBadge>
-                        <span class="text-gray-500 dark:text-gray-400">{{ fileCountLabel }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">
+                            {{ cardInfo.fileCount }}
+                        </span>
                     </div>
                 </div>
 
@@ -289,7 +319,7 @@ const testimonial = ref({
         </UPageCard>
 
         <div class="absolute top-2 right-2 z-10">
-            <UDropdownMenu :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
+            <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
                 :ui="{ content: 'w-48' }">
                 <UButton variant="ghost" icon="i-lucide-more-vertical" aria-label="More actions"
                     class="p-1 cursor-pointer" />
@@ -308,18 +338,18 @@ const testimonial = ref({
         </div>
     </div>
 
-    <ModalDelete v-model:open="OpenDelete" :item="{ channels_id: props.item.channels_id, title: props.item.title }"
+    <ModalDelete v-model:open="modals.delete" :item="{ channels_id: props.item.channels_id, title: props.item.title }"
         @deleted="emit('load')" />
 
-    <ModalEdit v-model:open="OpenEdit" :item="{
+    <ModalEdit v-model:open="modals.edit" :item="{
         channels_id: props.item.channels_id,
         title: props.item.title,
         description: props.item.description
     }" @edit="emit('load')" />
 
-    <ModalDetail v-model:open="OpenDetail" :item="props.item" @edit="emit('load')" />
+    <ModalDetail v-model:open="modals.detail" :item="props.item" @edit="emit('load')" />
 
-    <ModalRejected v-model:open="OpenRejected" :item="{
+    <ModalRejected v-model:open="modals.rejected" :item="{
         channels_id: props.item.channels_id,
         title: props.item.title
     }" @rejected="emit('load')" />

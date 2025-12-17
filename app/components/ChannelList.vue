@@ -1,52 +1,167 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import { onMounted, nextTick } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
-// 1. Mock Data (ข้อมูล)
-const allChannels = ref([
-    { id: 1, title: 'ห้องนั่งเล่นทั่วไป', type: 'general', isMine: false },
-    { id: 2, title: 'รวมเทคนิค Nuxt.js', type: 'recommended', isMine: true },
-    { id: 3, title: 'ถาม-ตอบ ปัญหาโค้ด', type: 'general', isMine: false },
-    { id: 4, title: 'Vue.js Update', type: 'recommended', isMine: false },
-    { id: 5, title: 'Project ส่วนตัวของฉัน', type: 'general', isMine: true },
-])
+// ========================================
+// 1. Setup & Composables
+// ========================================
+const authStore = useAuthStore()
+const {
+    fetchMyChannels,
+    fetchPublicChannels,
+    fetchAllChannels,
+    loading
+} = useChannel()
 
-const items = ref([
-    { label: 'แชนแนลของฉัน', value: 'my_channels' },
-    { label: 'แชนแนลสาธารณะ', value: 'recommended' },
-    { label: 'ทั้งหมด', value: 'all' }
-])
+const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
-const selectedTab = ref('my_channels')
+// ========================================
+// 2. State Management
+// ========================================
+const channels = ref<any[]>([])
+
+// ดึงค่าจาก URL Query ถ้าไม่มีให้เป็นค่าว่างไว้ก่อน แล้วค่อยกำหนดใน onMounted
+const selectedTab = ref((route.query.tab as string) || '')
+
+// ========================================
+// 3. Tab Configuration
+// ========================================
+const items = computed<TabsItem[]>(() => {
+    if (!authStore.token) {
+        return [{ label: 'แชนแนลสาธารณะ', value: 'public_channels' }]
+    }
+
+    const baseTabs = [
+        { label: 'แชนแนลของฉัน', value: 'my_channels' },
+        { label: 'แชนแนลสาธารณะ', value: 'public_channels' }
+    ]
+
+    if (authStore.role === 'admin') {
+        baseTabs.push({ label: 'ทั้งหมด (Admin)', value: 'all_channels' })
+    }
+
+    return baseTabs
+})
 
 const activeLabel = computed(() => {
-    return items.value.find(i => i.value === selectedTab.value)?.label
+    return items.value.find(i => i.value === selectedTab.value)?.label || 'แชนแนล'
 })
 
-const filteredChannels = computed(() => {
-    const currentKey = selectedTab.value ?? 'all'
+// ========================================
+// 4. Load Channels Function
+// ========================================
+const loadChannels = async () => {
+    // ถ้าไม่มี tab ที่เลือก (เช่น เข้ามาครั้งแรก) ไม่ต้องทำอะไร
+    if (!selectedTab.value) return
 
-    if (currentKey === 'all') return allChannels.value
-    else if (currentKey === 'my_channels') return allChannels.value.filter(item => item.isMine)
-    else return allChannels.value.filter(item => item.type === currentKey)
+    try {
+        let response
+
+        switch (selectedTab.value) {
+            case 'my_channels':
+                if (!authStore.token) {
+                    selectedTab.value = 'public_channels'
+                    return
+                }
+                response = await fetchMyChannels()
+                break
+
+            case 'public_channels':
+                response = await fetchPublicChannels()
+                break
+
+            case 'all_channels':
+                if (authStore.role !== 'admin') {
+                    toast.add({ title: 'ไม่มีสิทธิ์', color: 'error' })
+                    selectedTab.value = 'public_channels'
+                    return
+                }
+                response = await fetchAllChannels()
+                break
+        }
+
+        // มาตรฐานการรับข้อมูล (Parsing)
+        if (Array.isArray(response)) {
+            channels.value = response
+        } else if (response?.channels) {
+            channels.value = response.channels
+        } else if (response?.data) {
+            channels.value = response.data
+        } else {
+            channels.value = []
+        }
+
+    } catch (error: any) {
+        toast.add({
+            title: 'เกิดข้อผิดพลาด',
+            description: error.data?.message || 'ไม่สามารถโหลดข้อมูลได้',
+            color: 'error'
+        })
+        channels.value = []
+    }
+}
+
+// ========================================
+// 5. Watch Tab Changes (Sync URL)
+// ========================================
+watch(selectedTab, (newTab) => {
+    // อัปเดต URL ?tab=... เมื่อมีการเปลี่ยน Tab
+    router.replace({
+        query: { ...route.query, tab: newTab }
+    })
+    loadChannels()
 })
 
+// ========================================
+// 6. Initial Load
+// ========================================
+onMounted(() => {
+    const queryTab = route.query.tab as string
+
+    // ตรวจสอบความถูกต้องของ Tab จาก URL
+    const isValidTab = items.value.some(item => item.value === queryTab)
+
+    if (queryTab && isValidTab) {
+        selectedTab.value = queryTab
+    } else {
+        // ค่าเริ่มต้นถ้าไม่มี Query หรือ Query ไม่ถูกต้อง
+        selectedTab.value = !authStore.token ? 'public_channels' : 'my_channels'
+    }
+
+    // เรียกโหลดข้อมูลครั้งแรก
+    loadChannels()
+})
 </script>
 
 <template>
-    <main>
-        <div class="flex items-center justify-between my-6">
-            <h1 class="text-2xl font-semibold">{{ activeLabel }}</h1>
+    <main class="container mx-auto px-4 py-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                {{ activeLabel }}
+            </h1>
 
-            <UTabs v-model="selectedTab" :items="items" variant="pill" size="md" :content="false" />
+            <UTabs v-model="selectedTab" :items="items" variant="pill" size="md" :content="false"
+                class="w-full md:w-auto" />
         </div>
 
-        <div class="grid grid-cols-4 gap-4 my-6">
-            <div v-for="channel in filteredChannels" :key="channel.id">
-                <ChannelCard :item="channel" />
-            </div>
-            <div v-if="filteredChannels.length === 0" class="col-span-4 text-center py-10 text-gray-400">
-                ไม่มีข้อมูล
+        <div v-if="loading" class="flex justify-center items-center py-20">
+            <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-primary-500" />
+            <span class="ml-3 text-gray-600 dark:text-gray-400">กำลังโหลดข้อมูล...</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <ChannelCard v-for="channel in channels" :key="channel.channels_id" :item="channel" @load="loadChannels" />
+
+            <div v-if="channels.length === 0" class="col-span-full text-center py-20">
+                <UIcon name="i-lucide-folder-open" class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                <p class="text-xl font-medium text-gray-500 dark:text-gray-400">
+                    ไม่พบแชนแนล
+                </p>
+                <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                    {{ selectedTab === 'my_channels' ? 'คุณยังไม่มีแชนแนลที่สร้างไว้' : 'ไม่มีรายการในหมวดหมู่นี้' }}
+                </p>
             </div>
         </div>
     </main>
