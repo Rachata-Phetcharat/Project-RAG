@@ -67,6 +67,7 @@ onMounted(() => {
                     description: ch.description,
                     status: ch.status,
                     created_by_name: ch.created_by_name,
+                    created_by_id: ch.created_by_id,
                     created_at: ch.created_at,
                     file_count: ch.file_count
                 }" @load="loadChannels" />

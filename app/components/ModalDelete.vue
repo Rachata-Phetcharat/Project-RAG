@@ -3,7 +3,7 @@ const { deleteChannel, loading } = useChannel()
 const toast = useToast()
 
 const props = defineProps<{
-    open: boolean        // รับสถานะเปิดจาก v-model:open
+    open: boolean         // รับสถานะเปิดจาก v-model:open
     item: {
         channels_id: number
         title: string
@@ -45,33 +45,51 @@ const handleDelete = async () => {
 </script>
 
 <template>
-    <!-- ใช้ :open + @update:open แทน v-model ตรง ๆ -->
-    <UModal :open="open" @update:open="emit('update:open', $event)" title="ยืนยันการลบแชนแนล">
+    <UModal :open="open" @update:open="emit('update:open', $event)" :ui="{
+        content: 'sm:max-w-md',
+        overlay: 'backdrop-blur-sm'
+    }">
+        <template #header>
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                    <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-white" />
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ยืนยันการลบแชนแนล</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">ระวัง: ข้อมูลทั้งหมดจะหายไป</p>
+                </div>
+            </div>
+        </template>
+
         <template #body>
-            <p class="mb-4 text-red-500 text-md">
-                การลบจะไม่สามารถย้อมกลับมาได้และเอกสารทุกไฟล์จะถูกลบออกหมด
-            </p>
+            <div class="space-y-4">
+                <UAlert color="error" variant="soft" icon="i-heroicons-exclamation-circle">
+                    <template #title>คำเตือนสำคัญ</template>
+                    <template #description>
+                        การลบจะไม่สามารถย้อนกลับมาได้ และเอกสารทุกไฟล์ภายในแชนแนลนี้จะถูกลบออกถาวร
+                    </template>
+                </UAlert>
 
-            <p class="mb-4 text-md">
-                คุณต้องการลบแชนแนล
-                <span class="font-semibold text-red-500">"{{ item?.title }}"</span>
-                ใช่หรือไม่?
-            </p>
+                <p class="text-gray-700 dark:text-gray-300">
+                    คุณต้องการลบแชนแนล
+                    <span class="font-bold text-red-600 dark:text-red-400">"{{ item?.title }}"</span>
+                    ใช่หรือไม่?
+                </p>
+            </div>
+        </template>
 
-            <div class="pt-3 flex gap-2">
-                <UButton size="lg" color="error" @click="handleDelete" :disabled="loading"
-                    class="cursor-pointer mr-2 flex items-center justify-center gap-2">
-                    <!-- icon หมุนตอนกำลังบันทึก -->
-                    <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
-
-                    <!-- ข้อความ -->
-                    <span>
-                        {{ loading ? 'ลบแชนแนล...' : 'ลบแชนแนล' }}
-                    </span>
+        <template #footer>
+            <div class="flex gap-3 justify-end">
+                <UButton size="lg" color="neutral" variant="ghost" class="cursor-pointer" @click="close"
+                    :disabled="loading">
+                    ยกเลิก
                 </UButton>
 
-                <UButton size="lg" class="cursor-pointer" @click="close">
-                    ยกเลิก
+                <UButton size="lg" color="error" @click="handleDelete" :disabled="loading"
+                    class="cursor-pointer flex items-center justify-center gap-2 shadow-md">
+                    <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
+                    <span>{{ loading ? 'กำลังลบแชนแนล...' : 'ลบแชนแนล' }}</span>
                 </UButton>
             </div>
         </template>

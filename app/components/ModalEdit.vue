@@ -3,7 +3,7 @@ const { updateChannel, loading } = useChannel()
 const toast = useToast()
 
 const props = defineProps<{
-    open: boolean        // ใช้กับ v-model:open จาก parent
+    open: boolean         // ใช้กับ v-model:open จาก parent
     item: {
         channels_id: number
         title: string
@@ -35,19 +35,6 @@ watch(
 const close = () => {
     emit('update:open', false)
 }
-
-// ตัวกันที่ไม่กรอกชื่อ
-// async function validate(data: Partial<typeof form>) {
-//     const errors = []
-
-//     if (!data.title || !data.title.trim().length) {
-//         errors.push({ name: 'title', message: 'กรุณากรอกชื่อแชนแนล' })
-//     }
-
-//     return errors
-// }
-
-// :state="form" :validate="validate เรียกใช้
 
 const handleEdit = async () => {
     if (!form.title.trim()) {
@@ -87,39 +74,50 @@ const handleEdit = async () => {
 </script>
 
 <template>
-    <UModal :open="open" @update:open="emit('update:open', $event)" title="แก้ไขแชนแนล">
-        <template #body>
-            <UForm @submit.prevent="handleEdit">
-                <UFormField name="title" label="ชื่อแชนแนล" size="xl">
-                    <UInput v-model="form.title" type="text" size="xl" placeholder="แก้ไขชื่อแชนแนลของคุณ..."
-                        class="w-full pt-2" @keyup.enter="handleEdit" />
-                </UFormField>
-
-                <UFormField name="description" label="รายละเอียดของแชนแนล" size="xl" class="mt-4">
-                    <UTextarea v-model="form.description" size="xl" placeholder="แก้ไขคำอธิบายของแชนแนล..."
-                        class="w-full pt-2" />
-                </UFormField>
-
-                <div class="pt-3 flex gap-2">
-                    <!-- ปุ่มบันทึก -->
-                    <UButton size="lg" type="submit" :disabled="loading"
-                        class="cursor-pointer mr-2 flex items-center justify-center gap-2">
-                        <!-- icon หมุนตอนกำลังบันทึก -->
-                        <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
-
-                        <!-- ข้อความ -->
-                        <span>
-                            {{ loading ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
-                        </span>
-                    </UButton>
-
-                    <!-- ปุ่มยกเลิก -->
-                    <UButton size="lg" class="cursor-pointer" @click="close" type="button">
-                        ยกเลิก
-                    </UButton>
+    <UModal :open="open" @update:open="emit('update:open', $event)" :ui="{
+        content: 'sm:max-w-lg',
+        overlay: 'backdrop-blur-sm'
+    }">
+        <template #header>
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
+                    <UIcon name="i-heroicons-pencil-square" class="w-5 h-5 text-white" />
                 </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">แก้ไขข้อมูลแชนแนล</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">ปรับปรุงชื่อและรายละเอียดของแชนแนลของคุณ</p>
+                </div>
+            </div>
+        </template>
 
+        <template #body>
+            <UForm @submit.prevent="handleEdit" class="space-y-6 py-2">
+                <UFormField name="title" label="ชื่อแชนแนล" size="xl" required>
+                    <UInput v-model="form.title" type="text" size="xl" placeholder="กรอกชื่อแชนแนลใหม่..."
+                        class="w-full" @keyup.enter="handleEdit" icon="i-heroicons-tag" />
+                </UFormField>
+
+                <UFormField name="description" label="รายละเอียดแชนแนล" size="xl">
+                    <UTextarea v-model="form.description" size="xl" placeholder="เพิ่มคำอธิบายเกี่ยวกับแชนแนลนี้..."
+                        class="w-full" :rows="4" />
+                </UFormField>
             </UForm>
+        </template>
+
+        <template #footer>
+            <div class="flex gap-3 justify-end">
+                <UButton size="lg" color="neutral" variant="ghost" class="cursor-pointer" @click="close" type="button"
+                    :disabled="loading">
+                    ยกเลิก
+                </UButton>
+
+                <UButton size="lg" type="submit" color="primary" :disabled="loading"
+                    class="cursor-pointer flex items-center justify-center gap-2 shadow-md px-6" @click="handleEdit">
+                    <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
+                    <span>{{ loading ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}</span>
+                </UButton>
+            </div>
         </template>
     </UModal>
 </template>
