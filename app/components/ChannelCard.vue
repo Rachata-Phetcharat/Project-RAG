@@ -9,6 +9,8 @@ const {
     requestPublicChannel,
     cancelRequestPublicChannel,
     ownerSetPrivateChannel,
+    adminforceSetPrivateChannel,
+    adminforceSetPublicChannel,
     loading
 } = useChannel()
 
@@ -132,9 +134,9 @@ const handleSetPrivate = () => handleAction(
     'ดำเนินการไม่สำเร็จ'
 )
 
-/* =============================== */
-/* Status Switch (Admin)           */
-/* =============================== */
+/* =============================== /
+/ Status Switch (Admin)           /
+/ =============================== */
 const isPublic = ref(props.item.status === 'public')
 const statusLoading = ref(false)
 
@@ -143,22 +145,37 @@ watch(() => props.item.status, (newStatus) => {
 })
 
 watch(isPublic, async (val, oldVal) => {
+    // ป้องกันการทำงานซ้ำ หรือค่าไม่ได้เปลี่ยนจริง
     if (statusLoading.value || val === (props.item.status === 'public')) return
 
     statusLoading.value = true
     try {
-        if (val) {
-            if (props.item.status === 'private') {
-                await requestPublicChannel(props.item.channels_id)
+        // ✅ เพิ่มเงื่อนไขเช็ค Admin ตรงนี้
+        if (isAdmin.value) {
+            if (val) {
+                // กรณี Admin เปิด Switch -> บังคับเป็น Public
+                await adminforceSetPublicChannel(props.item.channels_id)
+            } else {
+                // กรณี Admin ปิด Switch -> บังคับเป็น Private
+                await adminforceSetPrivateChannel(props.item.channels_id)
             }
-            await statusChannel(props.item.channels_id, true)
         } else {
-            await ownerSetPrivateChannel(props.item.channels_id)
+            // Logic เดิมสำหรับ Owner (เผื่อในอนาคตมีการใช้ Switch นี้กับ Owner)
+            if (val) {
+                if (props.item.status === 'private') {
+                    await requestPublicChannel(props.item.channels_id)
+                }
+                // บรรทัดนี้อาจจะไม่จำเป็นถ้า requestPublicChannel จัดการให้แล้ว แต่ใส่ไว้ตาม Logic เดิม
+                await statusChannel(props.item.channels_id, true)
+            } else {
+                await ownerSetPrivateChannel(props.item.channels_id)
+            }
         }
+
         emit('load')
     } catch (err) {
         console.error(err)
-        isPublic.value = oldVal
+        isPublic.value = oldVal // คืนค่า Switch กลับหาก Error
         toast.add({
             title: 'เกิดข้อผิดพลาด',
             description: 'ไม่สามารถเปลี่ยนสถานะได้',

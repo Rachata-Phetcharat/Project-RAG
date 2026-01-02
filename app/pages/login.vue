@@ -80,9 +80,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                     loading: isLoading,
                     color: 'primary',
                 }" @submit="onSubmit">
-                <template #password-hint>
-                    <ULink to="#" class="text-primary font-medium" tabindex="-1">Forgot password?</ULink>
-                </template>
             </UAuthForm>
         </UPageCard>
     </div>

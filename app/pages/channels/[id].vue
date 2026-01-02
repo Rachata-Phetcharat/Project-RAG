@@ -9,7 +9,13 @@ const authStore = useAuthStore()
 const channelId = computed(() => route.params.id as string)
 
 const { loading, error, listFiles, uploadFiles, clearError } = useFileChannel()
-const { fetchChannelTitle } = useChannel()
+const { fetchChannelTitle, fetchAllChannels } = useChannel()
+const {
+    createSession,
+    getChatHistory,
+    sendOllamaReply,
+    loading: chatLoading
+} = useChat()
 
 /* ============================================
    State Management
@@ -20,13 +26,18 @@ const state = reactive({
     channelTitle: '',
     message: '',
     sources: [] as any[],
-    chatHistory: [] as any[]
+    totalFilesFromList: 0,
+    chatHistory: [] as any[],
+    sessionId: '',
+    isTyping: false
 })
 
 /* ============================================
    Computed Properties
 ============================================ */
-const fileCount = computed(() => state.sources.length)
+const fileCount = computed(() => {
+    return state.sources.length > 0 ? state.sources.length : (state.totalFilesFromList || 0)
+})
 const canSendMessage = computed(() => state.message.trim().length > 0)
 
 /* ============================================
@@ -36,17 +47,25 @@ const loadChannelData = async () => {
     if (!channelId.value) return
 
     try {
+        // 1. โหลดหัวข้อแชนแนลปัจจุบัน
         const response = await fetchChannelTitle(channelId.value)
         if (response && response.channel_title) {
             state.channelTitle = response.channel_title
         }
+
+        // 2. โหลดรายการแชนแนลทั้งหมดเพื่อดู "จำนวนไฟล์จริง" ที่ Server นับไว้
+        const allChannels = await fetchAllChannels()
+        // หาแชนแนลปัจจุบันจากรายการทั้งหมด
+        const currentChannel = allChannels.find((c: any) => c.channel_id === channelId.value)
+
+        if (currentChannel) {
+            // สมมติว่า field ชื่อ file_count หรือ files_count
+            state.totalFilesFromList = currentChannel.file_count || 0
+        }
+
     } catch (err: any) {
-        console.error('Error fetching channel title:', err)
-        toast.add({
-            title: 'ไม่สามารถโหลดข้อมูลแชนแนลได้',
-            description: 'แชนแนลอาจไม่มีอยู่จริง หรือคุณไม่มีสิทธิ์เข้าถึง',
-            color: 'error'
-        })
+        console.error('Error fetching channel data:', err)
+        // ... toast error
     }
 }
 
@@ -140,22 +159,61 @@ const handleFileDeleted = (fileId: string) => {
 }
 
 /* ============================================
-   Chat Message Handler
+   Chat Logic
 ============================================ */
-const handleSendMessage = () => {
-    if (!canSendMessage.value) return
 
-    // TODO: Implement chat with AI
-    console.log('Send message:', state.message)
+// ฟังก์ชันเริ่มต้นโหลดแชท
+const initChatSession = async () => {
+    try {
+        // 1. สร้าง session
+        const session = await createSession(channelId.value)
+        state.sessionId = session.sessions_id
 
+        // 2. โหลดประวัติเก่า (ถ้ามี)
+        const history = await getChatHistory(state.sessionId)
+        state.chatHistory = history.map(h => ({
+            id: h.chat_id,
+            role: h.sender_type, // 'user' หรือ 'bot' (เช็คค่าจาก API อีกครั้ง)
+            text: h.message,
+            citations: []
+        }))
+    } catch (err) {
+        console.error("Init session failed", err)
+    }
+}
+
+const handleSendMessage = async () => {
+    if (!canSendMessage.value || state.isTyping) return
+
+    const userText = state.message.trim()
+
+    // แสดงข้อความฝั่ง User ทันที
     state.chatHistory.push({
         id: Date.now(),
         role: 'user',
-        text: state.message,
+        text: userText,
         citations: []
     })
 
     state.message = ''
+    state.isTyping = true
+
+    try {
+        // ส่งไปหา AI
+        const aiResponse = await sendOllamaReply(state.sessionId, userText)
+
+        // แสดงข้อความฝั่ง AI
+        state.chatHistory.push({
+            id: Date.now() + 1,
+            role: 'bot', // หรือค่าที่ระบบคุณใช้แยกฝั่ง AI
+            text: aiResponse,
+            citations: []
+        })
+    } catch (err) {
+        toast.add({ title: 'Error', description: 'AI ไม่ตอบสนอง', color: 'error' })
+    } finally {
+        state.isTyping = false
+    }
 }
 
 /* ============================================
@@ -164,7 +222,8 @@ const handleSendMessage = () => {
 onMounted(async () => {
     await Promise.all([
         loadChannelData(),
-        loadChannelFiles()
+        loadChannelFiles(),
+        initChatSession()
     ])
 })
 
@@ -347,7 +406,7 @@ watch(() => route.params.id, (newId) => {
                                 {{ file.original_filename }}
                             </span>
                             <span class="text-xs text-gray-400 dark:text-gray-500">
-                                {{ (file.size / 1024).toFixed(1) }} KB
+                                {{ (file.size_bytes / 1024).toFixed(1) }} KB
                             </span>
                         </div>
                     </div>
@@ -382,9 +441,7 @@ watch(() => route.params.id, (newId) => {
         <!-- ============================================
          Main Content Area
     ============================================ -->
-        <main class="flex-1 flex flex-col relative min-w-0">
-
-            <!-- Header with Glassmorphism -->
+        <main class="flex-1 flex-col relative min-w-0 flex">
             <div
                 class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
                 <nav class="flex items-center justify-between py-5">
@@ -399,8 +456,15 @@ watch(() => route.params.id, (newId) => {
                 </nav>
             </div>
 
-            <!-- Empty State with Beautiful Design -->
-            <div v-if="fileCount === 0" class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
+            <div v-if="chatLoading && state.chatHistory.length === 0" class="flex-1 flex items-center justify-center">
+                <div class="text-center space-y-4">
+                    <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500" />
+                    <p class="text-gray-500">กำลังเตรียมห้องสนทนา...</p>
+                </div>
+            </div>
+
+            <div v-else-if="fileCount === 0 && state.chatHistory.length === 0"
+                class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
                 <div class="relative">
                     <div
                         class="absolute inset-0 bg-gradient-to-r from-primary-400 to-blue-500 rounded-full blur-3xl opacity-20 animate-pulse">
@@ -419,80 +483,70 @@ watch(() => route.params.id, (newId) => {
                         เพิ่มแหล่งข้อมูลของคุณแล้วถามคำถามเกี่ยวกับเอกสารเหล่านั้นได้เลย
                     </p>
                 </div>
-                <UBadge color="primary" variant="subtle" size="lg" class="px-6 py-2">
-                    <UIcon name="i-heroicons-sparkles" class="w-4 h-4 mr-2" />
-                    AI พร้อมช่วยเหลือคุณ
-                </UBadge>
             </div>
 
-            <!-- Chat Area -->
-            <div v-else class="flex flex-col h-[calc(100vh-64px)] relative">
-
-                <!-- Messages Container -->
-                <div
+            <div v-else class="flex flex-col flex-1 relative overflow-hidden">
+                <div ref="chatContainer"
                     class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth bg-gradient-to-b from-transparent via-gray-50/30 to-transparent dark:via-gray-900/30">
 
                     <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
-                        :class="['flex animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']"
-                        :style="{ animationDelay: `${index * 100}ms` }">
+                        :class="['flex animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']">
                         <div :class="['max-w-3xl', msg.role === 'user' ? 'w-fit' : 'w-full']">
 
-                            <!-- User Message -->
                             <div v-if="msg.role === 'user'"
-                                class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md shadow-lg hover:shadow-xl transition-all duration-300 text-base font-medium">
+                                class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md shadow-lg text-base font-medium">
                                 {{ msg.text }}
                             </div>
 
-                            <!-- AI Message -->
                             <UCard v-else :ui="{
                                 body: { padding: 'p-6 sm:p-7' },
-                                ring: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg hover:shadow-xl transition-shadow duration-300',
+                                ring: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg',
                                 rounded: 'rounded-3xl',
                                 background: 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm'
                             }">
                                 <div class="flex gap-5">
                                     <div class="flex-shrink-0">
                                         <UAvatar icon="i-heroicons-sparkles" size="md"
-                                            class="bg-gradient-to-br from-primary-500 to-blue-600 text-white ring-2 ring-primary-100 dark:ring-primary-900 shadow-lg" />
+                                            class="bg-gradient-to-br from-primary-500 to-blue-600 text-white shadow-lg" />
                                     </div>
-
-                                    <div class="space-y-4 w-full">
-                                        <p class="text-gray-800 dark:text-gray-200 leading-8 text-base">
-                                            {{ msg.text }}
-                                        </p>
-
-                                        <!-- Citations -->
-                                        <div v-if="msg.citations && msg.citations.length"
-                                            class="flex gap-2 flex-wrap pt-5 border-t border-gray-100 dark:border-gray-800">
-                                            <UBadge v-for="(cit, idx) in msg.citations" :key="idx" color="primary"
-                                                variant="subtle"
-                                                class="cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-900 transition-all duration-200 hover:scale-105 px-3 py-1.5">
-                                                <UIcon name="i-heroicons-link" class="w-3.5 h-3.5 mr-1.5" />
-                                                {{ cit }}
-                                            </UBadge>
-                                        </div>
+                                    <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-base">
+                                        <p class="whitespace-pre-wrap">{{ msg.text }}</p>
                                     </div>
                                 </div>
                             </UCard>
+                        </div>
+                    </div>
 
+                    <div v-if="state.isTyping" class="flex justify-start animate-fade-in">
+                        <div class="flex gap-4 items-center bg-gray-100/50 dark:bg-gray-800/50 px-6 py-4 rounded-3xl">
+                            <div class="flex gap-1">
+                                <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></span>
+                                <span
+                                    class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                <span
+                                    class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                            </div>
+                            <span class="text-sm text-gray-500 font-medium">Ollama กำลังประมวลผลคำตอบ...</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Input Area with Floating Effect -->
                 <div
                     class="shrink-0 p-6 pb-8 z-10 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
                     <div class="w-full max-w-5xl mx-auto">
                         <form @submit.prevent="handleSendMessage">
                             <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
-                                :rows="1" autoresize :ui="{
+                                :rows="1" autoresize :disabled="state.isTyping"
+                                @keydown.enter.exact.prevent="handleSendMessage"
+                                class="shadow-2xl border-2 border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 focus-within:ring-4 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
+                                :ui="{
                                     wrapper: 'relative',
                                     base: 'pl-6 pr-14 py-5 text-base'
-                                }"
-                                class="shadow-2xl border-2 border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 focus-within:ring-4 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl">
+                                }">
                                 <template #trailing>
                                     <div class="absolute right-4 bottom-auto top-0 flex items-center h-full">
-                                        <UChatPromptSubmit size="md" color="primary" :disabled="!canSendMessage"
+                                        <UChatPromptSubmit size="md" color="primary"
+                                            :disabled="!canSendMessage || state.isTyping"
                                             icon="i-heroicons-paper-airplane"
                                             class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
                                             :class="{
@@ -508,9 +562,7 @@ watch(() => route.params.id, (newId) => {
                         </p>
                     </div>
                 </div>
-
             </div>
-
         </main>
 
         <!-- Delete Modal Component -->

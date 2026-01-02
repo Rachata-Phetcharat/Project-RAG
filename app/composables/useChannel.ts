@@ -146,6 +146,20 @@ export const useChannel = () => {
     return request(`/channels/${id}/owner-set-private`, { method: "POST" });
   };
 
+  const adminforceSetPublicChannel = (id: number) => {
+    return request(`/channels/${id}/admin-forced-public`, {
+      method: "POST",
+      body: { approve: true },
+    });
+  };
+
+  const adminforceSetPrivateChannel = (id: number) => {
+    return request(`/channels/${id}/admin-forced-private`, {
+      method: "POST",
+      body: { approve: true },
+    });
+  };
+
   return {
     loading,
     // ⭐ API Methods ใหม่
@@ -163,5 +177,7 @@ export const useChannel = () => {
     requestPublicChannel,
     cancelRequestPublicChannel,
     ownerSetPrivateChannel,
+    adminforceSetPublicChannel,
+    adminforceSetPrivateChannel,
   };
 };
