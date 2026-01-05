@@ -240,10 +240,8 @@ watch(() => route.params.id, (newId) => {
 
                             <!-- AI Message -->
                             <UCard v-else :ui="{
-                                body: { padding: 'p-6 sm:p-7' },
-                                ring: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg',
-                                rounded: 'rounded-3xl',
-                                background: 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm'
+                                body: 'p-6 sm:p-7',
+                                root: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg rounded-3xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm'
                             }">
                                 <div class="flex gap-5">
                                     <div class="flex-shrink-0">
@@ -268,7 +266,7 @@ watch(() => route.params.id, (newId) => {
                                 <span
                                     class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
                             </div>
-                            <span class="text-sm text-gray-500 font-medium">Ollama กำลังประมวลผลคำตอบ...</span>
+                            <span class="text-sm text-gray-500 font-medium">กำลังประมวลผลคำตอบ...</span>
                         </div>
                     </div>
                 </div>
@@ -282,19 +280,17 @@ watch(() => route.params.id, (newId) => {
                                 :rows="1" autoresize :disabled="state.isTyping"
                                 @keydown.enter.exact.prevent="handleSendMessage"
                                 class="shadow-2xl border-2 border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 focus-within:ring-4 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
-                                :ui="{ wrapper: 'relative', base: 'pl-6 pr-14 py-5 text-base' }">
+                                :ui="{ root: 'relative', base: 'pl-6 pr-14 py-5 text-base' }">
 
-                                <template #trailing>
-                                    <div class="absolute right-4 bottom-auto top-0 flex items-center h-full">
-                                        <UChatPromptSubmit size="md" color="primary" :disabled="!canSendMessage"
-                                            icon="i-heroicons-paper-airplane"
-                                            class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
-                                            :class="{
-                                                'scale-0 opacity-0 rotate-90': !canSendMessage,
-                                                'scale-100 opacity-100 rotate-0 hover:scale-110': canSendMessage
-                                            }" />
-                                    </div>
-                                </template>
+                                <div class="absolute right-4 bottom-auto top-0 flex items-center h-full">
+                                    <UChatPromptSubmit size="md" color="primary" :disabled="!canSendMessage"
+                                        icon="i-heroicons-paper-airplane" type="submit" @click="handleSendMessage"
+                                        class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                                        :class="{
+                                            'scale-0 opacity-0 rotate-90': !canSendMessage,
+                                            'scale-100 opacity-100 rotate-0 hover:scale-110': canSendMessage
+                                        }" />
+                                </div>
                             </UChatPrompt>
                         </form>
 

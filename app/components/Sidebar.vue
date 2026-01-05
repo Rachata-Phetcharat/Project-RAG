@@ -350,7 +350,7 @@ watch(() => route.params.id, (newId) => {
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">ใช้งานแล้ว</span>
                         <span class="text-sm font-bold text-primary-600 dark:text-primary-400">{{ displayFileCount
-                            }}/50</span>
+                        }}/50</span>
                     </div>
                     <UProgress :model-value="displayFileCount" :max="50" size="md" />
                 </div>

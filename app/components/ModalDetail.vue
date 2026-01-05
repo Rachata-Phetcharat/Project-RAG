@@ -40,10 +40,10 @@ const createdAtText = computed(() => {
 
 const statusConfig = computed(() => {
     const s = props.item.status
-    if (s === 'public') return { color: 'success', label: 'Public Access', icon: 'i-heroicons-globe-alt' }
-    if (s === 'private') return { color: 'error', label: 'Private Only', icon: 'i-heroicons-lock-closed' }
-    if (s === 'pending') return { color: 'warning', label: 'Pending Review', icon: 'i-heroicons-clock' }
-    return { color: 'neutral', label: s || 'Unknown', icon: 'i-heroicons-question-mark-circle' }
+    if (s === 'public') return { color: 'success' as const, label: 'Public Access', icon: 'i-heroicons-globe-alt' }
+    if (s === 'private') return { color: 'error' as const, label: 'Private Only', icon: 'i-heroicons-lock-closed' }
+    if (s === 'pending') return { color: 'warning' as const, label: 'Pending Review', icon: 'i-heroicons-clock' }
+    return { color: 'neutral' as const, label: s || 'Unknown', icon: 'i-heroicons-question-mark-circle' }
 })
 </script>
 
