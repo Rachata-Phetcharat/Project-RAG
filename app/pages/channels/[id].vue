@@ -8,8 +8,8 @@ const toast = useToast()
 const authStore = useAuthStore()
 const channelId = computed(() => route.params.id as string)
 
-const { loading, error, listFiles, uploadFiles, clearError } = useFileChannel()
-const { fetchChannelTitle, fetchAllChannels } = useChannel()
+const { loading, error, uploadFiles, clearError } = useFileChannel()
+const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 const {
     createSession,
     getChatHistory,
@@ -47,39 +47,47 @@ const loadChannelData = async () => {
     if (!channelId.value) return
 
     try {
-        // 1. โหลดหัวข้อแชนแนลปัจจุบัน
-        const response = await fetchChannelTitle(channelId.value)
-        if (response && response.channel_title) {
-            state.channelTitle = response.channel_title
+        let response;
+
+        // 1. ตรวจสอบลำดับสิทธิ์ (Admin > Owner > Public)
+        if (authStore.role == 'admin') {
+            // ถ้าเป็น Admin ให้ดึงจากรายการทั้งหมด
+            response = await fetchAllChannels({ limit: 100 })
+        } else if (authStore.token) {
+            // ถ้าเป็น User ทั่วไปที่ล็อกอิน ให้ดึงจากรายการของตัวเองก่อน
+            response = await fetchMyChannels({ limit: 100 })
         }
 
-        // 2. โหลดรายการแชนแนลทั้งหมดเพื่อดู "จำนวนไฟล์จริง" ที่ Server นับไว้
-        const allChannels = await fetchAllChannels()
-        // หาแชนแนลปัจจุบันจากรายการทั้งหมด
-        const currentChannel = allChannels.find((c: any) => c.channel_id === channelId.value)
+        // Helper สำหรับหาช่องที่ ID ตรงกัน (จัดการเรื่อง String/Number mismatch)
+        const findMatch = (list: any[]) =>
+            list.find((c: any) => String(c.channels_id) === String(channelId.value))
 
+        let currentChannel = response ? findMatch(response) : null
+
+        // 2. ถ้ายังไม่เจอ (เช่น เป็นคนนอก) ให้ดึงจาก Public List
+        if (!currentChannel) {
+            console.log('🌍 กำลังดึงข้อมูลจากรายการสาธารณะ')
+            const publicRes = await fetchPublicChannels({ limit: 100 })
+            currentChannel = findMatch(publicRes)
+        }
+
+        // 3. อัปเดตข้อมูลลง State
         if (currentChannel) {
-            // สมมติว่า field ชื่อ file_count หรือ files_count
+            state.channelTitle = currentChannel.title || 'ไม่พบชื่อช่อง'
             state.totalFilesFromList = currentChannel.file_count || 0
+            state.sources = currentChannel.files || []
+            console.log('✅ โหลดข้อมูลสำเร็จ:', state.channelTitle)
+        } else {
+            toast.add({
+                title: 'ไม่พบข้อมูลช่อง',
+                description: 'คุณไม่มีสิทธิ์เข้าถึงช่องนี้',
+                color: 'warning'
+            })
+            router.push('/')
         }
 
     } catch (err: any) {
-        console.error('Error fetching channel data:', err)
-        // ... toast error
-    }
-}
-
-const loadChannelFiles = async () => {
-    try {
-        const data = await listFiles(channelId.value)
-        state.sources = data.files || []
-    } catch (err) {
-        console.error('Failed to load files:', err)
-        toast.add({
-            title: 'เกิดข้อผิดพลาด',
-            description: 'ไม่สามารถโหลดรายการไฟล์ได้',
-            color: 'error'
-        })
+        console.error('❌ Error:', err)
     }
 }
 
@@ -222,7 +230,6 @@ const handleSendMessage = async () => {
 onMounted(async () => {
     await Promise.all([
         loadChannelData(),
-        loadChannelFiles(),
         initChatSession()
     ])
 })
@@ -230,7 +237,6 @@ onMounted(async () => {
 watch(() => route.params.id, (newId) => {
     if (newId) {
         loadChannelData()
-        loadChannelFiles()
     }
 })
 </script>
