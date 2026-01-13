@@ -13,6 +13,13 @@ export interface DashboardStats {
   data: DailyStatItem[];
 }
 
+export interface ChannelStatItem {
+  date: string;
+  Channel_public_count: string;
+  Channel_private_count: string;
+  Channel_pending_count: string;
+}
+
 export const useDashboard = () => {
   const config = useRuntimeConfig();
   const apiBase = config.public.apiBase;
@@ -99,9 +106,97 @@ export const useDashboard = () => {
     }
   };
 
+  // --- 3. สำหรับ Channels ---
+  const fetchChannelsStatsPublic = async () => {
+    loading.value = true;
+    try {
+      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
+      const res = await $fetch<any>(`${apiBase}/channels/public/count`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
+      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
+      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
+      const Channel_public_count =
+        typeof res === "object" ? res.Channel_public_count : parseInt(res);
+
+      return {
+        total: Channel_public_count || 0,
+        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
+        data: [], // และไม่มีกราฟรายวัน
+      };
+    } catch (err) {
+      console.error("Fetch Channels Error:", err);
+      return { total: 0, growth: "+0%", data: [] };
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchChannelsStatsPrivate = async () => {
+    loading.value = true;
+    try {
+      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
+      const res = await $fetch<any>(`${apiBase}/channels/private/count`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
+      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
+      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
+      const Channel_private_count =
+        typeof res === "object" ? res.Channel_private_count : parseInt(res);
+
+      return {
+        total: Channel_private_count || 0,
+        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
+        data: [], // และไม่มีกราฟรายวัน
+      };
+    } catch (err) {
+      console.error("Fetch Channels Error:", err);
+      return { total: 0, growth: "+0%", data: [] };
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchChannelsStatsPending = async () => {
+    loading.value = true;
+    try {
+      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
+      const res = await $fetch<any>(`${apiBase}/channels/pending/count`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
+      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
+      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
+      const Channel_pending_count =
+        typeof res === "object" ? res.Channel_pending_count : parseInt(res);
+
+      return {
+        total: Channel_pending_count || 0,
+        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
+        data: [], // และไม่มีกราฟรายวัน
+      };
+    } catch (err) {
+      console.error("Fetch Channels Error:", err);
+      return { total: 0, growth: "+0%", data: [] };
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     loading,
     fetchQuestionsStats,
     fetchUsersStats,
+    fetchChannelsStatsPublic,
+    fetchChannelsStatsPrivate,
+    fetchChannelsStatsPending,
   };
 };

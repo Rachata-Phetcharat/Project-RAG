@@ -1,70 +1,98 @@
 <script setup lang="ts">
-const { fetchQuestionsStats, fetchUsersStats, loading } = useDashboard();
+const { fetchQuestionsStats, fetchUsersStats, fetchChannelsStatsPublic, fetchChannelsStatsPrivate, fetchChannelsStatsPending, loading } = useDashboard();
 
 definePageMeta({
-    middleware: ['auth', 'admin'] // เรียงลำดับสำคัญ
+    middleware: ['auth', 'admin']
 })
 
+const dateRange = ref({
+    start: new Date(new Date().setDate(new Date().getDate() - 7)),
+    end: new Date()
+});
+
+// เตรียม State สำหรับเก็บข้อมูลแต่ละส่วน
 const questionsData = ref({ total: 0, growth: '+0%' });
 const usersData = ref({ total: 0, growth: '+0%' });
+const publicChannelsData = ref({ total: 0, growth: '+0%' });
+const privateChannelsData = ref({ total: 0, growth: '+0%' });
+const pendingChannelsData = ref({ total: 0, growth: '+0%' });
 
 const initDashboard = async () => {
-    // วิธีดึงวันที่ YYYY-MM-DD ตามเวลาเครื่องผู้ใช้ (Local Time)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // เติม 0 ข้างหน้าถ้าเป็นเลขหลักเดียว
-    const day = String(now.getDate()).padStart(2, '0');
-
-    const todayStr = `${year}-${month}-${day}`;
+    const formatDate = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
 
     const params = {
-        start_date: todayStr,
-        end_date: todayStr
+        start_date: formatDate(dateRange.value.start),
+        end_date: formatDate(dateRange.value.end)
     };
 
     try {
-        const qRes = await fetchQuestionsStats(params);
-        const uRes = await fetchUsersStats(params);
+        // ดึงข้อมูลพร้อมกัน 3 ตัว (รวม fetchChannelsStats)
+        const [qRes, uRes, puRes, prRes, peRes] = await Promise.all([
+            fetchQuestionsStats(params),
+            fetchUsersStats(params),
+            fetchChannelsStatsPublic(),
+            fetchChannelsStatsPrivate(),
+            fetchChannelsStatsPending()
+        ]);
 
         if (qRes) questionsData.value = qRes;
         if (uRes) usersData.value = uRes;
+        if (puRes) publicChannelsData.value = puRes;
+        if (prRes) privateChannelsData.value = prRes;
+        if (peRes) pendingChannelsData.value = peRes;
     } catch (e) {
         console.error("Dashboard Load Error:", e);
     }
 }
 
+watch(dateRange, () => {
+    initDashboard();
+}, { deep: true });
+
 onMounted(() => {
     initDashboard();
 });
 
-// ใช้ Computed เพื่อ Map ข้อมูลเข้ากับ Card UI
+// ปรับปรุง Computed ให้ดึงค่าจาก Ref จริงๆ
 const statsCards = computed(() => [
     {
-        label: 'คำถามวันนี้',
+        label: 'คำถามช่วงนี้',
         value: questionsData.value.total.toLocaleString(),
         change: questionsData.value.growth,
         icon: 'i-heroicons-question-mark-circle',
         color: 'primary'
     },
     {
-        label: 'ผู้ใช้วันนี้',
+        label: 'ผู้ใช้ช่วงนี้',
         value: usersData.value.total.toLocaleString(),
         change: usersData.value.growth,
         icon: 'i-heroicons-users',
         color: 'green'
     },
     {
-        label: 'ยอดขายรวม',
-        value: '฿245,000', // ส่วนนี้ถ้ามี API ยอดขาย ก็ใช้วิธีเดียวกัน
-        change: '+12.5%',
-        icon: 'i-heroicons-currency-dollar',
+        label: 'แชนแนลสาธารณะ',
+        value: publicChannelsData.value.total.toLocaleString(), // ใช้ค่าจาก API
+        change: publicChannelsData.value.growth,
+        icon: 'i-heroicons-globe-alt',
         color: 'blue'
     },
     {
-        label: 'อัตราการเติบโต',
-        value: '23.5%',
-        change: '+2.1%',
-        icon: 'i-heroicons-chart-bar',
+        label: 'แชนแนลส่วนตัว',
+        value: privateChannelsData.value.total.toLocaleString(), // รอ API เพิ่มเติม
+        change: privateChannelsData.value.growth,
+        icon: 'i-heroicons-lock-closed',
+        color: 'amber'
+    },
+    {
+        label: 'แชนแนลส่วนตัว',
+        value: pendingChannelsData.value.total.toLocaleString(), // รอ API เพิ่มเติม
+        change: pendingChannelsData.value.growth,
+        icon: 'i-heroicons-lock-closed',
         color: 'amber'
     }
 ])
@@ -74,6 +102,7 @@ const statsCards = computed(() => [
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav class="flex items-center justify-between py-4">
             <NuxtLink to="/" class="text-xl font-semibold text-gray-900 dark:text-white">ห้องคำขอ</NuxtLink>
+
             <div class="flex items-center gap-3">
                 <UserMenu />
             </div>
@@ -82,6 +111,11 @@ const statsCards = computed(() => [
         <USeparator size="md" />
 
         <main class="py-8">
+
+            <div class="pb-10">
+                <DashboardDateSelector v-model="dateRange" />
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <template v-if="loading">
                     <UCard v-for="i in 4" :key="i">
@@ -95,7 +129,7 @@ const statsCards = computed(() => [
 
                 <template v-else>
                     <UCard v-for="stat in statsCards" :key="stat.label"
-                        class="hover:shadow-lg transition-all duration-300 group">
+                        class="hover:shadow-lg transition-all duration-300 group cursor-default">
                         <div class="flex items-center justify-between">
                             <div class="space-y-1">
                                 <p
@@ -113,22 +147,20 @@ const statsCards = computed(() => [
                                     ]">
                                         {{ stat.change }}
                                     </span>
-                                    <span class="text-[10px] text-gray-400">เทียบกับวันก่อนหน้า</span>
+                                    <span class="text-[10px] text-gray-400">เทียบกับก่อนหน้า</span>
                                 </div>
                             </div>
                             <div :class="[
                                 'w-14 h-14 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform',
                                 stat.color === 'primary' ? 'bg-primary-50 dark:bg-primary-900/20' :
                                     stat.color === 'green' ? 'bg-green-50 dark:bg-green-900/20' :
-                                        stat.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20' :
-                                            'bg-amber-50 dark:bg-amber-900/20'
+                                        stat.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-amber-50 dark:bg-amber-900/20'
                             ]">
                                 <UIcon :name="stat.icon" :class="[
                                     'w-8 h-8',
                                     stat.color === 'primary' ? 'text-primary-500' :
                                         stat.color === 'green' ? 'text-green-500' :
-                                            stat.color === 'blue' ? 'text-blue-500' :
-                                                'text-amber-500'
+                                            stat.color === 'blue' ? 'text-blue-500' : 'text-amber-500'
                                 ]" />
                             </div>
                         </div>
