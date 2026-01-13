@@ -568,7 +568,7 @@ watch(() => route.params.id, (newId) => {
                                 }">
                                 <template #trailing>
                                     <div class="absolute right-4 bottom-auto top-0 flex items-center h-full">
-                                        <UChatPromptSubmit size="md" color="primary"
+                                        <UChatPromptSubmit @click="handleSendMessage" size="md" color="primary"
                                             :disabled="!canSendMessage || state.isTyping"
                                             icon="i-heroicons-paper-airplane"
                                             class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"

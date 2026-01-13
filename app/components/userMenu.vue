@@ -21,6 +21,10 @@ const items = computed(() => [
             label: 'คำขอ',
             icon: 'i-lucide-book-plus',
             to: '/admin/pending'
+        }, {
+            label: 'dashboard',
+            icon: 'i-lucide-book-plus',
+            to: '/admin/dashboard'
         }]]
         : []
     ),
