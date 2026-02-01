@@ -180,10 +180,8 @@ watch(() => route.params.id, () => {
 
                         <!-- AI Message -->
                         <UCard v-else :ui="{
-                            body: { padding: 'p-6 sm:p-7' },
-                            ring: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg',
-                            rounded: 'rounded-3xl',
-                            background: 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm'
+                            body: 'p-6 sm:p-7',
+                            root: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg rounded-3xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm',
                         }">
                             <div class="flex gap-5">
                                 <div class="flex-shrink-0">
@@ -223,7 +221,7 @@ watch(() => route.params.id, () => {
                             @keydown.enter.exact.prevent="handleSendMessage"
                             class="shadow-2xl border-2 border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 focus-within:ring-4 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
                             :ui="{
-                                wrapper: 'relative',
+                                root: 'relative',
                                 base: 'pl-6 pr-14 py-5 text-base'
                             }">
                             <template #trailing>
