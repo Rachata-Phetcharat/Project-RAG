@@ -1,47 +1,60 @@
 <script setup lang="ts">
-const { deleteChannel, loading } = useChannel()
 const toast = useToast()
 
+interface DeleteItem {
+    id: string | number
+    name: string
+}
+
 const props = defineProps<{
-    open: boolean         // รับสถานะเปิดจาก v-model:open
-    item: {
-        channels_id: number
-        title: string
-    }
+    open: boolean
+    item: DeleteItem | null
+    title: string
+    description?: string
+    loading?: boolean
+    deleteHandler: (id: string | number) => Promise<void>
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:open', value: boolean): void  // สำหรับ v-model:open
-    (e: 'deleted'): void                      // บอก parent ว่าลบเสร็จแล้ว
+    (e: 'update:open', value: boolean): void
+    (e: 'deleted', id: string | number): void
 }>()
+
+const isDeleting = ref(false)
 
 const close = () => {
     emit('update:open', false)
 }
 
 const handleDelete = async () => {
-    const id = props.item.channels_id
+    if (!props.item) return
 
+    isDeleting.value = true
     try {
-        await deleteChannel(id)
+        await props.deleteHandler(props.item.id)
+
         toast.add({
-            title: 'Successful!',
-            description: `ลบแชนแนล ${props.item.title} แล้ว`,
+            title: 'สำเร็จ!',
+            description: `ลบ "${props.item.name}" เรียบร้อยแล้ว`,
             icon: 'i-lucide-check-circle',
             color: 'success'
         })
 
-        emit('deleted')   // ให้ parent ไป reload list
+        emit('deleted', props.item.id)
         close()
     } catch (e: any) {
         toast.add({
-            title: 'Error',
+            title: 'เกิดข้อผิดพลาด',
             description: e?.data?.detail || e?.message || 'ลบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
             icon: 'i-lucide-x-circle',
             color: 'error'
         })
+    } finally {
+        isDeleting.value = false
     }
 }
+
+const loading = computed(() => props.loading || isDeleting.value)
 </script>
 
 <template>
@@ -56,24 +69,24 @@ const handleDelete = async () => {
                     <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ยืนยันการลบแชนแนล</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">ระวัง: ข้อมูลทั้งหมดจะหายไป</p>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ยืนยันการลบ</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
                 </div>
             </div>
         </template>
 
         <template #body>
-            <div class="space-y-4">
+            <div class="space-y-4" v-if="item">
                 <UAlert color="error" variant="soft" icon="i-heroicons-exclamation-circle">
                     <template #title>คำเตือนสำคัญ</template>
                     <template #description>
-                        การลบจะไม่สามารถย้อนกลับมาได้ และเอกสารทุกไฟล์ภายในแชนแนลนี้จะถูกลบออกถาวร
+                        {{ description || 'การลบจะไม่สามารถย้อนกลับได้ และข้อมูลจะถูกลบออกถาวร' }}
                     </template>
                 </UAlert>
 
                 <p class="text-gray-700 dark:text-gray-300">
-                    คุณต้องการลบแชนแนล
-                    <span class="font-bold text-red-600 dark:text-red-400">"{{ item?.title }}"</span>
+                    {{ title }}
+                    <span class="font-semibold text-red-600 dark:text-red-400">"{{ item.name }}"</span>
                     ใช่หรือไม่?
                 </p>
             </div>
@@ -89,7 +102,7 @@ const handleDelete = async () => {
                 <UButton size="lg" color="error" @click="handleDelete" :disabled="loading"
                     class="cursor-pointer flex items-center justify-center gap-2 shadow-md">
                     <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
-                    <span>{{ loading ? 'กำลังลบแชนแนล...' : 'ลบแชนแนล' }}</span>
+                    <span>{{ loading ? 'กำลังลบ...' : 'ยืนยันการลบ' }}</span>
                 </UButton>
             </div>
         </template>

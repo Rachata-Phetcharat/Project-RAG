@@ -7,7 +7,7 @@ const router = useRouter()
 const toast = useToast()
 const authStore = useAuthStore()
 
-const { loading, error, uploadFiles, downLoadFile, clearError } = useFileChannel()
+const { loading, error, uploadFiles, downLoadFile, clearError, deleteFile } = useFileChannel()
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 
 /* ============================================
@@ -122,9 +122,10 @@ const handleFileUpload = async (event: any) => {
 
     try {
         state.isUploading = true
-        const result = await uploadFiles(channelId.value, fileArray)
+        await uploadFiles(channelId.value, fileArray)
 
-        state.sources.push(...result.files)
+        // Reload channel data to get the updated file list
+        await loadChannelData()
 
         toast.add({
             title: 'สำเร็จ',
@@ -160,12 +161,20 @@ const handleDownload = async (file: any) => {
     }
 }
 
+const fileToDelete = computed(() => {
+    if (!deleteModalState.selectedFile) return null
+    return {
+        id: deleteModalState.selectedFile.files_id,
+        name: deleteModalState.selectedFile.original_filename
+    }
+})
+
 const openDeleteModal = (file: any) => {
     deleteModalState.selectedFile = file
     deleteModalState.isOpen = true
 }
 
-const handleFileDeleted = (fileId: string) => {
+const handleFileDeleted = (fileId: string | number) => {
     state.sources = state.sources.filter(f => f.files_id !== fileId)
 }
 
@@ -388,8 +397,9 @@ watch(() => route.params.id, (newId) => {
         </div>
 
         <!-- Delete Modal Component -->
-        <ModalDeleteFile v-model:open="deleteModalState.isOpen" :file="deleteModalState.selectedFile"
-            @deleted="handleFileDeleted" />
+        <ModalDelete v-model:open="deleteModalState.isOpen" :item="fileToDelete"
+            :delete-handler="(id) => deleteFile(id)" title="คุณต้องการลบไฟล์"
+            description="การลบจะไม่สามารถย้อนกลับได้และไฟล์นี้จะถูกลบออกถาวร" @deleted="handleFileDeleted" />
     </aside>
 </template>
 

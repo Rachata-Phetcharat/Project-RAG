@@ -16,7 +16,7 @@ export const useChannel = () => {
    * GET /channels/list/
    */
   const fetchMyChannels = async (
-    params: { search?: string; skip?: number; limit?: number } = {}
+    params: { search?: string; skip?: number; limit?: number } = {},
   ) => {
     loading.value = true;
     try {
@@ -39,7 +39,7 @@ export const useChannel = () => {
    * GET /channels/public/list/
    */
   const fetchPublicChannels = async (
-    params: { search?: string; skip?: number; limit?: number } = {}
+    params: { search?: string; skip?: number; limit?: number } = {},
   ) => {
     loading.value = true;
     try {
@@ -62,7 +62,7 @@ export const useChannel = () => {
    * GET /channels/list/all/
    */
   const fetchAllChannels = async (
-    params: { search?: string; skip?: number; limit?: number } = {}
+    params: { search?: string; skip?: number; limit?: number } = {},
   ) => {
     loading.value = true;
     try {
@@ -104,7 +104,7 @@ export const useChannel = () => {
 
   const updateChannel = async (
     id: number,
-    payload: { title: string; description?: string | null }
+    payload: { title: string; description?: string | null },
   ) => {
     loading.value = true;
     try {
@@ -124,7 +124,7 @@ export const useChannel = () => {
   const deleteChannel = async (id: number) => {
     loading.value = true;
     try {
-      return await $fetch(`${apiBase}/channels/${id}`, {
+      await $fetch(`${apiBase}/channels/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
@@ -138,7 +138,7 @@ export const useChannel = () => {
   const statusChannel = async (
     id: number,
     approve: boolean,
-    reason: string = ""
+    reason: string = "",
   ) => {
     loading.value = true;
     try {
@@ -153,7 +153,7 @@ export const useChannel = () => {
   };
 
   const fetchPendingChannels = async (
-    params: { search?: string; skip?: number; limit?: number } = {}
+    params: { search?: string; skip?: number; limit?: number } = {},
   ) => {
     loading.value = true;
     try {

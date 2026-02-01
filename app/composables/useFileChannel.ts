@@ -34,7 +34,7 @@ export const useFileChannel = () => {
     loading.value = true;
     error.value = null; // เพิ่มการเคลียร์ error ก่อนเริ่ม request
     try {
-      return await $fetch<T>(endpoint, {
+      await $fetch<T>(endpoint, {
         baseURL: apiBase,
         ...options,
         headers: {
@@ -90,7 +90,7 @@ export const useFileChannel = () => {
    * ลบไฟล์ตามไอดี
    * DELETE /files/delete/{id}
    */
-  const deleteFile = (fileId: string) => {
+  const deleteFile = (fileId: string | number) => {
     if (!fileId) throw new Error("กรุณาระบุ File ID");
 
     return request<DeleteResponse>(`/files/delete/${fileId}`, {

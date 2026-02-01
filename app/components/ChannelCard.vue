@@ -11,8 +11,10 @@ const {
     ownerSetPrivateChannel,
     adminforceSetPrivateChannel,
     adminforceSetPublicChannel,
+    deleteChannel,
     loading // ใช้ loading ตัวรวมที่ประกาศไว้ใน useChannel ตัวใหม่
 } = useChannel()
+
 
 const authStore = useAuthStore()
 const toast = useToast()
@@ -51,6 +53,14 @@ const modals = ref({
     edit: false,
     detail: false,
     rejected: false
+})
+
+const channelToDelete = computed(() => {
+    if (!props.item) return null
+    return {
+        id: props.item.channels_id,
+        name: props.item.title
+    }
 })
 
 const openModal = (type: keyof typeof modals.value) => {
@@ -360,7 +370,9 @@ const testimonial = computed(() => ({
         </div>
     </div>
 
-    <ModalDelete v-model:open="modals.delete" :item="{ channels_id: props.item.channels_id, title: props.item.title }"
+    <ModalDelete v-model:open="modals.delete" :item="channelToDelete"
+        :delete-handler="(channels_id) => deleteChannel(props.item.channels_id)" title="คุณต้องการลบแชนแนล"
+        description="การลบจะไม่สามารถย้อนกลับมาได้ และเอกสารทุกไฟล์ภายในแชนแนลนี้จะถูกลบออกถาวร"
         @deleted="emit('load')" />
 
     <ModalEdit v-model:open="modals.edit" :item="{
