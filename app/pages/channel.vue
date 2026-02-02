@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-const { fetchMyChannels, loading } = useChannel()
+const { fetchMyChannels, createChannel, updateChannel, loading } = useChannel()
 
 definePageMeta({
     middleware: 'auth'
@@ -23,6 +23,19 @@ const loadChannels = async () => {
     }
 }
 
+const handleCreate = async (data: { title: string; description: string }) => {
+    const id = await createChannel(data)
+    // เมื่อสร้างเสร็จ อาจจะ redirect ไปหน้าใหม่ หรือแค่โหลดข้อมูลใหม่
+    await loadChannels()
+    // navigateTo(`/channels/${id}`) // ถ้าต้องการไปที่หน้านั้นทันที
+}
+
+// Handler สำหรับการแก้ไข (ใส่ไว้เพื่อให้ Type ครบถ้วน แม้หน้านี้จะเน้น Create)
+const handleEdit = async (id: number, data: { title: string; description: string }) => {
+    await updateChannel(id, data)
+    await loadChannels()
+}
+
 onMounted(() => {
     loadChannels()
 })
@@ -30,14 +43,16 @@ onMounted(() => {
 
 <template>
     <div class="flex items-center justify-between">
-        <ModalCreate v-model:open="isCreateModalOpen">
+        <div>
+            <UInput icon="i-heroicons-magnifying-glass" size="lg" :trailing="false"
+                placeholder="ค้นหาหรือพิมพ์ชื่อเพื่อสร้างแชนแนลใหม่..." class="w-full max-w-sm cursor-pointer" readonly>
+            </UInput>
+        </div>
+        <div :v-model:open="isCreateModalOpen" mode="create" :loading="loading" :create-handler="handleCreate"
+            :edit-handler="handleEdit">
             <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
                 @click="isCreateModalOpen = true" />
-        </ModalCreate>
-        <ModalCreate v-model:open="isCreateModalOpen">
-            <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
-                @click="isCreateModalOpen = true" />
-        </ModalCreate>
+        </div>
     </div>
 
     <main class="mt-6">
@@ -58,13 +73,16 @@ onMounted(() => {
             </p>
 
             <ModalCreate v-model:open="isCreateModalOpen">
-                <UButton class="cursor-pointer" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
-                    @click="isCreateModalOpen = true" />
+                <div :v-model:open="isCreateModalOpen" mode="create" :loading="loading" :create-handler="handleCreate"
+                    :edit-handler="handleEdit">
+                    <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
+                        @click="isCreateModalOpen = true" />
+                </div>
             </ModalCreate>
         </div>
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
-            <ModalCreate v-model:open="isCreateModalOpen">
+            <div :v-model:open="isCreateModalOpen">
                 <button type="button" @click="isCreateModalOpen = true"
                     class="w-full h-full min-h-[188.5px] bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-800 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-blue-300 transition-all group">
                     <div
@@ -75,7 +93,7 @@ onMounted(() => {
                         สร้างแชนแนลใหม่
                     </span>
                 </button>
-            </ModalCreate>
+            </div>
 
             <div v-for="ch in channels" :key="ch.channels_id" class="w-full">
                 <ChannelCard :item="{
@@ -91,4 +109,7 @@ onMounted(() => {
             </div>
         </div>
     </main>
+
+    <ModalChannelForm v-model:open="isCreateModalOpen" mode="create" :loading="loading" :create-handler="handleCreate"
+        :edit-handler="handleEdit" />
 </template>
