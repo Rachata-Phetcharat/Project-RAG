@@ -11,7 +11,13 @@ export default defineNuxtConfig({
     "@nuxt/eslint",
     "@nuxt/hints",
     "@pinia/nuxt",
+    "@nuxt/fonts",
   ],
+  fonts: {
+    families: [
+      { name: "Kanit", provider: "google" }, // เปลี่ยนเป็นชื่อฟอนต์ที่ชอบ
+    ],
+  },
   css: ["~/assets/css/main.css"],
   runtimeConfig: {
     public: {
