@@ -28,13 +28,6 @@ onMounted(() => {
 
 
 <template>
-    <nav class="flex items-center justify-between py-4">
-        <NuxtLink to="/" class="text-xl">ห้องคำขอ</NuxtLink>
-        <div class="flex items-center gap-3">
-            <UserMenu />
-        </div>
-    </nav>
-
     <USeparator size="md" />
 
     <main class="mt-6">

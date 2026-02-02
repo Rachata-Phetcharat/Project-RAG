@@ -9,9 +9,9 @@ await callOnce(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen px-40">
-    <UApp>
+  <div class="">
+    <NuxtLayout>
       <NuxtPage />
-    </UApp>
+    </NuxtLayout>
   </div>
 </template>

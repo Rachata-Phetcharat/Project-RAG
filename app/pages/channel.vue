@@ -29,19 +29,16 @@ onMounted(() => {
 </script>
 
 <template>
-    <nav class="flex items-center justify-between py-4">
-        <NuxtLink to="/" class="text-xl">จัดการห้องแชนแนล</NuxtLink>
-        <div class="flex items-center gap-3">
-            <ModalCreate v-model:open="isCreateModalOpen">
-                <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
-                    @click="isCreateModalOpen = true" />
-            </ModalCreate>
-
-            <UserMenu />
-        </div>
-    </nav>
-
-    <USeparator size="md" />
+    <div class="flex items-center justify-between">
+        <ModalCreate v-model:open="isCreateModalOpen">
+            <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
+                @click="isCreateModalOpen = true" />
+        </ModalCreate>
+        <ModalCreate v-model:open="isCreateModalOpen">
+            <UButton class="cursor-pointer" size="lg" label="สร้างแชนแนลใหม่" color="secondary" variant="solid"
+                @click="isCreateModalOpen = true" />
+        </ModalCreate>
+    </div>
 
     <main class="mt-6">
         <div v-if="loading"

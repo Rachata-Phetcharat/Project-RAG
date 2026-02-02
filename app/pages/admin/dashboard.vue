@@ -169,22 +169,6 @@ const statsCards = computed(() => [
 
 <template>
     <!-- ============================================ -->
-    <!-- ส่วนหัวของหน้า (Navigation Bar) -->
-    <!-- ============================================ -->
-    <nav class="flex items-center justify-between py-4">
-        <NuxtLink to="/" class="text-xl font-semibold text-gray-900 dark:text-white">
-            Dashboard
-        </NuxtLink>
-
-        <div class="flex items-center gap-3">
-            <UserMenu />
-        </div>
-    </nav>
-
-    <!-- เส้นแบ่ง -->
-    <USeparator size="md" />
-
-    <!-- ============================================ -->
     <!-- เนื้อหาหลักของหน้า -->
     <!-- ============================================ -->
     <main class="py-8">

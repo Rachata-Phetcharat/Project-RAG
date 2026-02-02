@@ -72,7 +72,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center gap-4 p-4 min-h-screen">
+    <div class="flex flex-col items-center justify-center gap-4 pt-30">
         <UPageCard class="w-full max-w-md">
             <UAuthForm :schema="schema" :fields="fields" title="เข้าสู่ระบบ" icon="i-lucide-graduation-cap"
                 :loading="isLoading" :submit="{
