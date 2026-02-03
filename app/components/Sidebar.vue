@@ -14,6 +14,7 @@ const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
    Computed Properties
 ============================================ */
 const channelId = computed(() => route.params.id as string)
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 const fileCount = computed(() => {
     return state.sources.length > 0
         ? state.sources.length
@@ -194,15 +195,20 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Header with Gradient -->
         <div
-            class="p-6 border-b border-gray-100 dark:border-gray-800/50 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
-            <div class="flex items-center gap-2 mb-4">
+            class="p-4 border-b border-gray-100 dark:border-gray-800/50 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
+            <div v-if="isLoggedIn" class="flex items-center gap-2 mb-4">
+                <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
+                    แหล่งข้อมูล
+                </h2>
+            </div>
+            <div v-else class="flex items-center">
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
                 </h2>
             </div>
 
             <!-- Upload Modal Button -->
-            <UModal v-model="state.isModalOpen" :ui="{
+            <UModal v-if="isLoggedIn" v-model="state.isModalOpen" :ui="{
                 content: 'sm:max-w-[900px]',
                 overlay: 'backdrop-blur-sm'
             }">
@@ -362,12 +368,12 @@ watch(() => route.params.id, (newId) => {
                 </div>
 
                 <!-- Download Button -->
-                <UButton icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost" size="sm"
+                <UButton v-if="isLoggedIn" icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost" size="sm"
                     @click.stop="handleDownload(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
 
                 <!-- Delete Button -->
-                <UButton icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
+                <UButton v-if="isLoggedIn" icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
                     @click.stop="openDeleteModal(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
             </div>

@@ -110,6 +110,10 @@ watch(() => route.params.id, () => {
             class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
             <nav class="flex items-center justify-between py-5">
                 <div class="flex items-center gap-3">
+                    <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" size="lg"
+                        @click="$router.back()"
+                        class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-xl"
+                        aria-label="ย้อนกลับ" />
                     <div class="w-1 h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600"></div>
                     <h1
                         class="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">

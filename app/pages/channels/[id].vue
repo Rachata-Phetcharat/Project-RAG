@@ -152,11 +152,13 @@ watch(() => route.params.id, (newId) => {
         <!-- Main Content (แสดงเมื่อโหลดเสร็จแล้ว) -->
         <template v-else>
             <!-- Sidebar Component -->
-            <div v-if="isLoggedIn">
-                <Sidebar :channel-id="channelId" :sources="channelState.sources"
-                    :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
-                    @update:sources="handleSourcesUpdate" />
-            </div>
+            <!-- <Sidebar v-if="isLoggedIn" :channel-id="channelId" :sources="channelState.sources"
+                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
+                @update:sources="handleSourcesUpdate" /> -->
+
+            <Sidebar :channel-id="channelId" :sources="channelState.sources"
+                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
+                @update:sources="handleSourcesUpdate" />
 
             <!-- Main Content Component -->
             <MainContent :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount" />
