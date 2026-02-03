@@ -110,8 +110,6 @@ export const useAuthStore = defineStore("auth", () => {
 
       user.value = response;
     } catch (error: any) {
-      console.error("Fetch user failed:", error);
-
       // Logout เฉพาะ token หมดอายุ
       const isUnauthorized =
         error?.statusCode === 401 || error?.response?.status === 401;

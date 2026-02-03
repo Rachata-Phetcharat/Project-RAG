@@ -35,8 +35,6 @@ export const useChat = () => {
         credentials: "include",
       });
 
-      console.log("Create session response:", data);
-
       // ดึง session_id จาก response (รองรับหลายรูปแบบ)
       const sessionId =
         data?.session_id || data?.sessions_id || data?.id || data?.sessionId;
@@ -55,7 +53,6 @@ export const useChat = () => {
       const errorMsg =
         err?.data?.detail || err?.message || "ไม่สามารถสร้าง Session ได้";
       error.value = errorMsg;
-      console.error("Create session error:", err);
       throw new Error(errorMsg);
     } finally {
       loading.value = false;
@@ -100,7 +97,6 @@ export const useChat = () => {
       const errorMsg =
         err?.data?.detail || err?.message || "เกิดข้อผิดพลาดในการสื่อสารกับ AI";
       error.value = errorMsg;
-      console.error("Send Ollama reply error:", err);
       throw new Error(errorMsg);
     }
   };

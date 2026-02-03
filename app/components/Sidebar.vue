@@ -78,7 +78,6 @@ const loadChannelData = async () => {
             router.push('/')
         }
     } catch (err: any) {
-        console.error('❌ Error loading channel:', err)
         toast.add({
             title: 'เกิดข้อผิดพลาด',
             description: 'ไม่สามารถโหลดข้อมูลช่องได้',
@@ -135,7 +134,6 @@ const handleFileUpload = async (event: any) => {
 
         state.isModalOpen = false
     } catch (err) {
-        console.error('Upload failed:', err)
         toast.add({
             title: 'เกิดข้อผิดพลาด',
             description: error.value || 'ไม่สามารถอัปโหลดไฟล์ได้',
@@ -196,9 +194,8 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Header with Gradient -->
         <div
-            class="p-6 border-b border-gray-100 dark:border-gray-800/50 bg-gradient-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
+            class="p-6 border-b border-gray-100 dark:border-gray-800/50 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
             <div class="flex items-center gap-2 mb-4">
-                <div class="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
                 </h2>
@@ -213,7 +210,6 @@ watch(() => route.params.id, (newId) => {
                     :disabled="loading || state.isUploading"
                     class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                     <span class="flex items-center gap-2">
-                        <UIcon name="i-heroicons-sparkles" class="w-4 h-4" />
                         เพิ่มแหล่งที่มา
                     </span>
                 </UButton>
@@ -221,7 +217,7 @@ watch(() => route.params.id, (newId) => {
                 <template #header>
                     <div class="flex items-center gap-3">
                         <div
-                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
+                            class="w-10 h-10 rounded-xl bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
                             <UIcon name="i-heroicons-document-plus" class="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -238,13 +234,13 @@ watch(() => route.params.id, (newId) => {
                         <!-- Upload Zone -->
                         <div class="relative group">
                             <div
-                                class="border-3 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl h-64 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50 hover:from-primary-50 hover:to-blue-50 dark:hover:from-primary-950/20 dark:hover:to-blue-950/20 hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300 cursor-pointer group-hover:shadow-2xl group-hover:scale-[1.01]">
+                                class="border-3 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl h-64 flex flex-col items-center justify-center bg-linear-to-br from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50 hover:from-primary-50 hover:to-blue-50 dark:hover:from-primary-950/20 dark:hover:to-blue-950/20 hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300 cursor-pointer group-hover:shadow-2xl group-hover:scale-[1.01]">
 
                                 <!-- Default State -->
                                 <div v-if="!state.isUploading"
                                     class="flex flex-col items-center text-center space-y-4 pointer-events-none">
                                     <div
-                                        class="w-16 h-16 bg-gradient-to-br from-primary-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                        class="w-16 h-16 bg-linear-to-br from-primary-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                                         <UIcon name="i-heroicons-cloud-arrow-up" class="w-8 h-8" />
                                     </div>
                                     <h4 class="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -301,7 +297,7 @@ watch(() => route.params.id, (newId) => {
 
                     <!-- Progress Footer -->
                     <div
-                        class="p-6 bg-gradient-to-br from-gray-50 to-transparent dark:from-gray-900/50 border-t border-gray-100 dark:border-gray-800">
+                        class="p-6 bg-linear-to-br from-gray-50 to-transparent dark:from-gray-900/50 border-t border-gray-100 dark:border-gray-800">
                         <div class="flex items-center gap-4">
                             <UIcon name="i-heroicons-folder" class="w-5 h-5 text-gray-500 flex-shrink-0" />
                             <div class="flex-1">
@@ -335,9 +331,9 @@ watch(() => route.params.id, (newId) => {
 
             <!-- Empty State -->
             <div v-else-if="state.sources.length === 0"
-                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-gradient-to-br from-gray-100/50 to-transparent dark:from-gray-800/30">
+                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-linear-to-br from-gray-100/50 to-transparent dark:from-gray-800/30">
                 <div
-                    class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-3">
+                    class="w-16 h-16 rounded-2xl bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-3">
                     <UIcon name="i-heroicons-document" class="w-8 h-8 text-gray-400" />
                 </div>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">ยังไม่มีไฟล์</p>
@@ -346,11 +342,11 @@ watch(() => route.params.id, (newId) => {
 
             <!-- File Items -->
             <div v-for="(file, index) in state.sources" :key="file.files_id"
-                class="flex items-center justify-between p-3 rounded-xl hover:bg-gradient-to-r hover:from-primary-50 hover:to-transparent dark:hover:from-primary-950/30 group transition-all duration-300 hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-primary-200 dark:hover:border-primary-900"
+                class="flex items-center justify-between p-3 rounded-xl hover:bg-linear-to-r hover:from-primary-50 hover:to-transparent dark:hover:from-primary-950/30 group transition-all duration-300 hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-primary-200 dark:hover:border-primary-900"
                 :style="{ animationDelay: `${index * 50}ms` }">
                 <div class="flex items-center gap-3 truncate flex-1 min-w-0">
                     <div
-                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        class="w-10 h-10 rounded-lg bg-linear-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                         <UIcon name="i-heroicons-document-text"
                             class="w-5 h-5 text-primary-600 dark:text-primary-400" />
                     </div>
@@ -379,7 +375,7 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Footer Progress -->
         <div
-            class="p-4 bg-gradient-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
+            class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
             <div class="flex items-center gap-3">
                 <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500 flex-shrink-0" />
                 <div class="flex-1">

@@ -82,8 +82,6 @@ const handleSendMessage = async () => {
             }
         })
     } catch (err) {
-        console.error('AI response failed:', err)
-        // ลบข้อความ user ที่ส่งไปแล้วถ้า AI ไม่ตอบ
         state.chatHistory.pop()
         state.message = userText // คืนข้อความให้ user
     } finally {
@@ -114,7 +112,7 @@ watch(() => route.params.id, () => {
                 <div class="flex items-center gap-3">
                     <div class="w-1 h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600"></div>
                     <h1
-                        class="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
+                        class="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
                         {{ channelTitle }}
                     </h1>
                 </div>
@@ -135,16 +133,16 @@ watch(() => route.params.id, () => {
             class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
             <div class="relative">
                 <div
-                    class="absolute inset-0 bg-gradient-to-r from-primary-400 to-blue-500 rounded-full blur-3xl opacity-20 animate-pulse">
+                    class="absolute inset-0 bg-linear-to-r from-primary-400 to-blue-500 rounded-full blur-3xl opacity-20 animate-pulse">
                 </div>
                 <div
-                    class="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-2xl">
+                    class="relative w-24 h-24 rounded-3xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-2xl">
                     <UIcon name="i-heroicons-chat-bubble-oval-left-ellipsis" class="w-12 h-12 text-white" />
                 </div>
             </div>
             <div class="space-y-3">
                 <h2
-                    class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                    class="text-3xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     เริ่มต้นการสนทนา
                 </h2>
                 <p class="text-gray-600 dark:text-gray-400 max-w-md text-lg">
@@ -165,7 +163,7 @@ watch(() => route.params.id, () => {
 
                         <!-- User Message -->
                         <div v-if="msg.role === 'user'"
-                            class="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md shadow-lg text-base font-medium">
+                            class="bg-linear-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md shadow-lg text-base font-medium">
                             {{ msg.text }}
                         </div>
 
@@ -177,7 +175,7 @@ watch(() => route.params.id, () => {
                             <div class="flex gap-5">
                                 <div class="flex-shrink-0">
                                     <UAvatar icon="i-heroicons-sparkles" size="md"
-                                        class="bg-gradient-to-br from-primary-500 to-blue-600 text-white shadow-lg" />
+                                        class="bg-linear-to-br from-primary-500 to-blue-600 text-white shadow-lg" />
                                 </div>
                                 <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-base">
                                     <p class="whitespace-pre-wrap">{{ msg.text }}</p>
@@ -204,7 +202,7 @@ watch(() => route.params.id, () => {
 
             <!-- Input Area -->
             <div
-                class="shrink-0 p-6 pb-8 z-10 bg-gradient-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
+                class="shrink-0 p-6 pb-8 z-10 bg-linear-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
                 <div class="w-full max-w-5xl mx-auto">
                     <form @submit.prevent="handleSendMessage">
                         <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."

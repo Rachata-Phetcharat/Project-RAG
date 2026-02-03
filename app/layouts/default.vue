@@ -16,10 +16,10 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                         <!-- Logo Icon/Badge -->
                         <div class="relative">
                             <div
-                                class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity">
+                                class="absolute inset-0 bg-linear-to-r from-blue-600 to-indigo-600 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity">
                             </div>
                             <div
-                                class="relative p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                                class="relative p-2.5 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
                                 <UIcon name="i-lucide-graduation-cap" class="w-6 h-6 text-white" />
                             </div>
                         </div>
@@ -27,7 +27,7 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                         <!-- Logo Text -->
                         <div class="flex flex-col">
                             <span
-                                class="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                class="text-2xl font-bold bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                                 KmutnbLM
                             </span>
                             <span class="text-xs text-gray-500 dark:text-gray-400 font-medium -mt-1">
@@ -49,8 +49,8 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
         <main :class="[
             'min-h-screen px-40 pt-10 transition-colors duration-500',
             layoutClass === 'admin-theme'
-                ? ' bg-gradient-to-br from-slate-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-orange-950'
-                : 'bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950'
+                ? ' bg-linear-to-br from-slate-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-orange-950'
+                : 'bg-linear-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950'
         ]">
             <slot />
         </main>

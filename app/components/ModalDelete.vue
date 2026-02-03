@@ -65,7 +65,7 @@ const loading = computed(() => props.loading || isDeleting.value)
         <template #header>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                    class="w-10 h-10 rounded-xl bg-linear-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
                     <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-white" />
                 </div>
                 <div>

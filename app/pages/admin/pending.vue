@@ -18,7 +18,6 @@ const loadChannels = async () => {
         const data = await fetchPendingChannels()
         channels.value = Array.isArray(data) ? data : []
     } catch (e) {
-        console.error(e)
         errorMsg.value = 'โหลดข้อมูลแชนแนลไม่สำเร็จ'
     }
 }
@@ -91,17 +90,16 @@ onMounted(() => {
         <!-- Admin Badge & Title -->
         <div class="flex items-center gap-3 mb-6">
             <div class="relative">
-                <div
-                    class="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl blur-lg opacity-50">
+                <div class="absolute inset-0 bg-linear-to-r from-amber-500 to-orange-500 rounded-xl blur-lg opacity-50">
                 </div>
-                <div class="relative p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                <div class="relative p-3 bg-linear-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
                     <UIcon name="i-lucide-shield-alert" class="w-7 h-7 text-white" />
                 </div>
             </div>
             <div>
                 <div class="flex items-center gap-2 mb-1">
                     <h1
-                        class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                        class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         คำขอแชนแนลรอดำเนินการ
                     </h1>
                     <div class="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full">
@@ -135,11 +133,11 @@ onMounted(() => {
                     { value: 'week', label: 'สัปดาห์', icon: 'i-lucide-calendar-range' },
                     { value: 'month', label: 'เดือน', icon: 'i-lucide-calendar' }
                 ]" :key="filter.value" @click="filterStatus = filter.value" :class="[
-                            'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
-                            filterStatus === filter.value
-                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-md'
-                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        ]">
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
+                    filterStatus === filter.value
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-md'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                ]">
                     <UIcon :name="filter.icon" class="w-4 h-4" />
                     <span class="hidden sm:inline">{{ filter.label }}</span>
                 </button>
@@ -154,7 +152,7 @@ onMounted(() => {
             <div class="relative">
                 <div class="absolute inset-0 bg-amber-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
                 <div
-                    class="relative p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-full">
+                    class="relative p-6 bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-full">
                     <UIcon name="i-lucide-loader-circle" class="w-12 h-12 animate-spin text-amber-600" />
                 </div>
             </div>
@@ -167,16 +165,16 @@ onMounted(() => {
         <!-- Empty State -->
         <div v-else-if="!channels.length" class="relative">
             <div
-                class="absolute inset-0 bg-gradient-to-r from-amber-600/5 to-orange-600/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-3xl blur-2xl">
+                class="absolute inset-0 bg-linear-to-r from-amber-600/5 to-orange-600/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-3xl blur-2xl">
             </div>
             <div
                 class="relative flex flex-col items-center justify-center gap-8 px-4 text-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm py-5 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                 <div class="relative">
                     <div
-                        class="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full blur-2xl opacity-20 animate-pulse">
+                        class="absolute inset-0 bg-linear-to-r from-amber-500 to-orange-500 rounded-full blur-2xl opacity-20 animate-pulse">
                     </div>
                     <div
-                        class="relative p-8 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-full shadow-xl border border-amber-100 dark:border-amber-800">
+                        class="relative p-8 bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-full shadow-xl border border-amber-100 dark:border-amber-800">
                         <UIcon name="i-lucide-inbox" class="w-20 h-20 text-amber-600 dark:text-amber-400" />
                     </div>
                 </div>
@@ -257,10 +255,10 @@ onMounted(() => {
 
     <!-- Decorative Elements -->
     <div
-        class="fixed top-20 right-20 w-72 h-72 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed top-20 right-20 w-72 h-72 bg-linear-to-br from-amber-400 to-orange-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
     <div
-        class="fixed bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-orange-400 to-red-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-orange-400 to-red-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
 </template>
 

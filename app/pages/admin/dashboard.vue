@@ -214,16 +214,16 @@ const quickActions = [
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div
-                        class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl blur-lg opacity-50">
+                        class="absolute inset-0 bg-linear-to-r from-indigo-500 to-purple-500 rounded-xl blur-lg opacity-50">
                     </div>
-                    <div class="relative p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
+                    <div class="relative p-3 bg-linear-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
                         <UIcon name="i-lucide-bar-chart-3" class="w-7 h-7 text-white" />
                     </div>
                 </div>
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <h1
-                            class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                            class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                             Admin Dashboard
                         </h1>
                         <div class="px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
@@ -298,7 +298,7 @@ const quickActions = [
                     class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default">
                     <!-- Gradient Background -->
                     <div
-                        :class="['absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity', stat.gradient]">
+                        :class="['absolute inset-0 bg-linear-to-br opacity-0 group-hover:opacity-5 transition-opacity', stat.gradient]">
                     </div>
 
                     <div class="relative p-6">
@@ -338,7 +338,7 @@ const quickActions = [
 
                     <!-- Hover Effect Line -->
                     <div
-                        :class="['absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity', stat.gradient]">
+                        :class="['absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 group-hover:opacity-100 transition-opacity', stat.gradient]">
                     </div>
                 </div>
             </template>
@@ -348,7 +348,7 @@ const quickActions = [
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <!-- Total Channels -->
             <div
-                class="bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
+                class="bg-linear-to-br from-indigo-500 to-purple-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <div class="relative">
                     <div class="flex items-center gap-3 mb-4">
@@ -369,7 +369,7 @@ const quickActions = [
 
             <!-- Pending Requests -->
             <div
-                class="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
+                class="bg-linear-to-br from-amber-500 to-orange-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <div class="relative">
                     <div class="flex items-center gap-3 mb-4">
@@ -391,7 +391,7 @@ const quickActions = [
 
             <!-- Activity Summary -->
             <div
-                class="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
+                class="bg-linear-to-br from-blue-500 to-cyan-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <div class="relative">
                     <div class="flex items-center gap-3 mb-4">
@@ -467,10 +467,10 @@ const quickActions = [
 
     <!-- Decorative Elements -->
     <div
-        class="fixed top-20 right-20 w-72 h-72 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed top-20 right-20 w-72 h-72 bg-linear-to-br from-indigo-400 to-purple-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
     <div
-        class="fixed bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
 </template>
 

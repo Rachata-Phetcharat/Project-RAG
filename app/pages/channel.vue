@@ -17,7 +17,6 @@ const loadChannels = async () => {
         const data = await fetchMyChannels()
         channels.value = Array.isArray(data) ? data : []
     } catch (e) {
-        console.error(e)
         errorMsg.value = 'โหลดข้อมูลแชนแนลไม่สำเร็จ'
     }
 }
@@ -51,12 +50,12 @@ onMounted(() => {
     <!-- Header Section -->
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
+            <div class="p-3 bg-linear-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
                 <UIcon name="i-lucide-layout-grid" class="w-7 h-7 text-white" />
             </div>
             <div>
                 <h1
-                    class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                    class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     แชนแนลของฉัน
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -93,7 +92,7 @@ onMounted(() => {
             <div class="relative">
                 <div class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
                 <div
-                    class="relative p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full">
+                    class="relative p-6 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full">
                     <UIcon name="i-lucide-loader-circle" class="w-12 h-12 animate-spin text-blue-600" />
                 </div>
             </div>
@@ -106,16 +105,16 @@ onMounted(() => {
         <!-- Empty State -->
         <div v-else-if="!channels.length" class="relative">
             <div
-                class="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-3xl blur-2xl">
+                class="absolute inset-0 bg-linear-to-r from-blue-600/5 to-indigo-600/5 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-3xl blur-2xl">
             </div>
             <div
                 class="relative flex flex-col items-center justify-center gap-8 px-4 text-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm py-5 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                 <div class="relative">
                     <div
-                        class="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full blur-2xl opacity-20 animate-pulse">
+                        class="absolute inset-0 bg-linear-to-r from-blue-500 to-indigo-500 rounded-full blur-2xl opacity-20 animate-pulse">
                     </div>
                     <div
-                        class="relative p-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full shadow-xl border border-blue-100 dark:border-blue-800">
+                        class="relative p-8 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full shadow-xl border border-blue-100 dark:border-blue-800">
                         <UIcon name="i-lucide-folder-plus" class="w-20 h-20 text-blue-600 dark:text-blue-400" />
                     </div>
                 </div>
@@ -159,9 +158,9 @@ onMounted(() => {
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <!-- Create New Card -->
                 <button type="button" @click="isCreateModalOpen = true"
-                    class="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+                    class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
                     <div
-                        class="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
+                        class="absolute inset-0 bg-linear-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
                     </div>
 
                     <div class="relative z-10 flex flex-col items-center gap-4">
@@ -170,7 +169,7 @@ onMounted(() => {
                                 class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300">
                             </div>
                             <div
-                                class="relative w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                class="relative w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                                 <UIcon name="i-lucide-plus" class="w-8 h-8 text-white" />
                             </div>
                         </div>
@@ -220,10 +219,10 @@ onMounted(() => {
 
     <!-- Decorative Elements -->
     <div
-        class="fixed top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed top-20 right-20 w-72 h-72 bg-linear-to-br from-blue-400 to-indigo-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
     <div
-        class="fixed bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
+        class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
 
     <!-- Modal -->

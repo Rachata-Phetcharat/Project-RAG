@@ -70,8 +70,7 @@ const items = computed(() => [
         <UColorModeButton class="cursor-pointer" />
 
         <!-- Auth Logic -->
-        <UButton v-if="!authStore.isLoggedIn" label="เข้าสู่ระบบ" to="/login" color="primary" variant="solid"
-            icon="i-lucide-log-in" />
+        <ModalLogin v-if="!authStore.isLoggedIn" />
 
         <UDropdownMenu v-else :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
             :ui="{ content: 'w-48' }">

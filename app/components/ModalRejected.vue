@@ -77,7 +77,7 @@ const handleSubmit = async () => {
         <template #header>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg">
+                    class="w-10 h-10 rounded-xl bg-linear-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg">
                     <UIcon name="i-heroicons-x-circle" class="w-6 h-6 text-white" />
                 </div>
                 <div>

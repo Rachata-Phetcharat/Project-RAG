@@ -55,7 +55,7 @@ const statusConfig = computed(() => {
         <template #header>
             <div class="flex items-center gap-4">
                 <div
-                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/20">
+                    class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/20">
                     <UIcon name="i-heroicons-information-circle" class="h-7 w-7 text-white" />
                 </div>
                 <div class="min-w-0 flex flex-col">
@@ -130,7 +130,7 @@ const statusConfig = computed(() => {
                 </div>
 
                 <div
-                    class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 p-5 shadow-lg shadow-primary-500/20">
+                    class="relative overflow-hidden rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 p-5 shadow-lg shadow-primary-500/20">
                     <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
                     <div class="absolute -left-4 -bottom-4 h-20 w-20 rounded-full bg-black/5 blur-xl"></div>
 

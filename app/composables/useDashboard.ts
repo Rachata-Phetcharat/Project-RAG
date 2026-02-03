@@ -60,7 +60,7 @@ export const useDashboard = () => {
           method: "GET",
           headers: getHeaders(),
           query: params,
-        }
+        },
       );
 
       // หาค่าวันนี้ (ตัวสุดท้าย) และ เมื่อวาน (ตัวรองสุดท้าย)
@@ -88,7 +88,7 @@ export const useDashboard = () => {
           method: "GET",
           headers: getHeaders(),
           query: params,
-        }
+        },
       );
 
       const todayVal = res[res.length - 1]?.active_users || 0;
@@ -128,7 +128,6 @@ export const useDashboard = () => {
         data: [], // และไม่มีกราฟรายวัน
       };
     } catch (err) {
-      console.error("Fetch Channels Error:", err);
       return { total: 0, growth: "+0%", data: [] };
     } finally {
       loading.value = false;
@@ -156,7 +155,6 @@ export const useDashboard = () => {
         data: [], // และไม่มีกราฟรายวัน
       };
     } catch (err) {
-      console.error("Fetch Channels Error:", err);
       return { total: 0, growth: "+0%", data: [] };
     } finally {
       loading.value = false;
@@ -184,7 +182,6 @@ export const useDashboard = () => {
         data: [], // และไม่มีกราฟรายวัน
       };
     } catch (err) {
-      console.error("Fetch Channels Error:", err);
       return { total: 0, growth: "+0%", data: [] };
     } finally {
       loading.value = false;

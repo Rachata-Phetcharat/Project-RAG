@@ -120,7 +120,7 @@ const submitLabel = computed(() => isEdit.value ? 'บันทึกการ�
         <template #header>
             <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
+                    class="w-10 h-10 rounded-xl bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
                     <UIcon :name="headerIcon" class="w-5 h-5 text-white" />
                 </div>
                 <div>

@@ -207,7 +207,6 @@ watch(isPublic, async (val, oldVal) => {
 
         emit('load')
     } catch (err) {
-        console.error(err)
         isPublic.value = oldVal
         toast.add({
             title: 'เกิดข้อผิดพลาด',
@@ -340,7 +339,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             class="block relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
             <!-- Gradient Header -->
             <div :class="[
-                'h-20 bg-gradient-to-br relative overflow-hidden',
+                'h-20 bg-linear-to-br relative overflow-hidden',
                 statusBadge.gradient
             ]">
                 <div class="absolute inset-0 bg-black/10"></div>
@@ -398,7 +397,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
                     <div class="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <div class="relative">
                             <div
-                                class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-lg">
+                                class="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-lg">
                                 {{ cardInfo.createdBy.charAt(0).toUpperCase() }}
                             </div>
                             <div
@@ -419,7 +418,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
 
             <!-- Hover Effect Overlay -->
             <div
-                class="absolute inset-0 bg-gradient-to-t from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-2xl">
+                class="absolute inset-0 bg-linear-to-t from-blue-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none rounded-2xl">
             </div>
         </NuxtLink>
 

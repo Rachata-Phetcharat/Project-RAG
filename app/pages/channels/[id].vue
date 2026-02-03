@@ -9,6 +9,12 @@ const authStore = useAuthStore()
 
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 
+definePageMeta({
+    layout: 'chat-layout', // แก้จาก layouts เป็น layout
+})
+
+const isLoggedIn = computed(() => authStore.isLoggedIn)
+
 /* ============================================
    Computed Properties
 ============================================ */
@@ -146,9 +152,11 @@ watch(() => route.params.id, (newId) => {
         <!-- Main Content (แสดงเมื่อโหลดเสร็จแล้ว) -->
         <template v-else>
             <!-- Sidebar Component -->
-            <Sidebar :channel-id="channelId" :sources="channelState.sources"
-                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
-                @update:sources="handleSourcesUpdate" />
+            <div v-if="isLoggedIn">
+                <Sidebar :channel-id="channelId" :sources="channelState.sources"
+                    :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
+                    @update:sources="handleSourcesUpdate" />
+            </div>
 
             <!-- Main Content Component -->
             <MainContent :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount" />

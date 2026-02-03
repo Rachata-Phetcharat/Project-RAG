@@ -57,7 +57,6 @@ export const useFileChannel = () => {
       const errorMessage =
         err?.data?.message || err?.message || "เกิดข้อผิดพลาด";
       error.value = errorMessage;
-      console.error("API Error:", errorMessage, err);
       throw err;
     } finally {
       loading.value = false;
@@ -89,7 +88,6 @@ export const useFileChannel = () => {
       const errorMessage =
         err?.data?.message || err?.message || "เกิดข้อผิดพลาด";
       error.value = errorMessage;
-      console.error("API Error:", errorMessage, err);
       throw err;
     } finally {
       loading.value = false;
@@ -114,7 +112,6 @@ export const useFileChannel = () => {
       const errorMessage =
         err?.data?.message || err?.message || "เกิดข้อผิดพลาด";
       error.value = errorMessage;
-      console.error("API Error:", errorMessage, err);
       throw err;
     } finally {
       loading.value = false;
@@ -152,7 +149,6 @@ export const useFileChannel = () => {
     } catch (err: any) {
       const errorMessage = "ไม่สามารถดาวน์โหลดไฟล์ได้";
       error.value = errorMessage;
-      console.error("Download Error:", err);
       throw err;
     } finally {
       loading.value = false;
