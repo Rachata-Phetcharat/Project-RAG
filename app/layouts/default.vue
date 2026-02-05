@@ -15,13 +15,14 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                     <NuxtLink to="/" class="group flex items-center gap-3 transition-all duration-300 hover:scale-105">
                         <!-- Logo Icon/Badge -->
                         <div class="relative">
-                            <div
+                            <!-- <div
                                 class="absolute inset-0 bg-linear-to-r from-blue-600 to-indigo-600 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity">
-                            </div>
-                            <div
+                            </div> -->
+                            <!-- <div
                                 class="relative p-2.5 bg-linear-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
                                 <UIcon name="i-lucide-graduation-cap" class="w-6 h-6 text-white" />
-                            </div>
+                            </div> -->
+                            <img src="/logo.png" alt="Logo" class="h-10 w-10 object-scale-down" />
                         </div>
 
                         <!-- Logo Text -->
@@ -30,9 +31,9 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                                 class="text-2xl font-bold bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                                 KmutnbLM
                             </span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium -mt-1">
+                            <!-- <span class="text-xs text-gray-500 dark:text-gray-400 font-medium -mt-1">
                                 Learning Platform
-                            </span>
+                            </span> -->
                         </div>
                     </NuxtLink>
 

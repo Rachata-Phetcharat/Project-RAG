@@ -21,6 +21,16 @@ const fileCount = computed(() => {
         : (state.totalFilesFromList || 0)
 })
 
+const isOwnerOrAdmin = computed(() => {
+    if (!isLoggedIn.value) return false
+
+    // ถ้าเป็น admin ให้แสดงทุกอย่าง
+    if (authStore.role === 'admin') return true
+
+    // ตรวจสอบว่าช่องนี้อยู่ในรายการ "My Channels" หรือไม่
+    return state.isOwner
+})
+
 /* ============================================
    State Management
 ============================================ */
@@ -29,7 +39,8 @@ const state = reactive({
     isUploading: false,
     channelTitle: '',
     sources: [] as any[],
-    totalFilesFromList: 0
+    totalFilesFromList: 0,
+    isOwner: false
 })
 
 const deleteModalState = reactive({
@@ -44,25 +55,38 @@ const loadChannelData = async () => {
     if (!channelId.value) return
 
     try {
-        let response
+        let currentChannel = null
+        state.isOwner = false // รีเซ็ตก่อน
 
-        // ตรวจสอบสิทธิ์ (Admin > Owner > Public)
+        // ถ้าเป็น admin ใช้ fetchAllChannels
         if (authStore.role === 'admin') {
-            response = await fetchAllChannels({ limit: 100 })
-        } else if (authStore.token) {
-            response = await fetchMyChannels({ limit: 100 })
+            const adminResponse: any = await fetchAllChannels({ limit: 100 })
+            currentChannel = adminResponse?.find((c: any) =>
+                String(c.channels_id) === String(channelId.value)
+            )
+            state.isOwner = true // admin มีสิทธิ์เหมือนเจ้าของ
+        }
+        // ถ้า login แล้ว ลองหาใน My Channels
+        else if (authStore.token) {
+            const myChannelsResponse: any = await fetchMyChannels({ limit: 100 })
+            currentChannel = myChannelsResponse?.find((c: any) =>
+                String(c.channels_id) === String(channelId.value)
+            )
+
+            // ถ้าเจอใน My Channels แสดงว่าเป็นเจ้าของ
+            if (currentChannel) {
+                state.isOwner = true
+            }
         }
 
-        // ฟังก์ชันหาช่องที่ ID ตรงกัน
-        const findChannel = (list: any[]) =>
-            list?.find((c: any) => String(c.channels_id) === String(channelId.value))
-
-        let currentChannel = response ? findChannel(response as any[]) : null
-
-        // ถ้าไม่เจอให้ดึงจาก Public
+        // ถ้าไม่เจอใน My Channels หรือไม่ได้ login ให้ลองหาใน Public Channels
         if (!currentChannel) {
-            const publicRes = await fetchPublicChannels({ limit: 100 })
-            currentChannel = findChannel(publicRes as any[])
+            const publicResponse: any = await fetchPublicChannels({ limit: 100 })
+            currentChannel = publicResponse?.find((c: any) =>
+                String(c.channels_id) === String(channelId.value)
+            )
+            // ถ้าเจอใน Public แต่ไม่ได้อยู่ใน My Channels แสดงว่าไม่ใช่เจ้าของ
+            state.isOwner = false
         }
 
         // อัปเดตข้อมูล
@@ -196,7 +220,7 @@ watch(() => route.params.id, (newId) => {
         <!-- Header with Gradient -->
         <div
             class="p-4 border-b border-gray-100 dark:border-gray-800/50 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
-            <div v-if="isLoggedIn" class="flex items-center gap-2 mb-4">
+            <div v-if="isOwnerOrAdmin" class="flex items-center gap-2 mb-4">
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
                 </h2>
@@ -208,7 +232,7 @@ watch(() => route.params.id, (newId) => {
             </div>
 
             <!-- Upload Modal Button -->
-            <UModal v-if="isLoggedIn" v-model="state.isModalOpen" :ui="{
+            <UModal v-if="isOwnerOrAdmin" v-model="state.isModalOpen" :ui="{
                 content: 'sm:max-w-[900px]',
                 overlay: 'backdrop-blur-sm'
             }">
@@ -368,19 +392,19 @@ watch(() => route.params.id, (newId) => {
                 </div>
 
                 <!-- Download Button -->
-                <UButton v-if="isLoggedIn" icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost" size="sm"
-                    @click.stop="handleDownload(file)"
+                <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost"
+                    size="sm" @click.stop="handleDownload(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
 
                 <!-- Delete Button -->
-                <UButton v-if="isLoggedIn" icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
+                <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
                     @click.stop="openDeleteModal(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
             </div>
         </div>
 
         <!-- Footer Progress -->
-        <div
+        <div v-if="isOwnerOrAdmin"
             class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
             <div class="flex items-center gap-3">
                 <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500 flex-shrink-0" />

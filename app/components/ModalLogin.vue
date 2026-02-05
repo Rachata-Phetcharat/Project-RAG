@@ -71,16 +71,16 @@ function onModalClose() {
 </script>
 
 <template>
-    <UModal :open="isOpen" @update:open="isOpen = $event" prevent-close @close="onModalClose" :ui="{
-        content: 'sm:max-w-lg',
-        overlay: 'backdrop-blur-sm'
-    }">
+    <UModal title="เข้าสู่ระบบ" description="ยินดีต้อนรับกลับมา กรุณาเข้าสู่ระบบด้วย ICIT Account" :open="isOpen"
+        @update:open="isOpen = $event" prevent-close @close="onModalClose" :ui="{
+            content: 'sm:max-w-lg',
+            overlay: 'backdrop-blur-sm'
+        }">
         <UButton label="เข้าสู่ระบบ" color="primary" variant="solid" icon="i-lucide-log-in" />
-
 
         <template #body>
             <div class="space-y-6">
-                <div class="flex items-center gap-3">
+                <!-- <div class="flex items-center gap-3">
                     <div
                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
                         <UIcon name="i-lucide-graduation-cap" class="w-5 h-5 text-white" />
@@ -91,7 +91,7 @@ function onModalClose() {
                             ยินดีต้อนรับกลับมา กรุณาเข้าสู่ระบบด้วย ICIT Account
                         </p>
                     </div>
-                </div>
+                </div> -->
 
                 <UAuthForm :schema="schema" :fields="fields" :loading="isLoading" :submit="{
                     label: 'เข้าสู่ระบบ',

@@ -2,7 +2,12 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-
+  app: {
+    head: {
+      title: "KmutnbLM",
+      link: [{ rel: "icon", type: "image/x-icon", href: "/logo.png" }],
+    },
+  },
   modules: [
     "@nuxt/content",
     "@nuxt/image",
@@ -15,7 +20,7 @@ export default defineNuxtConfig({
   ],
   fonts: {
     families: [
-      { name: "Kanit", provider: "google" }, // เปลี่ยนเป็นชื่อฟอนต์ที่ชอบ
+      { name: "Kanit", provider: "sans-serif" }, // เปลี่ยนเป็นชื่อฟอนต์ที่ชอบ
     ],
   },
   css: ["~/assets/css/main.css"],

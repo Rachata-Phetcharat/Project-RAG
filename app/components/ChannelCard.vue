@@ -373,7 +373,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
 
                 <div v-if="isLoggedIn" class="space-y-4">
                     <!-- Stats -->
-                    <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <!-- <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                                 <UIcon name="i-lucide-file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -391,7 +391,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
                                 {{ cardInfo.createdAtShort }}
                             </span>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Creator Info -->
                     <div class="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -408,9 +408,9 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
                             <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                 {{ cardInfo.createdBy }}
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <!-- <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 สร้างเมื่อ {{ cardInfo.createdAtShort }}
-                            </p>
+                            </p> -->
                         </div>
                     </div>
                 </div>
@@ -423,7 +423,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
         </NuxtLink>
 
         <!-- Dropdown Menu (Floating) -->
-        <div class="absolute top-4 right-4 z-20" @click.stop>
+        <div v-if="isLoggedIn" class="absolute top-4 right-4 z-20" @click.stop>
             <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
                 :ui="{ content: 'w-56' }">
                 <button
