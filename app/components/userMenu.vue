@@ -24,7 +24,7 @@ const items = computed(() => [
         }, {
             label: 'dashboard',
             icon: 'i-lucide-book-plus',
-            to: '/admin/dashboard'
+            to: '/admin/dashboard/home'
         }]]
         : []
     ),
