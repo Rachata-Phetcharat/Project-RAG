@@ -17,53 +17,49 @@ definePageMeta({
 })
 
 // ============================================
-// 2. ตั้งค่าช่วงวันที่
+// 2. ตั้งค่าช่วงวันที่ - ใช้ interface DateRange จาก DashboardDateSelector
 // ============================================
-const dateRange = ref({
+interface DateRange {
+    start: Date
+    end: Date
+}
+
+const dateRange = ref<DateRange>({
     start: new Date(new Date().setDate(new Date().getDate() - 7)),
     end: new Date()
 });
 
-// Quick date presets
-const datePresets = ref([
-    { label: '7 วัน', days: 7 },
-    { label: '30 วัน', days: 30 },
-    { label: '90 วัน', days: 90 }
-]);
-
-const setDatePreset = (days: number) => {
-    dateRange.value = {
-        start: new Date(new Date().setDate(new Date().getDate() - days)),
-        end: new Date()
-    };
-};
-
 // ============================================
-// 3. ตัวแปรเก็บข้อมูลสถิติ
+// 3. ตัวแปรเก็บข้อมูลสถิติ (รวมทั้ง data array)
 // ============================================
-const questionsData = ref({
+const questionsData = ref<{ total: number; growth: string; data: DailyStatItem[] }>({
     total: 0,
-    growth: '+0%'
+    growth: '+0%',
+    data: []
 });
 
-const usersData = ref({
+const usersData = ref<{ total: number; growth: string; data: DailyStatItem[] }>({
     total: 0,
-    growth: '+0%'
+    growth: '+0%',
+    data: []
 });
 
-const publicChannelsData = ref({
+const publicChannelsData = ref<{ total: number; growth: string; data: DailyStatItem[] }>({
     total: 0,
-    growth: '+0%'
+    growth: '+0%',
+    data: []
 });
 
-const privateChannelsData = ref({
+const privateChannelsData = ref<{ total: number; growth: string; data: DailyStatItem[] }>({
     total: 0,
-    growth: '+0%'
+    growth: '+0%',
+    data: []
 });
 
-const pendingChannelsData = ref({
+const pendingChannelsData = ref<{ total: number; growth: string; data: DailyStatItem[] }>({
     total: 0,
-    growth: '+0%'
+    growth: '+0%',
+    data: []
 });
 
 // ============================================
@@ -74,6 +70,15 @@ const formatDate = (date: Date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+};
+
+// ฟังก์ชันแปลงวันที่แบบไทย
+const formatDateThai = (date: Date) => {
+    return date.toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 };
 
 // ============================================
@@ -100,6 +105,7 @@ const initDashboard = async () => {
             fetchChannelsStatsPending()
         ]);
 
+        // เก็บข้อมูลทั้ง total, growth และ data
         if (questionsResponse) questionsData.value = questionsResponse;
         if (usersResponse) usersData.value = usersResponse;
         if (publicChannelsResponse) publicChannelsData.value = publicChannelsResponse;
@@ -229,29 +235,42 @@ const statsCards = computed(() => [
                 <!-- Date Range Selector -->
                 <div
                     class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 border border-gray-200 dark:border-gray-700">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <!-- Date Range Display -->
+                        <div class="flex items-center gap-3 flex-wrap">
                             <UIcon name="i-lucide-calendar-range" class="w-5 h-5 text-gray-500" />
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">ช่วงเวลา:</span>
-                            <div class="flex items-center gap-2 text-sm">
+                            <div class="flex items-center gap-2 text-sm flex-wrap">
                                 <span
                                     class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white">
-                                    {{ formatDate(dateRange.start) }}
+                                    {{ formatDateThai(dateRange.start) }}
                                 </span>
                                 <UIcon name="i-lucide-arrow-right" class="w-4 h-4 text-gray-400" />
                                 <span
                                     class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white">
-                                    {{ formatDate(dateRange.end) }}
+                                    {{ formatDateThai(dateRange.end) }}
                                 </span>
                             </div>
                         </div>
 
-                        <!-- Quick Presets -->
-                        <div class="flex gap-2">
-                            <button v-for="preset in datePresets" :key="preset.days" @click="setDatePreset(preset.days)"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                                {{ preset.label }}
-                            </button>
+                        <!-- Date Picker Component -->
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">เลือกช่วงเวลา:</span>
+                            <DashboardDateSelector v-model="dateRange" />
+                        </div>
+                    </div>
+
+                    <!-- Info Banner -->
+                    <div
+                        class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div class="flex items-start gap-2">
+                            <UIcon name="i-lucide-info"
+                                class="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                            <p class="text-xs text-blue-700 dark:text-blue-300">
+                                <span class="font-semibold">คำแนะนำ:</span>
+                                เลือกช่วงเวลาที่ต้องการดูข้อมูลได้จากปุ่ม "เลือกช่วงเวลา" ด้านบน
+                                กราฟจะอัพเดทอัตโนมัติตามช่วงเวลาที่เลือก
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -325,73 +344,12 @@ const statsCards = computed(() => [
                     </template>
                 </div>
 
-                <!-- Summary Cards Row -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <!-- Total Channels -->
-                    <div
-                        class="bg-linear-to-br from-indigo-500 to-purple-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                        <div class="relative">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <UIcon name="i-lucide-folder-open" class="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium opacity-90">แชนแนลทั้งหมด</p>
-                                    <p class="text-4xl font-bold">{{ totalChannels.toLocaleString() }}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="opacity-90">Public: {{ publicChannelsData.total }}</span>
-                                <span class="opacity-90">Private: {{ privateChannelsData.total }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pending Requests -->
-                    <div
-                        class="bg-linear-to-br from-amber-500 to-orange-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                        <div class="relative">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <UIcon name="i-lucide-alert-circle" class="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium opacity-90">รอดำเนินการ</p>
-                                    <p class="text-4xl font-bold">{{ pendingChannelsData.total.toLocaleString() }}</p>
-                                </div>
-                            </div>
-                            <NuxtLink to="/admin/pending"
-                                class="inline-flex items-center gap-2 text-sm font-medium bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors">
-                                <span>ดูทั้งหมด</span>
-                                <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
-                            </NuxtLink>
-                        </div>
-                    </div>
-
-                    <!-- Activity Summary -->
-                    <div
-                        class="bg-linear-to-br from-blue-500 to-cyan-500 rounded-2xl p-8 shadow-2xl text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                        <div class="relative">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                    <UIcon name="i-lucide-activity" class="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium opacity-90">กิจกรรมช่วงนี้</p>
-                                    <p class="text-4xl font-bold">
-                                        {{ (questionsData.total + usersData.total).toLocaleString() }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="opacity-90">คำถาม: {{ questionsData.total }}</span>
-                                <span class="opacity-90">ผู้ใช้: {{ usersData.total }}</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Charts Section -->
+                <div class="mb-8">
+                    <DashboardCharts :questions-data="questionsData" :users-data="usersData"
+                        :public-channels-data="publicChannelsData.total"
+                        :private-channels-data="privateChannelsData.total"
+                        :pending-channels-data="pendingChannelsData.total" />
                 </div>
             </main>
 
