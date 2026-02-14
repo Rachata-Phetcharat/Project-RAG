@@ -102,9 +102,6 @@ onMounted(() => {
                         class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         คำขอแชนแนลรอดำเนินการ
                     </h1>
-                    <div class="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                        <span class="text-xs font-bold text-amber-700 dark:text-amber-400">ADMIN</span>
-                    </div>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     ตรวจสอบและอนุมัติคำขอแชนแนลสาธารณะ

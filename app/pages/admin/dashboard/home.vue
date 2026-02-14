@@ -259,20 +259,6 @@ const statsCards = computed(() => [
                             <DashboardDateSelector v-model="dateRange" />
                         </div>
                     </div>
-
-                    <!-- Info Banner -->
-                    <div
-                        class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div class="flex items-start gap-2">
-                            <UIcon name="i-lucide-info"
-                                class="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                            <p class="text-xs text-blue-700 dark:text-blue-300">
-                                <span class="font-semibold">คำแนะนำ:</span>
-                                เลือกช่วงเวลาที่ต้องการดูข้อมูลได้จากปุ่ม "เลือกช่วงเวลา" ด้านบน
-                                กราฟจะอัพเดทอัตโนมัติตามช่วงเวลาที่เลือก
-                            </p>
-                        </div>
-                    </div>
                 </div>
             </div>
 

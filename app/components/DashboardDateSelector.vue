@@ -15,7 +15,7 @@ const df = new DateFormatter('en-US', {
 const selected = defineModel<DateRange>({ required: true })
 
 const ranges = [
-    // { label: 'วันนี้', days: 0 },์
+    { label: 'วันนี้', days: 0 },
     { label: '7 วันล่าสุด', days: 7 },
     { label: '14 วันล่าสุด', days: 14 },
     { label: '30 วันล่าสุด', days: 30 },
@@ -85,7 +85,8 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
         <UButton color="neutral" variant="subtle" icon="i-heroicons-calendar-days" class="group">
             <span class="truncate">
                 <template v-if="selected.start && selected.end">
-                    {{ df.format(selected.start) }} - {{ df.format(selected.end) }}
+                    <!-- {{ df.format(selected.start) }} - {{ df.format(selected.end) }}  -->
+                    {{ranges.find(r => isRangeSelected(r)) ? `${ranges.find(r => isRangeSelected(r))!.label}` : ''}}
                 </template>
                 <template v-else>
                     เลือกวันที่
