@@ -19,6 +19,7 @@ onMounted(async () => {
     }
 
     sessionStorage.removeItem('sso_state') // ✅ ลบทิ้งหลังใช้แล้ว
+    console.log(code)
 
     if (code) {
         try {
