@@ -29,4 +29,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "",
     },
   },
+  nitro: {
+    preset: "vercel",
+  },
 });

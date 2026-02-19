@@ -5,11 +5,23 @@ const toast = useToast()
 
 onMounted(async () => {
     const code = route.query.code as string
-    console.log(code)
+    const returnedState = route.query.state as string
+    const savedState = sessionStorage.getItem('sso_state')
+
+    // ✅ เช็ค state ก่อนเพื่อป้องกัน CSRF
+    if (!savedState || savedState !== returnedState) {
+        toast.add({
+            title: 'การยืนยันตัวตนล้มเหลว',
+            description: 'State ไม่ตรงกัน กรุณาลองใหม่อีกครั้ง',
+            color: 'error'
+        })
+        return navigateTo('/')
+    }
+
+    sessionStorage.removeItem('sso_state') // ✅ ลบทิ้งหลังใช้แล้ว
 
     if (code) {
         try {
-            // ส่ง code ไปแลก Token ที่ FastAPI ผ่าน Pinia Store
             const result = await authStore.loginWithSSO(code)
 
             if (result.success) {
@@ -18,7 +30,7 @@ onMounted(async () => {
                     icon: 'i-lucide-check-circle',
                     color: 'success'
                 })
-                return navigateTo('/') // เข้าสู่ระบบสำเร็จ พาไปหน้าหลัก
+                return navigateTo('/')
             } else {
                 throw new Error(result.error)
             }
@@ -31,7 +43,6 @@ onMounted(async () => {
             navigateTo('/')
         }
     } else {
-        // ถ้าไม่มี code กลับมา ให้เด้งไปหน้าแรก
         navigateTo('/')
     }
 })

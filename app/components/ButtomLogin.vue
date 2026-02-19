@@ -16,6 +16,7 @@ const loginWithSSO = () => {
         state: config.state
     }).toString()
 
+    sessionStorage.setItem('sso_state', config.state)
     window.location.href = `${config.baseURL}?${queryString}`
 }
 </script>
