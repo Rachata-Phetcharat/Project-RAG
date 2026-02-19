@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth' // เรียกใช้ Store
+import ButtomLogin from './ButtomLogin.vue';
 
 const authStore = useAuthStore()
 
@@ -70,7 +71,7 @@ const items = computed(() => [
         <UColorModeButton class="cursor-pointer" />
 
         <!-- Auth Logic -->
-        <ModalLogin v-if="!authStore.isLoggedIn" />
+        <ButtomLogin v-if="!authStore.isLoggedIn" />
 
         <UDropdownMenu v-else :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
             :ui="{ content: 'w-48' }">
