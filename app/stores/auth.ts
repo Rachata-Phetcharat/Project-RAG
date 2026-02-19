@@ -60,7 +60,7 @@ export const useAuthStore = defineStore("auth", () => {
     isLoading.value = true;
     try {
       // ยิงไปที่ Endpoint ของคุณที่รองรับ SSO
-      const response: any = await $fetch(`${apiBase}/auth/sso/kmutnb`, {
+      const response: any = await $fetch(`${apiBase}/auth/kmutnb-sso/login`, {
         method: "POST",
         body: { code }, // ส่ง JSON { "code": "..." } ตาม Swagger
       });
