@@ -14,8 +14,6 @@ const {
 } = useChannel()
 
 const toast = useToast()
-const route = useRoute()
-const router = useRouter()
 
 // ========================================
 // 2. State Management
@@ -23,7 +21,7 @@ const router = useRouter()
 const channels = ref<any[]>([])
 
 // ดึงค่าจาก URL Query ถ้าไม่มีให้เป็นค่าว่างไว้ก่อน แล้วค่อยกำหนดใน onMounted
-const selectedTab = ref((route.query.tab as string) || '')
+const selectedTab = useState('channel-tab', () => '')
 
 // ========================================
 // 3. Tab Configuration
@@ -106,11 +104,7 @@ const loadChannels = async () => {
 // ========================================
 // 5. Watch Tab Changes (Sync URL)
 // ========================================
-watch(selectedTab, (newTab) => {
-    // อัปเดต URL ?tab=... เมื่อมีการเปลี่ยน Tab
-    router.replace({
-        query: { ...route.query, tab: newTab }
-    })
+watch(selectedTab, () => {
     loadChannels()
 })
 
@@ -118,19 +112,9 @@ watch(selectedTab, (newTab) => {
 // 6. Initial Load
 // ========================================
 onMounted(() => {
-    const queryTab = route.query.tab as string
-
-    // ตรวจสอบความถูกต้องของ Tab จาก URL
-    const isValidTab = items.value.some(item => item.value === queryTab)
-
-    if (queryTab && isValidTab) {
-        selectedTab.value = queryTab
-    } else {
-        // ค่าเริ่มต้นถ้าไม่มี Query หรือ Query ไม่ถูกต้อง
+    if (!selectedTab.value) {
         selectedTab.value = !authStore.token ? 'public_channels' : 'my_channels'
     }
-
-    // เรียกโหลดข้อมูลครั้งแรก
     loadChannels()
 })
 </script>
@@ -170,7 +154,7 @@ onMounted(() => {
 
         <main>
             <!-- Enhanced Filter Bar -->
-            <div
+            <div v-if="authStore.token"
                 class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 mb-10 border border-gray-100 dark:border-gray-700">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div class="flex items-center gap-4">
