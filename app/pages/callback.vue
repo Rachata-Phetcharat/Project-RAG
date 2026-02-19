@@ -5,24 +5,11 @@ const toast = useToast()
 
 onMounted(async () => {
     const code = route.query.code as string
-    const returnedState = route.query.state as string
-    const savedState = sessionStorage.getItem('sso_state')
-
-    // ✅ เช็ค state ก่อนเพื่อป้องกัน CSRF
-    if (!savedState || savedState !== returnedState) {
-        toast.add({
-            title: 'การยืนยันตัวตนล้มเหลว',
-            description: 'State ไม่ตรงกัน กรุณาลองใหม่อีกครั้ง',
-            color: 'error'
-        })
-        return navigateTo('/')
-    }
-
-    sessionStorage.removeItem('sso_state') // ✅ ลบทิ้งหลังใช้แล้ว
     console.log(code)
 
     if (code) {
         try {
+            // ส่ง code ไปแลก Token ที่ FastAPI ผ่าน Pinia Store
             const result = await authStore.loginWithSSO(code)
 
             if (result.success) {
