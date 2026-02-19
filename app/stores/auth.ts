@@ -4,99 +4,93 @@ import { defineStore } from "pinia";
    Interface: User Profile
 ================================ */
 export interface UserProfile {
-  users_id?: number;
   username: string;
-  name: string;
-  email: string;
-  role: string;
+  display_name: string;
+  account_type:
+    | "personnel"
+    | "student"
+    | "templecturer"
+    | "retirement"
+    | "exchange_student"
+    | "alumni"
+    | "guest";
+  role: string; // นำกลับมาเพื่อใช้จัดการสิทธิ์ (Permissions) ในฐานข้อมูลของคุณเอง
 }
 
-/* ===============================
-   Auth Store
-================================ */
 export const useAuthStore = defineStore("auth", () => {
-  /* ---------- Runtime ---------- */
   const config = useRuntimeConfig();
   const apiBase = config.public.apiBase;
-  const toast = useToast();
 
   /* ===============================
      State
   ================================ */
-
-  // Token (Sync กับ Cookie)
   const token = useCookie<string | null>("access_token", {
-    maxAge: 60 * 60 * 24, // 1 day
+    maxAge: 60 * 60 * 24,
     path: "/",
     sameSite: "lax",
     watch: true,
   });
 
-  // User Profile
   const user = useState<UserProfile | null>("user", () => null);
-
-  // Loading state
   const isLoading = useState<boolean>("authLoading", () => false);
 
   /* ===============================
      Getters
   ================================ */
-
-  // Login status
   const isLoggedIn = computed(() => Boolean(token.value && user.value));
 
-  // User role
+  // Getter สำหรับ Role โดยตรง
   const role = computed(() => user.value?.role ?? "guest");
 
-  // Display name
-  const displayName = computed(() => {
-    if (!user.value) return "ผู้ใช้งานทั่วไป";
-    return user.value.name || user.value.username || "Unknown User";
-  });
+  const accountType = computed(() => user.value?.account_type ?? "guest");
+
+  const displayName = computed(
+    () => user.value?.display_name || "ผู้ใช้งานทั่วไป",
+  );
 
   /* ===============================
      Actions
   ================================ */
 
-  /* ---------- Login ---------- */
-  const login = async (username: string, password: string) => {
+  /**
+   * loginWithSSO:
+   * แลก Authorization Code เป็น Access Token
+   */
+  const loginWithSSO = async (code: string) => {
     isLoading.value = true;
-
     try {
-      const body = new URLSearchParams({
-        username,
-        password,
-        grant_type: "password",
-      });
-
-      const response: any = await $fetch(`${apiBase}/auth/token`, {
+      // ยิงไปที่ Endpoint ของคุณที่รองรับ SSO
+      const response: any = await $fetch(`${apiBase}/auth/sso/kmutnb`, {
         method: "POST",
-        body,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        body: { code }, // ส่ง JSON { "code": "..." } ตาม Swagger
       });
 
-      const accessToken = response?.access_token || response?.token;
-      if (!accessToken) throw new Error("Token not found");
+      const accessToken =
+        typeof response === "string" ? response : response?.access_token;
+
+      if (!accessToken) throw new Error("ไม่ได้รับ Access Token");
 
       token.value = accessToken;
+
+      // หลังจากได้ Token ให้ดึง Profile (ซึ่งควรจะมีข้อมูล Role จาก DB ของคุณรวมอยู่ด้วย)
       await fetchUser();
 
       return { success: true };
     } catch (error: any) {
-      await logout(false);
-
+      console.error("SSO Login Error:", error);
       return {
         success: false,
-        error: error?.data?.detail || "เข้าสู่ระบบไม่สำเร็จ",
+        error: error?.data?.detail || "ยืนยันตัวตนล้มเหลว",
       };
     } finally {
       isLoading.value = false;
     }
   };
 
-  /* ---------- Fetch User ---------- */
+  /**
+   * fetchUser:
+   * ดึงข้อมูลผู้ใช้จาก Token (Backend ควรจะ Return ทั้งข้อมูล SSO และ Role จาก DB มาให้)
+   */
   const fetchUser = async () => {
     if (!token.value) return;
 
@@ -108,96 +102,40 @@ export const useAuthStore = defineStore("auth", () => {
         },
       });
 
+      // Mapping ข้อมูลที่ได้ลงใน State user
       user.value = response;
     } catch (error: any) {
-      // Logout เฉพาะ token หมดอายุ
-      const isUnauthorized =
-        error?.statusCode === 401 || error?.response?.status === 401;
-
-      if (isUnauthorized) {
-        await logout();
+      if (error?.statusCode === 401) {
+        await logout(false);
       }
     }
   };
 
-  /* ---------- Check Session ---------- */
   const checkSession = async () => {
     if (user.value) return true;
-
-    if (token.value) {
-      await fetchUser();
-    }
-
+    if (token.value) await fetchUser();
     return isLoggedIn.value;
   };
 
-  /* ---------- Logout ---------- */
   const logout = async (redirect = true) => {
     token.value = null;
     user.value = null;
-
-    if (!redirect) return;
-
-    toast.add({
-      title: "ออกจากระบบสำเร็จ",
-      color: "success",
-      icon: "i-lucide-log-out",
-      duration: 3000,
-    });
-
-    await navigateTo("/", { replace: true });
-  };
-
-  // เพิ่มต่อท้ายจาก login ปกติใน stores/auth.ts
-  const loginWithSSO = async (code: string) => {
-    isLoading.value = true;
-    try {
-      // ยิงไปที่ FastAPI ตามที่รูป Swagger ระบุไว้
-      const response: any = await $fetch(`${apiBase}/auth/sso/kmutnb`, {
-        method: "POST",
-        body: { code: code }, // ส่ง JSON { "code": "..." }
-      });
-
-      // สมมติว่า FastAPI คืนค่า Token มาโดยตรง หรืออยู่ใน field access_token
-      const accessToken =
-        typeof response === "string" ? response : response?.access_token;
-
-      if (!accessToken) throw new Error("ไม่ได้รับ Access Token จาก Server");
-
-      token.value = accessToken; // เก็บ Token ลง Cookie (ตาม Logic เดิมของคุณ)
-      await fetchUser(); // ดึงข้อมูล User Profile มาเก็บไว้ใน Store
-
-      return { success: true };
-    } catch (error: any) {
-      console.error("SSO Login Error:", error);
-      return {
-        success: false,
-        error: error?.data?.detail || "ไม่สามารถเชื่อมต่อกับ FastAPI ได้",
-      };
-    } finally {
-      isLoading.value = false;
+    if (redirect) {
+      await navigateTo("/", { replace: true });
     }
   };
 
-  /* ===============================
-     Exports
-  ================================ */
   return {
-    // State
     token,
     user,
     isLoading,
-
-    // Getters
     isLoggedIn,
     role,
+    accountType,
     displayName,
-
-    // Actions
-    login,
+    loginWithSSO,
     fetchUser,
     checkSession,
     logout,
-    loginWithSSO,
   };
 });

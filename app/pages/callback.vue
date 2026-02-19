@@ -5,7 +5,6 @@ const toast = useToast()
 
 onMounted(async () => {
     const code = route.query.code as string
-    console.log(code)
 
     if (code) {
         try {

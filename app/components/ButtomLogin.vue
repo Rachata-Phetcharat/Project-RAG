@@ -21,6 +21,5 @@ const loginWithSSO = () => {
 </script>
 
 <template>
-    <UButton label="เข้าสู่ระบบด้วย ICIT Account" icon="i-lucide-graduation-cap" color="primary" size="xl" block
-        @click="loginWithSSO" />
+    <UButton label="เข้าสู่ระบบ" icon="i-lucide-log-in" color="primary" size="xl" block @click="loginWithSSO" />
 </template>
