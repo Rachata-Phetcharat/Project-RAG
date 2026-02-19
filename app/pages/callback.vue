@@ -5,6 +5,8 @@ const toast = useToast()
 
 onMounted(async () => {
     const code = route.query.code as string
+    console.log('Code received:', code)
+    console.log('Time:', new Date().toISOString())
 
     if (code) {
         try {
