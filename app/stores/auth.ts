@@ -148,6 +148,37 @@ export const useAuthStore = defineStore("auth", () => {
     await navigateTo("/", { replace: true });
   };
 
+  // เพิ่มต่อท้ายจาก login ปกติใน stores/auth.ts
+  const loginWithSSO = async (code: string) => {
+    isLoading.value = true;
+    try {
+      // ยิงไปที่ FastAPI ตามที่รูป Swagger ระบุไว้
+      const response: any = await $fetch(`${apiBase}/auth/sso/kmutnb`, {
+        method: "POST",
+        body: { code: code }, // ส่ง JSON { "code": "..." }
+      });
+
+      // สมมติว่า FastAPI คืนค่า Token มาโดยตรง หรืออยู่ใน field access_token
+      const accessToken =
+        typeof response === "string" ? response : response?.access_token;
+
+      if (!accessToken) throw new Error("ไม่ได้รับ Access Token จาก Server");
+
+      token.value = accessToken; // เก็บ Token ลง Cookie (ตาม Logic เดิมของคุณ)
+      await fetchUser(); // ดึงข้อมูล User Profile มาเก็บไว้ใน Store
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("SSO Login Error:", error);
+      return {
+        success: false,
+        error: error?.data?.detail || "ไม่สามารถเชื่อมต่อกับ FastAPI ได้",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   /* ===============================
      Exports
   ================================ */
@@ -167,5 +198,6 @@ export const useAuthStore = defineStore("auth", () => {
     fetchUser,
     checkSession,
     logout,
+    loginWithSSO,
   };
 });
