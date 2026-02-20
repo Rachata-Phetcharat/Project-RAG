@@ -66,7 +66,7 @@ export const useAuthStore = defineStore("auth", () => {
       });
 
       const accessToken =
-        typeof response === "string" ? response : response?.access_token;
+        typeof response === "string" ? response : response?.local_access_token;
 
       if (!accessToken) throw new Error("ไม่ได้รับ Access Token");
 
