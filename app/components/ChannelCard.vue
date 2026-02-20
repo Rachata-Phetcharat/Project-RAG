@@ -427,7 +427,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
                 :ui="{ content: 'w-56' }">
                 <button
-                    class="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+                    class="flex p-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
                     aria-label="More actions">
                     <UIcon name="i-lucide-more-vertical" class="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </button>
