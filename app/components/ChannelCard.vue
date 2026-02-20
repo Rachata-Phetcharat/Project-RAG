@@ -339,7 +339,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             class="block relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
             <!-- Gradient Header -->
             <div :class="[
-                'h-20 bg-linear-to-br relative overflow-hidden',
+                'h-15 bg-linear-to-br relative overflow-hidden',
                 statusBadge.gradient
             ]">
                 <div class="absolute inset-0 bg-black/10"></div>
