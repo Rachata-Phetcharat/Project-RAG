@@ -109,8 +109,24 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   const logout = async (redirect = true) => {
-    token.value = null;
-    user.value = null;
+    try {
+      // ยิง SSO Logout ก่อน (ถ้ามี token อยู่)
+      if (token.value) {
+        await $fetch(`${apiBase}/auth/kmutnb-sso/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token.value}`,
+          },
+        });
+      }
+    } catch (error) {
+      // ถึง SSO logout จะ error ก็ยังล้าง local state ต่อ
+      console.error("SSO Logout Error:", error);
+    } finally {
+      token.value = null;
+      user.value = null;
+    }
+
     if (redirect) {
       await navigateTo("/", { replace: true });
     }
