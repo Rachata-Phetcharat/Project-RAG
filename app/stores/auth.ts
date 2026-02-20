@@ -6,14 +6,7 @@ import { defineStore } from "pinia";
 export interface UserProfile {
   username: string;
   name: string;
-  account_type:
-    | "personnel"
-    | "student"
-    | "templecturer"
-    | "retirement"
-    | "exchange_student"
-    | "alumni"
-    | "guest";
+  account_type: string; // "student", "staff", "teacher", "admin"
   role: string; // นำกลับมาเพื่อใช้จัดการสิทธิ์ (Permissions) ในฐานข้อมูลของคุณเอง
 }
 
@@ -54,13 +47,13 @@ export const useAuthStore = defineStore("auth", () => {
    * loginWithSSO:
    * แลก Authorization Code เป็น Access Token
    */
-  const loginWithSSO = async (code: string) => {
+  const loginWithSSO = async (code: string, type: string) => {
     isLoading.value = true;
     try {
       // ยิงไปที่ Endpoint ของคุณที่รองรับ SSO
       const response: any = await $fetch(`${apiBase}/auth/kmutnb-sso/login`, {
         method: "POST",
-        body: { code }, // ส่ง JSON { "code": "..." } ตาม Swagger
+        body: { code, type }, // ส่ง JSON { "code": "...", "type": "..." } ตาม Swagger
       });
 
       const accessToken =

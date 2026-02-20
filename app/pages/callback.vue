@@ -9,7 +9,7 @@ onMounted(async () => {
     if (code) {
         try {
             // ส่ง code ไปแลก Token ที่ FastAPI ผ่าน Pinia Store
-            const result = await authStore.loginWithSSO(code)
+            const result = await authStore.loginWithSSO(code, "vercel")
 
             if (result.success) {
                 toast.add({
@@ -17,6 +17,7 @@ onMounted(async () => {
                     icon: 'i-lucide-check-circle',
                     color: 'success'
                 })
+
                 return navigateTo('/')
             } else {
                 throw new Error(result.error)
