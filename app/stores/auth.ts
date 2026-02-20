@@ -5,7 +5,7 @@ import { defineStore } from "pinia";
 ================================ */
 export interface UserProfile {
   username: string;
-  display_name: string;
+  name: string;
   account_type:
     | "personnel"
     | "student"
@@ -44,9 +44,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   const accountType = computed(() => user.value?.account_type ?? "guest");
 
-  const displayName = computed(
-    () => user.value?.display_name || "ผู้ใช้งานทั่วไป",
-  );
+  const displayName = computed(() => user.value?.name || "ผู้ใช้งานทั่วไป");
 
   /* ===============================
      Actions
