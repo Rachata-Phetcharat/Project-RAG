@@ -4,17 +4,17 @@ export const useUser = () => {
   const authStore = useAuthStore();
   const loading = ref(false);
 
-  interface User {
-    user_id: number;
-    username: string;
-    name: string;
-    role: string;
-  }
-
-  // ฟังก์ชันสำหรับดึง Header (เพื่อลดความซ้ำซ้อนในการเขียน Authorization)
   const getHeaders = () => ({
     Authorization: authStore.token ? `Bearer ${authStore.token}` : "",
   });
+
+  interface User {
+    users_id: number;
+    username: string;
+    name: string;
+    role: string;
+    account_type: string;
+  }
 
   const fetchUser = async (params: { skip?: number; limit?: number }) => {
     loading.value = true;
@@ -24,7 +24,7 @@ export const useUser = () => {
         headers: getHeaders(),
         query: {
           skip: params.skip ?? 0,
-          limit: params.limit ?? 10,
+          limit: params.limit ?? 100,
         },
       });
     } finally {

@@ -195,7 +195,7 @@ const statsCards = computed(() => [
         <AdminSidebar />
 
         <!-- Main Content -->
-        <main class="flex-1 p-6 md:p-8 overflow-auto max-w-7xl mx-auto w-full">
+        <main class="flex-1 p-6 md:p-8 overflow-auto mx-auto w-full">
             <!-- Header Section -->
             <div class="mb-8">
                 <!-- Title & Welcome -->

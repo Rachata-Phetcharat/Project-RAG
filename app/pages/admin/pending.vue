@@ -35,24 +35,24 @@ const filteredChannels = computed(() => {
     }
 
     // Time filter
-    if (filterStatus.value !== 'all') {
-        const now = new Date()
-        result = result.filter(ch => {
-            const createdDate = new Date(ch.created_at)
-            const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+    // if (filterStatus.value !== 'all') {
+    //     const now = new Date()
+    //     result = result.filter(ch => {
+    //         const createdDate = new Date(ch.created_at)
+    //         const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
 
-            switch (filterStatus.value) {
-                case 'today':
-                    return diffDays === 0
-                case 'week':
-                    return diffDays <= 7
-                case 'month':
-                    return diffDays <= 30
-                default:
-                    return true
-            }
-        })
-    }
+    //         switch (filterStatus.value) {
+    //             case 'today':
+    //                 return diffDays === 0
+    //             case 'week':
+    //                 return diffDays <= 7
+    //             case 'month':
+    //                 return diffDays <= 30
+    //             default:
+    //                 return true
+    //         }
+    //     })
+    // }
 
     return result
 })
