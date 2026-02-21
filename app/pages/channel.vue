@@ -187,8 +187,7 @@ onMounted(() => {
                 </button>
 
                 <!-- Channel Cards -->
-                <div v-for="ch in filteredChannels" :key="ch.channels_id"
-                    class="transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                <div v-for="ch in filteredChannels" :key="ch.channels_id">
                     <ChannelCard :item="{
                         channels_id: ch.channels_id,
                         title: ch.title,

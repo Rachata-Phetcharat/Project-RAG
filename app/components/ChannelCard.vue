@@ -445,14 +445,14 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
         </div>
 
         <!-- Quick View Badge (Optional) -->
-        <!-- <div
+        <div
             class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div
                 class="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-xl shadow-lg text-sm font-medium">
                 <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
                 <span>เปิดดู</span>
             </div>
-        </div> -->
+        </div>
     </div>
 
     <!-- Modals -->

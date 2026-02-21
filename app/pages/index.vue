@@ -200,8 +200,7 @@ onMounted(() => {
                 <div v-if="channels.length > 0"
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     <div v-for="channel in channels" :key="channel.channels_id" class="group">
-                        <ChannelCard :item="channel" @load="loadChannels"
-                            class="transform transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl" />
+                        <ChannelCard :item="channel" @load="loadChannels" />
                     </div>
                 </div>
 
@@ -253,21 +252,3 @@ onMounted(() => {
         </div>
     </div>
 </template>
-
-<style scoped>
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.group:hover {
-    animation: float 3s ease-in-out infinite;
-}
-</style>
