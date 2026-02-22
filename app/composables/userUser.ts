@@ -14,6 +14,7 @@ export const useUser = () => {
     name: string;
     role: string;
     account_type: string;
+    file_size: number;
   }
 
   const fetchUser = async (params: { skip?: number; limit?: number }) => {
@@ -32,8 +33,54 @@ export const useUser = () => {
     }
   };
 
+  const fetchRole = async () => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/role/list`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const changeRole = async (user_id: number, new_role: string) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/role/update/${user_id}/${new_role}`, {
+        method: "PUT",
+        headers: getHeaders(),
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const changeFileSize = async (payload: {
+    users_id: number;
+    file_size: number;
+  }) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/users/file-size/`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: {
+          users_id: payload.users_id,
+          file_size: payload.file_size,
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     fetchUser,
+    fetchRole,
+    changeRole,
+    changeFileSize,
     loading,
   };
 };

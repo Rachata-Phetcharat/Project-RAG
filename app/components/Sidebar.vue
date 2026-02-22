@@ -9,6 +9,17 @@ const authStore = useAuthStore()
 
 const { loading, error, uploadFiles, downLoadFile, clearError, deleteFile } = useFileChannel()
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
+const { changeFileSize } = useUser()
+
+const allowedSize = computed(() => authStore.user?.file_size ?? 50)
+
+const updateFileSize = async (userId: number, fileSize: number) => {
+    await changeFileSize({ users_id: userId, file_size: fileSize })
+    // ถ้า user ที่แก้คือตัวเอง ให้ refresh store ด้วย
+    if (userId === authStore.user?.users_id) {
+        await authStore.fetchUser()
+    }
+}
 
 /* ============================================
    Computed Properties
@@ -120,25 +131,14 @@ const handleFileUpload = async (event: any) => {
     if (!files || files.length === 0) return
 
     const fileArray = Array.from(files) as File[]
-    const MAX_FILES = 50
-    const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
-
-    // ตรวจสอบจำนวนไฟล์
-    if (state.sources.length + fileArray.length > MAX_FILES) {
-        toast.add({
-            title: 'เกิดข้อผิดพลาด',
-            description: `ไม่สามารถอัปโหลดได้เกิน ${MAX_FILES} ไฟล์`,
-            color: 'error'
-        })
-        return
-    }
+    const MAX_FILE_SIZE = allowedSize.value * 1024 * 1024
 
     // ตรวจสอบขนาดไฟล์
     const invalidFiles = fileArray.filter(f => f.size > MAX_FILE_SIZE)
     if (invalidFiles.length > 0) {
         toast.add({
             title: 'ไฟล์ใหญ่เกินไป',
-            description: `${invalidFiles[0]?.name} มีขนาดเกิน 50MB`,
+            description: `${invalidFiles[0]?.name} มีขนาดเกิน ${allowedSize.value}MB`,
             color: 'error'
         })
         return
@@ -147,8 +147,6 @@ const handleFileUpload = async (event: any) => {
     try {
         state.isUploading = true
         await uploadFiles(channelId.value, fileArray)
-
-        // Reload channel data to get the updated file list
         await loadChannelData()
 
         toast.add({
@@ -206,6 +204,7 @@ const handleFileDeleted = (fileId: string | number) => {
 ============================================ */
 onMounted(() => {
     loadChannelData()
+    updateFileSize
 })
 
 watch(() => route.params.id, (newId) => {
@@ -290,7 +289,7 @@ watch(() => route.params.id, (newId) => {
                                         <div class="w-1 h-1 rounded-full bg-gray-400"></div>
                                         <div class="flex items-center gap-1.5">
                                             <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
-                                            <span>สูงสุด 50MB</span>
+                                            <span>สูงสุด {{ allowedSize }} MB</span>
                                         </div>
                                     </div>
                                 </div>
@@ -386,7 +385,7 @@ watch(() => route.params.id, (newId) => {
                             {{ file.original_filename }}
                         </span>
                         <span class="text-xs text-gray-400 dark:text-gray-500">
-                            {{ (file.size_bytes / 1024).toFixed(1) }} KB
+                            {{ (file.size_bytes / 1024).toFixed(1) }} MB
                         </span>
                     </div>
                 </div>

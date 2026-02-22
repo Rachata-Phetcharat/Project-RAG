@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { getPaginationRowModel } from '@tanstack/vue-table'
 import type { TableColumn } from '@nuxt/ui'
+const authStore = useAuthStore()
 
-const { fetchUser, loading } = useUser()
+const { fetchUser, fetchRole, changeRole, changeFileSize, loading } = useUser()
 
 definePageMeta({
     middleware: ['auth', 'admin'],
@@ -11,8 +12,20 @@ definePageMeta({
 
 const table = useTemplateRef('table')
 const user = ref<User[]>([])
+const role = ref()
+const editingFileSize = ref<Record<number, number>>({})
 
-const items = ['admin', 'user']
+const itemsRole = async () => {
+    role.value = await fetchRole()
+}
+
+const updateRole = async (userId: number, newRole: string) => {
+    await changeRole(userId, newRole)
+}
+
+const updateFileSize = async (userId: number, fileSize: number) => {
+    await changeFileSize({ users_id: userId, file_size: fileSize })
+}
 
 interface User {
     users_id: number
@@ -20,6 +33,7 @@ interface User {
     name: string
     role: string
     account_type: string
+    file_size: number
 }
 
 const loadUser = async () => {
@@ -49,16 +63,54 @@ const columns: TableColumn<User>[] = [
         header: 'สิทธิ์',
         cell: ({ row }) => h(resolveComponent('USelect'), {
             modelValue: row.original.role,
-            items: items,
+            items: role.value,
             color: 'neutral',
             variant: 'subtle',
             class: 'w-26',
-            'onUpdate:modelValue': (val: string) => {
+            disabled: row.original.username === authStore.user?.username,
+            'onUpdate:modelValue': async (val: string) => {
                 row.original.role = val
-                // เรียก API update ตรงนี้ได้เลย
+                await updateRole(row.original.users_id, val)
             }
         })
-    }
+    },
+    {
+        accessorKey: 'file_size',
+        header: 'ขนาดไฟล์ (MB)',
+        cell: ({ row }) => {
+            const userId = row.original.users_id
+            if (editingFileSize.value[userId] === undefined) {
+                editingFileSize.value[userId] = row.original.file_size
+            }
+
+            return h('div', { class: 'flex items-center gap-2' }, [
+                h(resolveComponent('UInput'), {
+                    modelValue: editingFileSize.value[userId],
+                    type: 'number',
+                    color: 'neutral',
+                    variant: 'subtle',
+                    class: 'w-24',
+                    'onUpdate:modelValue': (val: string) => {
+                        editingFileSize.value[userId] = Number(val)
+                    }
+                }),
+                h(resolveComponent('UButton'), {
+                    label: "ยืนยัน",
+                    icon: 'i-lucide-check',
+                    color: 'success',
+                    variant: 'ghost',
+                    size: 'xs',
+                    onClick: async () => {
+                        const fileSize = editingFileSize.value[userId]
+                        if (fileSize !== undefined) {
+                            row.original.file_size = fileSize
+                            await updateFileSize(userId, fileSize)
+                        }
+                    }
+                })
+            ])
+        }
+    },
 ]
 
 const pagination = ref({
@@ -70,7 +122,10 @@ const globalFilter = ref('')
 
 const userData = computed(() => user.value)
 
-onMounted(loadUser)
+onMounted(() => {
+    loadUser()
+    itemsRole()
+})
 </script>
 
 <template>

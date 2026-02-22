@@ -7,8 +7,8 @@ export interface UserProfile {
   users_id?: number;
   username: string;
   name: string;
-  email: string;
   role: string;
+  file_size?: number;
 }
 
 /* ===============================
