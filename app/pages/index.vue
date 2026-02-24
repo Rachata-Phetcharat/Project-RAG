@@ -136,7 +136,7 @@ onMounted(() => {
                     <br />
                     <span
                         class="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        KmutnbLM
+                        kmutnbThinkHub
                     </span>
                 </h1>
 
@@ -227,7 +227,7 @@ onMounted(() => {
 
                         <p class="text-gray-600 dark:text-gray-400 mt-1 max-w-xs text-center text-sm leading-relaxed">
                             {{ selectedTab === 'my_channels'
-                                ? 'เริ่มต้นสร้างแชนแนลแรกของคุณเพื่อแบ่งปันความรู้และประสบการณ์'
+                                ? 'เริ่มต้นสร้างแชนแนลแรกของคุณเพื่อแบ่งปันความรู้'
                                 : 'ลองเปลี่ยนหมวดหมู่หรือกลับมาตรวจสอบใหม่อีกครั้ง'
                             }}
                         </p>

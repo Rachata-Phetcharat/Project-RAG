@@ -9,7 +9,7 @@ onMounted(async () => {
     if (code) {
         try {
             // ส่ง code ไปแลก Token ที่ FastAPI ผ่าน Pinia Store
-            const result = await authStore.loginWithSSO(code, "vercel")
+            const result = await authStore.loginWithSSO(code, "local")
 
             if (result.success) {
                 toast.add({
@@ -37,7 +37,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div class="flex items-center justify-center">
         <div
             class="text-center p-10 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
             <UIcon name="i-lucide-loader-2" class="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
