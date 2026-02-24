@@ -4,10 +4,12 @@ import { defineStore } from "pinia";
    Interface: User Profile
 ================================ */
 export interface UserProfile {
+  users_id: number;
   username: string;
   name: string;
-  email: string;
   role: string;
+  account_type: string;
+  file_size: number;
 }
 
 export const useAuthStore = defineStore("auth", () => {
