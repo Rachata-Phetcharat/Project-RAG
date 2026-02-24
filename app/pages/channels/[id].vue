@@ -10,10 +10,26 @@ const authStore = useAuthStore()
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 
 definePageMeta({
-    layout: 'chat-layout', // แก้จาก layouts เป็น layout
+    layout: 'chat-layout',
 })
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
+
+const state = reactive({
+    isOwner: false,
+    channelOwnerId: null as string | null
+})
+
+
+const isOwnerOrAdmin = computed(() => {
+    if (!isLoggedIn.value) return false
+
+    // ถ้าเป็น admin ให้แสดงทุกอย่าง
+    if (authStore.role === 'admin') return true
+
+    // ตรวจสอบว่าช่องนี้อยู่ในรายการ "My Channels" หรือไม่
+    return state.isOwner
+})
 
 /* ============================================
    Computed Properties
@@ -46,12 +62,15 @@ const loadChannelData = async () => {
     try {
         channelState.loading = true
         let response
+        let isChannelOwned = false
 
         // ตรวจสอบสิทธิ์ (Admin > Owner > Public)
         if (authStore.role === 'admin') {
             response = await fetchAllChannels({ limit: 100 })
+            isChannelOwned = true // Admin เห็นได้หมด
         } else if (authStore.token) {
             response = await fetchMyChannels({ limit: 100 })
+            isChannelOwned = !!response // ถ้าพบในรายการ My Channels แสดงว่าเป็นเจ้าของ
         }
 
         // ฟังก์ชันหาช่องที่ ID ตรงกัน
@@ -64,10 +83,13 @@ const loadChannelData = async () => {
         if (!currentChannel) {
             const publicRes = await fetchPublicChannels({ limit: 100 })
             currentChannel = findChannel(publicRes as any[])
+            isChannelOwned = false // Public channel ไม่เป็นเจ้าของ
         }
 
         // อัปเดตข้อมูล
         if (currentChannel) {
+            state.isOwner = isChannelOwned
+            state.channelOwnerId = currentChannel.owner_id || null
             channelState.channelTitle = currentChannel.title || 'ไม่พบชื่อช่อง'
             channelState.totalFilesFromList = currentChannel.file_count || 0
             channelState.sources = currentChannel.files || []
@@ -152,13 +174,13 @@ watch(() => route.params.id, (newId) => {
         <!-- Main Content (แสดงเมื่อโหลดเสร็จแล้ว) -->
         <template v-else>
             <!-- Sidebar Component -->
-            <!-- <Sidebar v-if="isLoggedIn" :channel-id="channelId" :sources="channelState.sources"
-                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
-                @update:sources="handleSourcesUpdate" /> -->
-
-            <Sidebar :channel-id="channelId" :sources="channelState.sources"
+            <Sidebar v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"
                 :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
                 @update:sources="handleSourcesUpdate" />
+            <!-- 
+            <Sidebar :channel-id="channelId" :sources="channelState.sources"
+                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
+                @update:sources="handleSourcesUpdate" /> -->
 
             <!-- Main Content Component -->
             <MainContent :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount" />

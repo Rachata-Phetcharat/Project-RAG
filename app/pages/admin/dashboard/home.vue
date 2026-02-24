@@ -195,7 +195,7 @@ const statsCards = computed(() => [
         <AdminSidebar />
 
         <!-- Main Content -->
-        <main class="flex-1 p-6 md:p-8 overflow-auto max-w-7xl mx-auto w-full">
+        <main class="flex-1 p-6 md:p-8 overflow-auto mx-auto w-full">
             <!-- Header Section -->
             <div class="mb-8">
                 <!-- Title & Welcome -->
@@ -350,21 +350,3 @@ const statsCards = computed(() => [
         class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
 </template>
-
-<style scoped>
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.group:hover {
-    animation: float 3s ease-in-out infinite;
-}
-</style>

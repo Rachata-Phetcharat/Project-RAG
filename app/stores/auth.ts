@@ -6,8 +6,8 @@ import { defineStore } from "pinia";
 export interface UserProfile {
   username: string;
   name: string;
-  account_type: string; // "student", "staff", "teacher", "admin"
-  role: string; // นำกลับมาเพื่อใช้จัดการสิทธิ์ (Permissions) ในฐานข้อมูลของคุณเอง
+  email: string;
+  role: string;
 }
 
 export const useAuthStore = defineStore("auth", () => {

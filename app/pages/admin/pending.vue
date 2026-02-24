@@ -35,24 +35,24 @@ const filteredChannels = computed(() => {
     }
 
     // Time filter
-    if (filterStatus.value !== 'all') {
-        const now = new Date()
-        result = result.filter(ch => {
-            const createdDate = new Date(ch.created_at)
-            const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+    // if (filterStatus.value !== 'all') {
+    //     const now = new Date()
+    //     result = result.filter(ch => {
+    //         const createdDate = new Date(ch.created_at)
+    //         const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
 
-            switch (filterStatus.value) {
-                case 'today':
-                    return diffDays === 0
-                case 'week':
-                    return diffDays <= 7
-                case 'month':
-                    return diffDays <= 30
-                default:
-                    return true
-            }
-        })
-    }
+    //         switch (filterStatus.value) {
+    //             case 'today':
+    //                 return diffDays === 0
+    //             case 'week':
+    //                 return diffDays <= 7
+    //             case 'month':
+    //                 return diffDays <= 30
+    //             default:
+    //                 return true
+    //         }
+    //     })
+    // }
 
     return result
 })
@@ -112,7 +112,7 @@ onMounted(() => {
         <!-- Search & Filter Bar -->
         <div class="flex flex-col sm:flex-row gap-4">
             <!-- Search -->
-            <div class="flex-1">
+            <div class="flex-1 max-w-md">
                 <div class="relative group">
                     <UIcon name="i-lucide-search"
                         class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
@@ -122,7 +122,7 @@ onMounted(() => {
             </div>
 
             <!-- Time Filter -->
-            <div
+            <!-- <div
                 class="flex gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <button v-for="filter in [
                     { value: 'all', label: 'ทั้งหมด', icon: 'i-lucide-list' },
@@ -138,7 +138,7 @@ onMounted(() => {
                     <UIcon :name="filter.icon" class="w-4 h-4" />
                     <span class="hidden sm:inline">{{ filter.label }}</span>
                 </button>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -220,8 +220,7 @@ onMounted(() => {
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <div v-for="ch in filteredChannels" :key="ch.channels_id"
-                    class="transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                <div v-for="ch in filteredChannels" :key="ch.channels_id">
                     <ChannelCard :item="{
                         channels_id: ch.channels_id,
                         title: ch.title,
@@ -258,21 +257,3 @@ onMounted(() => {
         class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-orange-400 to-red-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
     </div>
 </template>
-
-<style scoped>
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-.hover\:shadow-2xl:hover {
-    animation: float 3s ease-in-out infinite;
-}
-</style>

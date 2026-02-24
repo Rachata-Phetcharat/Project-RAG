@@ -48,7 +48,7 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
         </nav>
 
         <main :class="[
-            'min-h-screen px-40 pt-10 transition-colors duration-500',
+            'min-h-screen px-40 pt-10 pb-10 transition-colors duration-500',
             layoutClass === 'admin-theme'
                 ? ' bg-linear-to-br from-slate-50 via-amber-50 to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-orange-950'
                 : 'bg-linear-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950'

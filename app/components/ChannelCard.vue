@@ -339,7 +339,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             class="block relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
             <!-- Gradient Header -->
             <div :class="[
-                'h-20 bg-linear-to-br relative overflow-hidden',
+                'h-15 bg-linear-to-br relative overflow-hidden',
                 statusBadge.gradient
             ]">
                 <div class="absolute inset-0 bg-black/10"></div>
@@ -427,7 +427,7 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
                 :ui="{ content: 'w-56' }">
                 <button
-                    class="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+                    class="flex p-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
                     aria-label="More actions">
                     <UIcon name="i-lucide-more-vertical" class="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 </button>
@@ -445,14 +445,14 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
         </div>
 
         <!-- Quick View Badge (Optional) -->
-        <!-- <div
+        <div
             class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div
                 class="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-xl shadow-lg text-sm font-medium">
                 <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
                 <span>เปิดดู</span>
             </div>
-        </div> -->
+        </div>
     </div>
 
     <!-- Modals -->

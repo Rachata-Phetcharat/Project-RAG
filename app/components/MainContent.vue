@@ -52,40 +52,70 @@ const handleSendMessage = async () => {
 
     const userText = state.message.trim()
 
-    // แสดงข้อความฝั่ง User
+    // 1. เพิ่มข้อความ User
     state.chatHistory.push({
         id: Date.now(),
         role: 'user',
         text: userText,
-        citations: []
+        copied: false
     })
 
     state.message = ''
     state.isTyping = true
 
+    // เลื่อนทันทีเพื่อให้เห็นข้อความที่เพิ่งส่ง + typing indicator
+    await scrollToBottom('smooth')
+
     try {
-        // ส่งไปหา AI
         const aiResponse = await sendOllamaReply(state.sessionId, userText)
 
-        // แสดงข้อความฝั่ง AI
         state.chatHistory.push({
             id: Date.now() + 1,
             role: 'bot',
             text: aiResponse,
-            citations: []
+            copied: false
         })
 
-        // Auto-scroll to bottom
-        nextTick(() => {
-            if (chatContainer.value) {
-                chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-            }
-        })
+        // เลื่อนอีกครั้งหลังจาก AI ตอบกลับมา
+        await scrollToBottom('smooth')
     } catch (err) {
         state.chatHistory.pop()
-        state.message = userText // คืนข้อความให้ user
+        state.message = userText
     } finally {
         state.isTyping = false
+    }
+}
+
+/* ============================================
+   Copy Logic
+============================================ */
+const copyMessage = async (msg: any) => {
+    try {
+        await navigator.clipboard.writeText(msg.text)
+        msg.copied = true
+        setTimeout(() => {
+            msg.copied = false
+        }, 2000)
+    } catch (err) {
+        console.error('Copy failed:', err)
+    }
+}
+
+const lastBotIndex = computed(() =>
+    state.chatHistory.map((m, i) => m.role === 'bot' ? i : -1).filter(i => i !== -1).at(-1)
+)
+
+/* ============================================
+   Auto Scroll
+============================================ */
+const scrollToBottom = async (behavior: 'smooth' | 'instant' = 'smooth') => {
+    // ใช้ await nextTick เพื่อรอให้ Vue render DOM ใหม่ให้เสร็จก่อน
+    await nextTick()
+    if (chatContainer.value) {
+        chatContainer.value.scrollTo({
+            top: chatContainer.value.scrollHeight,
+            behavior
+        })
     }
 }
 
@@ -161,8 +191,8 @@ watch(() => route.params.id, () => {
             <div ref="chatContainer"
                 class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth bg-gradient-to-b from-transparent via-gray-50/30 to-transparent dark:via-gray-900/30">
 
-                <div v-for="msg in state.chatHistory" :key="msg.id"
-                    :class="['flex animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+                <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
+                    :class="['flex max-w-5xl mx-auto animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']">
                     <div :class="['max-w-3xl', msg.role === 'user' ? 'w-fit' : 'w-full']">
 
                         <!-- User Message -->
@@ -172,10 +202,7 @@ watch(() => route.params.id, () => {
                         </div>
 
                         <!-- AI Message -->
-                        <UCard v-else :ui="{
-                            body: 'p-6 sm:p-7',
-                            root: 'ring-1 ring-gray-200/80 dark:ring-gray-800/80 shadow-lg rounded-3xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm',
-                        }">
+                        <div v-else class="group">
                             <div class="flex gap-5">
                                 <div class="flex-shrink-0">
                                     <UAvatar icon="i-heroicons-sparkles" size="md"
@@ -183,14 +210,25 @@ watch(() => route.params.id, () => {
                                 </div>
                                 <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-base">
                                     <p class="whitespace-pre-wrap">{{ msg.text }}</p>
+                                    <!-- Copy Button -->
+                                    <div class="flex justify-start pt-1" :class="index === lastBotIndex
+                                        ? 'opacity-100'
+                                        : 'opacity-0 group-hover:opacity-100 transition-opacity duration-200'">
+                                        <UButton
+                                            :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                                            size="xs" color="neutral" variant="ghost"
+                                            class="absolute text-gray-400 hover:text-primary-500 transition-colors"
+                                            @click="copyMessage(msg)" />
+                                    </div>
                                 </div>
                             </div>
-                        </UCard>
+                        </div>
+
                     </div>
                 </div>
 
                 <!-- Typing Indicator -->
-                <div v-if="state.isTyping" class="flex justify-start animate-fade-in">
+                <div v-if="state.isTyping" class="flex justify-start animate-fade-in max-w-5xl mx-auto">
                     <div class="flex gap-4 items-center bg-gray-100/50 dark:bg-gray-800/50 px-6 py-4 rounded-3xl">
                         <div class="flex gap-1">
                             <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></span>
@@ -199,7 +237,6 @@ watch(() => route.params.id, () => {
                             <span
                                 class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
                         </div>
-                        <span class="text-sm text-gray-500 font-medium">Ollama กำลังประมวลผลคำตอบ...</span>
                     </div>
                 </div>
             </div>
