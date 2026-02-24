@@ -75,9 +75,7 @@ onMounted(() => {
                 </div>
             </div>
 
-            <UButton size="lg" label="สร้างแชนแนลใหม่" color="primary"
-                class="shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
-                @click="isCreateModalOpen = true">
+            <UButton size="lg" label="สร้างแชนแนลใหม่" color="primary" @click="isCreateModalOpen = true">
                 <template #leading>
                     <UIcon name="i-lucide-plus-circle" class="w-5 h-5" />
                 </template>

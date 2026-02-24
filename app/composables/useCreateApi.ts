@@ -3,31 +3,62 @@ export const useCreateApi = () => {
   const apiBase = config.public.apiBase;
   const authStore = useAuthStore();
   const loading = ref(false);
+  const apiKeys = ref(); // เก็บรายการ key ที่สร้างแล้ว
 
-  // ฟังก์ชันสำหรับดึง Header (เพื่อลดความซ้ำซ้อนในการเขียน Authorization)
   const getHeaders = () => ({
     Authorization: authStore.token ? `Bearer ${authStore.token}` : "",
   });
 
-  /**
-   * สร้างแชนแนลใหม่
-   * POST /channels/create/
-   */
-  const createApi = async (payload: { name: string; channel_id: string }) => {
+  // ดึงรายการ API Keys ทั้งหมด (GET /auth/api-keys/list)
+  const fetchApiKeys = async () => {
+    try {
+      const data = await $fetch(`${apiBase}/auth/api-keys/list`, {
+        headers: getHeaders(),
+      });
+      apiKeys.value = data;
+    } catch (e) {
+      console.error("Fetch API Keys error", e);
+    }
+  };
+
+  // สร้าง Key ใหม่
+  const createApiKey = async (payload: {
+    name: string;
+    channel_id: string;
+  }) => {
     loading.value = true;
     try {
-      return await $fetch(`${apiBase}/auth/api-keys`, {
+      const res = await $fetch(`${apiBase}/auth/api-keys`, {
         method: "POST",
         headers: getHeaders(),
         body: payload,
       });
+      await fetchApiKeys(); // อัปเดต list ทันที
+      return res;
     } finally {
       loading.value = false;
     }
   };
 
+  // ลบ Key (POST /auth/api-keys/revoke)
+  const revokeApiKey = async (key_id: number) => {
+    try {
+      await $fetch(`${apiBase}/auth/api-keys/revoke`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: { key_id },
+      });
+      await fetchApiKeys();
+    } catch (e) {
+      console.error("Revoke error", e);
+    }
+  };
+
   return {
-    createApi,
+    apiKeys,
+    createApiKey,
+    fetchApiKeys,
+    revokeApiKey,
     loading,
   };
 };
