@@ -33,11 +33,6 @@ interface ApiKeyRow {
 
 const columns: TableColumn<ApiKeyRow>[] = [
     {
-        accessorKey: 'key_id',
-        header: '#',
-        cell: ({ row }) => `#${row.getValue('key_id')}`,
-    },
-    {
         accessorKey: 'name',
         header: 'ชื่อ Key',
     },
@@ -48,7 +43,6 @@ const columns: TableColumn<ApiKeyRow>[] = [
     {
         accessorKey: 'key_hint',
         header: 'Key Hint',
-        cell: ({ row }) => `${row.getValue('key_hint')}••••••••`,
     },
     {
         accessorKey: 'created_at',
@@ -60,6 +54,17 @@ const columns: TableColumn<ApiKeyRow>[] = [
         header: '',
     },
 ]
+
+const revealedId = ref<number | null>(null)
+
+const copiedId = ref<string | null>(null)
+
+const copyText = async (text: string, id: string) => {
+    await navigator.clipboard.writeText(text)
+    copiedId.value = id
+    setTimeout(() => (copiedId.value = null), 2000)
+    toast.add({ title: 'คัดลอกแล้ว!', icon: 'i-lucide-check-circle', color: 'success', duration: 1500 })
+}
 
 const openDeleteModal = (row: ApiKeyRow) => {
     deleteTarget.value = { id: row.key_id, name: row.name }
@@ -174,10 +179,31 @@ const onCreated = async () => {
             </div>
 
             <!-- Table -->
-            <div v-else class="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+            <div v-else
+                class="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-900">
                 <UTable :data="filteredKeys" :columns="columns" class="w-full">
+                    <template #key_hint-cell="{ row }">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs text-gray-700 dark:text-gray-300">
+                                {{ revealedId === row.original.key_id ? row.original.key_hint :
+                                    '•••••••••••••••••••••••••••••••••••••••••••' }}
+                            </span>
+                            <button
+                                @click="revealedId = revealedId === row.original.key_id ? null : row.original.key_id"
+                                class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                <UIcon :name="revealedId === row.original.key_id ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                                    class="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                            </button>
+                        </div>
+                    </template>
+
                     <template #actions-cell="{ row }">
-                        <div class="flex justify-end">
+                        <div class="flex justify-end gap-1">
+                            <UButton :color="copiedId === `kh-${row.original.key_id}` ? 'success' : 'neutral'"
+                                variant="ghost" size="sm"
+                                :icon="copiedId === `kh-${row.original.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
+                                class="cursor-pointer"
+                                @click="copyText(row.original.key_hint, `kh-${row.original.key_id}`)" />
                             <UButton color="error" variant="ghost" size="sm" icon="i-lucide-trash-2"
                                 class="cursor-pointer" @click="openDeleteModal(row.original)" />
                         </div>

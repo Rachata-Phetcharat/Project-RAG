@@ -190,12 +190,6 @@ const close = () => {
         <template #body>
             <!-- ✅ แสดง Key ที่เพิ่งสร้าง -->
             <div v-if="createdKey" class="space-y-4">
-                <UAlert color="warning" variant="soft" icon="i-lucide-alert-triangle">
-                    <template #title>สำคัญ!</template>
-                    <template #description>
-                        Key Secret จะแสดงเพียงครั้งเดียว กรุณาคัดลอกและเก็บไว้ในที่ปลอดภัย
-                    </template>
-                </UAlert>
 
                 <div class="space-y-3">
                     <div
