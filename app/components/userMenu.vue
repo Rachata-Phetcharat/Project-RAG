@@ -31,10 +31,6 @@ const items = computed(() => [
     ],
     ...(authStore.role === 'admin'
         ? [[{
-            label: 'คำขอ',
-            icon: 'i-lucide-clipboard-list',
-            to: '/admin/pending'
-        }, {
             label: 'dashboard',
             icon: 'i-lucide-gauge',
             to: '/admin/dashboard/home'

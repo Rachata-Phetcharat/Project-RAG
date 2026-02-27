@@ -126,25 +126,6 @@ onMounted(() => {
                                 class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none" />
                         </div>
                     </div>
-
-                    <!-- Time Filter -->
-                    <!-- <div
-                class="flex gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <button v-for="filter in [
-                    { value: 'all', label: 'ทั้งหมด', icon: 'i-lucide-list' },
-                    { value: 'today', label: 'วันนี้', icon: 'i-lucide-calendar-days' },
-                    { value: 'week', label: 'สัปดาห์', icon: 'i-lucide-calendar-range' },
-                    { value: 'month', label: 'เดือน', icon: 'i-lucide-calendar' }
-                ]" :key="filter.value" @click="filterStatus = filter.value" :class="[
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
-                    filterStatus === filter.value
-                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-md'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                ]">
-                    <UIcon :name="filter.icon" class="w-4 h-4" />
-                    <span class="hidden sm:inline">{{ filter.label }}</span>
-                </button>
-            </div> -->
                 </div>
             </div>
 

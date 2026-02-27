@@ -19,7 +19,7 @@ const menuItems = computed(() => [
         label: 'คำขอ',
         icon: 'i-lucide-clipboard-list',
         to: '/admin/dashboard/pending',
-        color: 'from-blue-500 to-cyan-500'
+        color: 'from-amber-500 to-yellow-500'
     },
 ])
 
@@ -30,28 +30,16 @@ const isActive = (to: string) => {
 </script>
 
 <template>
+    <!-- Spacer ให้ content ข้างๆ ไม่ถูก sidebar บัง -->
+    <div class="hidden lg:block w-64 shrink-0"></div>
+
+    <!-- Sidebar ตรึงอยู่ใต้ navbar ตลอด -->
     <aside
-        class="hidden lg:flex w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col h-screen sticky top-0">
-        <!-- Logo / Branding -->
-        <!-- <div class="p-6 border-b border-gray-200 dark:border-gray-800">
-            <div class="flex items-center gap-3">
-                <div class="relative">
-                    <div
-                        class="absolute inset-0 bg-linear-to-r from-indigo-500 to-purple-500 rounded-xl blur-lg opacity-75">
-                    </div>
-                    <div class="relative p-2 bg-linear-to-br from-indigo-500 to-purple-500 rounded-lg">
-                        <UIcon name="i-lucide-shield-admin" class="w-6 h-6 text-white" />
-                    </div>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">Admin Panel</h1>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">ศูนย์จัดการระบบ</p>
-                </div>
-            </div>
-        </div> -->
+        class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col z-40"
+        style="height: calc(100vh - 80px)">
 
         <!-- Navigation Menu -->
-        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav class="flex-1 px-4 py-6 space-y-2">
             <NuxtLink v-for="item in menuItems" :key="item.to" :to="item.to" :class="[
                 'flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
                 isActive(item.to)
@@ -68,27 +56,7 @@ const isActive = (to: string) => {
                         :class="['w-5 h-5', isActive(item.to) ? 'text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-current']" />
                     <span class="font-medium text-sm">{{ item.label }}</span>
                 </div>
-
             </NuxtLink>
         </nav>
     </aside>
 </template>
-
-<style scoped>
-nav::-webkit-scrollbar {
-    width: 6px;
-}
-
-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-nav::-webkit-scrollbar-thumb {
-    background: rgba(156, 163, 175, 0.3);
-    border-radius: 99px;
-}
-
-nav::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 163, 175, 0.5);
-}
-</style>

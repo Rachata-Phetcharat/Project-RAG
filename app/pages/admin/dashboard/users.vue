@@ -167,6 +167,20 @@ onMounted(() => {
                 </div>
             </div>
 
+            <div v-if="loading" class="flex flex-col items-center justify-center gap-6 px-4 text-center py-32">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                    <div
+                        class="relative p-6 bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-full">
+                        <UIcon name="i-lucide-loader-circle" class="w-12 h-12 animate-spin text-blue-600" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-lg font-medium text-gray-700 dark:text-gray-300">กำลังโหลดข้อมูลผู้ใช้...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">กรุณารอสักครู่</p>
+                </div>
+            </div>
+
             <!-- Table -->
             <div
                 class="w-full space-y-4 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">

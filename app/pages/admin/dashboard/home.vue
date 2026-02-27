@@ -62,6 +62,8 @@ const pendingChannelsData = ref<{ total: number; growth: string; data: DailyStat
     data: []
 });
 
+const errorMsg = ref('')
+
 // ============================================
 // 4. ฟังก์ชันแปลงวันที่
 // ============================================
@@ -72,7 +74,6 @@ const formatDate = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-// ฟังก์ชันแปลงวันที่แบบไทย
 const formatDateThai = (date: Date) => {
     return date.toLocaleDateString('th-TH', {
         year: 'numeric',
@@ -85,6 +86,7 @@ const formatDateThai = (date: Date) => {
 // 5. ฟังก์ชันดึงข้อมูล
 // ============================================
 const initDashboard = async () => {
+    errorMsg.value = ''
     const params = {
         start_date: formatDate(dateRange.value.start),
         end_date: formatDate(dateRange.value.end)
@@ -105,7 +107,6 @@ const initDashboard = async () => {
             fetchChannelsStatsPending()
         ]);
 
-        // เก็บข้อมูลทั้ง total, growth และ data
         if (questionsResponse) questionsData.value = questionsResponse;
         if (usersResponse) usersData.value = usersResponse;
         if (publicChannelsResponse) publicChannelsData.value = publicChannelsResponse;
@@ -114,6 +115,7 @@ const initDashboard = async () => {
 
     } catch (error) {
         console.error("เกิดข้อผิดพลาดในการโหลด Dashboard:", error);
+        errorMsg.value = 'โหลดข้อมูล Dashboard ไม่สำเร็จ'
     }
 };
 
@@ -211,12 +213,10 @@ const statsCards = computed(() => [
                             </div>
                         </div>
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h1
-                                    class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                                    แดชบอร์ดผู้ดูแลระบบ
-                                </h1>
-                            </div>
+                            <h1
+                                class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                                แดชบอร์ดผู้ดูแลระบบ
+                            </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 ภาพรวมระบบและสถิติการใช้งาน
                             </p>
@@ -236,7 +236,6 @@ const statsCards = computed(() => [
                 <div
                     class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 border border-gray-200 dark:border-gray-700">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                        <!-- Date Range Display -->
                         <div class="flex items-center gap-3 flex-wrap">
                             <UIcon name="i-lucide-calendar-range" class="w-5 h-5 text-gray-500" />
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">ช่วงเวลา:</span>
@@ -252,8 +251,6 @@ const statsCards = computed(() => [
                                 </span>
                             </div>
                         </div>
-
-                        <!-- Date Picker Component -->
                         <div class="flex items-center gap-3">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">เลือกช่วงเวลา:</span>
                             <DashboardDateSelector v-model="dateRange" />
@@ -266,14 +263,21 @@ const statsCards = computed(() => [
             <main>
                 <!-- Stats Overview -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
-                    <!-- Loading Skeleton -->
+                    <!-- Loading State -->
                     <template v-if="loading">
                         <div v-for="i in 5" :key="i"
-                            class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-                            <div class="space-y-3">
-                                <USkeleton class="h-4 w-24" />
-                                <USkeleton class="h-8 w-16" />
-                                <USkeleton class="h-4 w-20" />
+                            class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col items-center justify-center gap-4 py-10">
+                            <div class="relative">
+                                <div
+                                    class="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-20 animate-pulse">
+                                </div>
+                                <div
+                                    class="relative p-5 bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full">
+                                    <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-indigo-500" />
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">กำลังโหลด...</p>
                             </div>
                         </div>
                     </template>
@@ -338,6 +342,19 @@ const statsCards = computed(() => [
                         :pending-channels-data="pendingChannelsData.total" />
                 </div>
             </main>
+
+            <!-- Error Message -->
+            <div v-if="errorMsg" class="fixed bottom-6 right-6 max-w-md z-50">
+                <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-xl">
+                    <div class="flex items-start gap-3">
+                        <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p class="font-medium text-red-800 dark:text-red-200">เกิดข้อผิดพลาด</p>
+                            <p class="text-sm text-red-700 dark:text-red-300 mt-1">{{ errorMsg }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
