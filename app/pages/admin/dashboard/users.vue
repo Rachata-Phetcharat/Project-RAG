@@ -168,7 +168,8 @@ onMounted(() => {
             </div>
 
             <!-- Table -->
-            <div class="w-full space-y-4 p-4 rounded-xl bg-white">
+            <div
+                class="w-full space-y-4 p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
                 <!-- Loading -->
                 <div v-if="loading" class="flex justify-center py-10">
                     <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-blue-500" />
@@ -180,7 +181,7 @@ onMounted(() => {
                         v-model:global-filter="globalFilter" :data="userData" :columns="columns"
                         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }" class="flex-1" />
 
-                    <div class="flex justify-end border-t border-default pt-4 px-4">
+                    <div v-if="pagination.pageSize > 10" class="flex justify-end border-t border-default pt-4 px-4">
                         <UPagination :page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
                             :items-per-page="table?.tableApi?.getState().pagination.pageSize"
                             :total="table?.tableApi?.getFilteredRowModel().rows.length"

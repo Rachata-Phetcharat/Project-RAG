@@ -210,12 +210,6 @@ const onCreated = async () => {
                     </template>
                 </UTable>
             </div>
-
-            <!-- Summary -->
-            <div class="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <UIcon name="i-lucide-info" class="w-4 h-4" />
-                ทั้งหมด {{ filteredKeys.length }} key
-            </div>
         </div>
     </main>
 

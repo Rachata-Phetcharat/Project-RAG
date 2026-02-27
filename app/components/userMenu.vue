@@ -15,11 +15,18 @@ const items = computed(() => [
             label: 'สร้างแชนแนลใหม่',
             icon: 'i-lucide-book-plus',
             to: '/channel'
-        }, {
+        },
+        {
 
             label: 'สร้าง Key API',
             icon: 'i-lucide-key-round',
             to: '/createapi'
+        },
+        {
+
+            label: 'ภาพรวม',
+            icon: 'i-lucide-layout-list',
+            to: '/overview'
         }
     ],
     ...(authStore.role === 'admin'

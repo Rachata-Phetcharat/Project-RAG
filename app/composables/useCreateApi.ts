@@ -11,6 +11,7 @@ export const useCreateApi = () => {
 
   // ดึงรายการ API Keys ทั้งหมด (GET /auth/api-keys/list)
   const fetchApiKeys = async () => {
+    loading.value = true;
     try {
       const data = await $fetch(`${apiBase}/auth/api-keys/list`, {
         headers: getHeaders(),
@@ -18,6 +19,8 @@ export const useCreateApi = () => {
       apiKeys.value = data;
     } catch (e) {
       console.error("Fetch API Keys error", e);
+    } finally {
+      loading.value = false;
     }
   };
 

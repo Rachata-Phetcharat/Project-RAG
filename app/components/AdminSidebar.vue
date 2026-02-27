@@ -14,7 +14,13 @@ const menuItems = computed(() => [
         icon: 'i-lucide-users',
         to: '/admin/dashboard/users',
         color: 'from-blue-500 to-cyan-500'
-    }
+    },
+    {
+        label: 'คำขอ',
+        icon: 'i-lucide-clipboard-list',
+        to: '/admin/dashboard/pending',
+        color: 'from-blue-500 to-cyan-500'
+    },
 ])
 
 // Check if menu item is active

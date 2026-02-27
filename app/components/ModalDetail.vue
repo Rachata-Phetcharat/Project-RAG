@@ -98,7 +98,7 @@ const statusConfig = computed(() => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-2.5">
                     <div
                         class="flex items-center gap-3 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/20">
                         <div
@@ -110,41 +110,6 @@ const statusConfig = computed(() => {
                             <p class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
                                 {{ item.created_by_name || 'Anonymous' }}
                             </p>
-                        </div>
-                    </div>
-
-                    <div
-                        class="flex items-center gap-3 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/20">
-                        <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
-                            <UIcon name="i-heroicons-calendar-days" class="h-5 w-5 text-primary-500" />
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">วันที่เริ่มใช้งาน
-                            </p>
-                            <p class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                {{ createdAtText }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="relative overflow-hidden rounded-2xl bg-linear-to-r from-primary-500 to-primary-600 p-5 shadow-lg shadow-primary-500/20">
-                    <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
-                    <div class="absolute -left-4 -bottom-4 h-20 w-20 rounded-full bg-black/5 blur-xl"></div>
-
-                    <div class="relative flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
-                                <UIcon name="i-heroicons-folder-open" class="h-6 w-6 text-white" />
-                            </div>
-                            <span class="text-sm font-bold text-white">เอกสารที่อัปโหลดแล้ว</span>
-                        </div>
-                        <div class="text-right text-white">
-                            <span class="text-3xl font-black">{{ item.file_count ?? 0 }}</span>
-                            <span class="text-xs font-medium ml-1 opacity-80 uppercase">Files</span>
                         </div>
                     </div>
                 </div>
