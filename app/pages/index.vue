@@ -9,7 +9,6 @@ const authStore = useAuthStore()
 const {
     fetchMyChannels,
     fetchPublicChannels,
-    fetchAllChannels,
     loading
 } = useChannel()
 
@@ -20,8 +19,7 @@ const toast = useToast()
 // ========================================
 const channels = ref<any[]>([])
 
-// ดึงค่าจาก URL Query ถ้าไม่มีให้เป็นค่าว่างไว้ก่อน แล้วค่อยกำหนดใน onMounted
-const selectedTab = useState('channel-tab', () => '')
+const selectedTab = useState('channel-tab', () => 'my_channels')
 
 // ========================================
 // 3. Tab Configuration
@@ -31,16 +29,10 @@ const items = computed<TabsItem[]>(() => {
         return [{ label: 'แชนแนลสาธารณะ', value: 'public_channels' }]
     }
 
-    const baseTabs = [
+    return [
         { label: 'แชนแนลของฉัน', value: 'my_channels' },
         { label: 'แชนแนลสาธารณะ', value: 'public_channels' }
     ]
-
-    if (authStore.role === 'admin') {
-        baseTabs.push({ label: 'ทั้งหมด (Admin)', value: 'all_channels' })
-    }
-
-    return baseTabs
 })
 
 const activeLabel = computed(() => {
@@ -51,7 +43,6 @@ const activeLabel = computed(() => {
 // 4. Load Channels Function
 // ========================================
 const loadChannels = async () => {
-    // ถ้าไม่มี tab ที่เลือก (เช่น เข้ามาครั้งแรก) ไม่ต้องทำอะไร
     if (!selectedTab.value) return
 
     try {
@@ -69,18 +60,8 @@ const loadChannels = async () => {
             case 'public_channels':
                 response = await fetchPublicChannels()
                 break
-
-            case 'all_channels':
-                if (authStore.role !== 'admin') {
-                    toast.add({ title: 'ไม่มีสิทธิ์', color: 'error' })
-                    selectedTab.value = 'public_channels'
-                    return
-                }
-                response = await fetchAllChannels()
-                break
         }
 
-        // มาตรฐานการรับข้อมูล (Parsing)
         if (Array.isArray(response)) {
             channels.value = response
         } else if ((response as any)?.channels) {
@@ -102,7 +83,7 @@ const loadChannels = async () => {
 }
 
 // ========================================
-// 5. Watch Tab Changes (Sync URL)
+// 5. Watch Tab Changes
 // ========================================
 watch(selectedTab, () => {
     loadChannels()
@@ -140,7 +121,7 @@ onMounted(() => {
                     </span>
                 </h1>
 
-                <!-- Search Bar (Optional Enhancement) -->
+                <!-- Search Bar -->
                 <div class="pt-6 max-w-2xl">
                     <div class="relative">
                         <UIcon name="i-lucide-search"
@@ -153,7 +134,7 @@ onMounted(() => {
         </header>
 
         <main>
-            <!-- Enhanced Filter Bar -->
+            <!-- Filter Bar -->
             <div v-if="authStore.token"
                 class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 mb-10 border border-gray-100 dark:border-gray-700">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -204,7 +185,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Enhanced Empty State -->
+                <!-- Empty State -->
                 <div v-else class="relative">
                     <div
                         class="absolute inset-0 bg-linear-to-r from-blue-600/5 to-indigo-600/5 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-3xl blur-2xl">

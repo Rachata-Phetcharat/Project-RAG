@@ -21,6 +21,12 @@ const menuItems = computed(() => [
         to: '/admin/dashboard/pending',
         color: 'from-amber-500 to-yellow-500'
     },
+    {
+        label: 'แชนแนลทั้งหมด',
+        icon: 'i-lucide-tv-2',
+        to: '/admin/dashboard/all_channel',
+        color: 'from-indigo-500 to-purple-500'
+    },
 ])
 
 // Check if menu item is active
