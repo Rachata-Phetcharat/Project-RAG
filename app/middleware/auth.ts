@@ -7,6 +7,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // ถ้าไม่มี Token (ยังไม่ล็อกอิน)
   if (!auth.token) {
     // ให้ดีดกลับไปหน้า Login
-    return navigateTo("/login");
+    return navigateTo("/");
   }
 });

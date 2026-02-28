@@ -26,7 +26,7 @@ const filteredKeys = computed(() => {
 interface ApiKeyRow {
     key_id: number
     name: string
-    channel_id: string
+    channel_name: string
     key_hint: string
     created_at: string
 }
@@ -37,8 +37,8 @@ const columns: TableColumn<ApiKeyRow>[] = [
         header: 'ชื่อ Key',
     },
     {
-        accessorKey: 'channel_id',
-        header: 'Channel ID',
+        accessorKey: 'channel_name',
+        header: 'ชื่อ Channel',
     },
     {
         accessorKey: 'key_hint',
@@ -186,7 +186,7 @@ const onCreated = async () => {
                         <div class="flex items-center gap-2">
                             <span class="font-mono text-xs text-gray-700 dark:text-gray-300">
                                 {{ revealedId === row.original.key_id ? row.original.key_hint :
-                                    '•••••••••••••••••••••••••••••••••••••••••••' }}
+                                    '••••••••••••••••••••••••••••••••••••••••••••••' }}
                             </span>
                             <button
                                 @click="revealedId = revealedId === row.original.key_id ? null : row.original.key_id"

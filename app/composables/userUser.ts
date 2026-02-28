@@ -48,7 +48,7 @@ export const useUser = () => {
   const changeRole = async (user_id: number, new_role: string) => {
     loading.value = true;
     try {
-      return await $fetch(`${apiBase}/role/update/${user_id}/${new_role}`, {
+      return await $fetch(`${apiBase}/user/role/${user_id}/${new_role}`, {
         method: "PUT",
         headers: getHeaders(),
       });

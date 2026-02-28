@@ -99,7 +99,7 @@ onMounted(() => {
                             class="absolute inset-0 bg-linear-to-r from-amber-500 to-orange-500 rounded-xl blur-lg opacity-50">
                         </div>
                         <div class="relative p-3 bg-linear-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
-                            <UIcon name="i-lucide-shield-alert" class="w-7 h-7 text-white" />
+                            <UIcon name="i-lucide-clipboard-list" class="w-7 h-7 text-white" />
                         </div>
                     </div>
                     <div>
