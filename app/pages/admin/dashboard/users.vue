@@ -3,7 +3,7 @@ import { getPaginationRowModel } from '@tanstack/vue-table'
 import type { TableColumn } from '@nuxt/ui'
 const authStore = useAuthStore()
 
-const { fetchUser, fetchRole, changeRole, changeFileSize, loading } = useUser()
+const { fetchUser, fetchRole, changeRole, changeFileSize, accountTypes, loading } = useUser()
 
 definePageMeta({
     middleware: ['auth', 'admin'],
@@ -13,11 +13,17 @@ definePageMeta({
 const table = useTemplateRef('table')
 const user = ref<User[]>([])
 const role = ref()
+const accountType = ref()
 const value = ref('user')
 const editingFileSize = ref<Record<number, number>>({})
+const editingChanged = ref<Record<number, boolean>>({})
 
 const itemsRole = async () => {
     role.value = await fetchRole()
+}
+
+const itemsAccountTypes = async () => {
+    accountType.value = await accountTypes()
 }
 
 const updateRole = async (userId: number, newRole: string) => {
@@ -25,7 +31,7 @@ const updateRole = async (userId: number, newRole: string) => {
 }
 
 const updateFileSize = async (userId: number, fileSize: number) => {
-    await changeFileSize({ users_id: userId, file_size: fileSize })
+    await changeFileSize({ users_id: userId, file_size_byte: fileSize })
 }
 
 interface User {
@@ -34,7 +40,7 @@ interface User {
     name: string
     role: string
     account_type: string
-    file_size: number
+    file_size_byte: number
 }
 
 const loadUser = async () => {
@@ -76,7 +82,7 @@ const columns: TableColumn<User>[] = [
         cell: ({ row }) => {
             const userId = row.original.users_id
             if (editingFileSize.value[userId] === undefined) {
-                editingFileSize.value[userId] = row.original.file_size
+                editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024)
             }
 
             return h('div', { class: 'flex items-center gap-2' }, [
@@ -86,27 +92,46 @@ const columns: TableColumn<User>[] = [
                     color: 'neutral',
                     variant: 'subtle',
                     class: 'w-24',
+                    disabled: row.original.role === 'user',
                     'onUpdate:modelValue': (val: string) => {
                         editingFileSize.value[userId] = Number(val)
+                        editingChanged.value[userId] = true // mark ว่าแก้แล้ว
                     }
                 }),
-                h(resolveComponent('UButton'), {
-                    label: "ยืนยัน",
-                    icon: 'i-lucide-check',
-                    color: 'success',
-                    variant: 'ghost',
-                    size: 'xs',
-                    onClick: async () => {
-                        const fileSize = editingFileSize.value[userId]
-                        if (fileSize !== undefined) {
-                            row.original.file_size = fileSize
-                            await updateFileSize(userId, fileSize)
-                        }
-                    }
-                })
+                // แสดงปุ่มเฉพาะตอนที่แก้ค่า
+                editingChanged.value[userId]
+                    ? h('div', { class: 'absolute right-30 items-center' }, [
+                        h(resolveComponent('UButton'), {
+                            icon: 'i-lucide-check',
+                            color: 'success',
+                            variant: 'ghost',
+                            size: 'xs',
+                            disabled: row.original.role === 'user',
+                            onClick: async () => {
+                                const fileSize = editingFileSize.value[userId]
+                                if (fileSize !== undefined) {
+                                    row.original.file_size_byte = fileSize * 1024 * 1024
+                                    await updateFileSize(userId, row.original.file_size_byte)
+                                    editingChanged.value[userId] = false
+                                }
+                            }
+                        }),
+                        h(resolveComponent('UButton'), {
+                            icon: 'i-lucide-rotate-ccw',
+                            color: 'error',
+                            variant: 'ghost',
+                            size: 'xs',
+                            disabled: row.original.role === 'user',
+                            onClick: () => {
+                                editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024) // คืนค่าเดิม
+                                editingChanged.value[userId] = false // ซ่อนปุ่ม
+                            }
+                        })
+                    ])
+                    : null
             ])
         }
-    },
+    }
 ]
 
 const pagination = ref({
@@ -123,6 +148,7 @@ const userData = computed(() => {
 onMounted(() => {
     loadUser()
     itemsRole()
+    itemsAccountTypes()
 })
 </script>
 
@@ -183,6 +209,21 @@ onMounted(() => {
                     <div>
                         <p class="text-lg font-medium text-gray-700 dark:text-gray-300">กำลังโหลดข้อมูลผู้ใช้...</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">กรุณารอสักครู่</p>
+                    </div>
+                </div>
+
+                <div v-else-if="userData.length === 0"
+                    class="flex flex-col items-center justify-center gap-6 px-4 text-center py-32">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                        <div
+                            class="relative p-6 bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-full">
+                            <UIcon name="i-lucide-user-x" class="w-12 h-12 text-blue-600" />
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-lg font-medium text-gray-700 dark:text-gray-300">ไม่มีข้อมูลผู้ใช้</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ไม่มีผู้ใช้ในระบบ</p>
                     </div>
                 </div>
 

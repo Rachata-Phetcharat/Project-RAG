@@ -14,7 +14,12 @@ export const useUser = () => {
     name: string;
     role: string;
     account_type: string;
-    file_size: number;
+    file_size_byte: number;
+  }
+  interface AccountType {
+    account_type_id: number;
+    type_name: string;
+    file_size_byte: number;
   }
 
   const fetchUser = async (params: { skip?: number; limit?: number }) => {
@@ -59,17 +64,29 @@ export const useUser = () => {
 
   const changeFileSize = async (payload: {
     users_id: number;
-    file_size: number;
+    file_size_byte: number;
   }) => {
     loading.value = true;
     try {
       return await $fetch(`${apiBase}/users/file-size/`, {
-        method: "POST",
+        method: "PUT",
         headers: getHeaders(),
         body: {
           users_id: payload.users_id,
-          file_size: payload.file_size,
+          file_size_byte: payload.file_size_byte,
         },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const accountTypes = async () => {
+    loading.value = true;
+    try {
+      return await $fetch<AccountType[]>(`${apiBase}/account-types`, {
+        method: "GET",
+        headers: getHeaders(),
       });
     } finally {
       loading.value = false;
@@ -81,6 +98,7 @@ export const useUser = () => {
     fetchRole,
     changeRole,
     changeFileSize,
+    accountTypes,
     loading,
   };
 };
