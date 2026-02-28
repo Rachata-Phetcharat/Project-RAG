@@ -64,29 +64,31 @@ const loadChannelData = async () => {
         let response
         let isChannelOwned = false
 
-        // ตรวจสอบสิทธิ์ (Admin > Owner > Public)
         if (authStore.role === 'admin') {
             response = await fetchAllChannels({ limit: 100 })
-            isChannelOwned = true // Admin เห็นได้หมด
+            isChannelOwned = true
         } else if (authStore.token) {
             response = await fetchMyChannels({ limit: 100 })
-            isChannelOwned = !!response // ถ้าพบในรายการ My Channels แสดงว่าเป็นเจ้าของ
+            // isChannelOwned จะเช็คหลังจาก findChannel
         }
 
-        // ฟังก์ชันหาช่องที่ ID ตรงกัน
         const findChannel = (list: any[]) =>
             list?.find((c: any) => String(c.channels_id) === String(channelId.value))
 
         let currentChannel = response ? findChannel(response as any[]) : null
 
+        // ✅ ถ้าเจอใน My Channels = เป็นเจ้าของ
+        if (currentChannel && authStore.role !== 'admin') {
+            isChannelOwned = true
+        }
+
         // ถ้าไม่เจอให้ดึงจาก Public
         if (!currentChannel) {
             const publicRes = await fetchPublicChannels({ limit: 100 })
             currentChannel = findChannel(publicRes as any[])
-            isChannelOwned = false // Public channel ไม่เป็นเจ้าของ
+            isChannelOwned = false // Public = ไม่ใช่เจ้าของ
         }
 
-        // อัปเดตข้อมูล
         if (currentChannel) {
             state.isOwner = isChannelOwned
             state.channelOwnerId = currentChannel.owner_id || null

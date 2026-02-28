@@ -3,7 +3,7 @@ import { getPaginationRowModel } from '@tanstack/vue-table'
 import type { TableColumn } from '@nuxt/ui'
 const authStore = useAuthStore()
 
-const { fetchUser, fetchRole, changeRole, changeFileSize, accountTypes, loading } = useUser()
+const { fetchUser, fetchRole, changeRole, changeFileSize, defaultFilesize, updateDefaultFilesize, loading } = useUser()
 
 definePageMeta({
     middleware: ['auth', 'admin'],
@@ -17,20 +17,65 @@ const accountType = ref()
 const value = ref('user')
 const editingFileSize = ref<Record<number, number>>({})
 const editingChanged = ref<Record<number, boolean>>({})
+const editingDefaults = ref<Record<number, number>>({})   // ค่าที่กำลังแก้
+const originalDefaults = ref<Record<number, number>>({})  // ค่าเดิมจาก API
+const defaultsChanged = ref<Record<number, boolean>>({})  // track การเปลี่ยนแปลง
+
+const loadUser = async () => {
+    user.value = await fetchUser({ skip: 0, limit: 100000000 })
+}
 
 const itemsRole = async () => {
     role.value = await fetchRole()
 }
 
 const itemsAccountTypes = async () => {
-    accountType.value = await accountTypes()
+    accountType.value = await defaultFilesize()
+    accountType.value?.forEach((item: any) => {
+        const mb = item.file_size_byte / (1024 * 1024)
+        editingDefaults.value[item.account_type_id] = mb
+        originalDefaults.value[item.account_type_id] = mb
+    })
+}
+
+const confirmDefault = async (accountTypeId: number) => {
+    const mb: number | undefined = editingDefaults.value[accountTypeId]
+    if (mb === undefined) return
+
+    await updateDefaultFilesize({
+        account_type_id: accountTypeId,
+        file_size_byte: mb * 1024 * 1024
+    })
+
+    originalDefaults.value[accountTypeId] = mb
+    defaultsChanged.value[accountTypeId] = false
+
+    // หา type_name จาก accountType
+    const targetType = accountType.value?.find((a: any) => a.account_type_id === accountTypeId)
+    if (!targetType) return
+
+    // อัปเดต file_size_byte ใน user.value และ clear editingFileSize cache
+    user.value.forEach((u) => {
+        if (u.account_type.trim() === targetType.type_name.trim()) {
+            u.file_size_byte = mb * 1024 * 1024
+            delete editingFileSize.value[u.users_id]   // ล้าง cache ให้ cell re-read จาก row.original
+            editingChanged.value[u.users_id] = false
+        }
+    })
+
+    await authStore.fetchUser()  // ✅ refresh store เพื่อให้ค่าใหม่แสดงใน Sidebar ทันที
+}
+
+const resetDefault = async (accountTypeId: number) => {
+    editingDefaults.value[accountTypeId] = originalDefaults.value[accountTypeId] ?? 0
+    defaultsChanged.value[accountTypeId] = false
 }
 
 const updateRole = async (userId: number, newRole: string) => {
     await changeRole(userId, newRole)
 }
 
-const updateFileSize = async (userId: number, fileSize: number) => {
+const updateFileSize = async (userId: number, fileSize: number | null) => {
     await changeFileSize({ users_id: userId, file_size_byte: fileSize })
 }
 
@@ -41,10 +86,6 @@ interface User {
     role: string
     account_type: string
     file_size_byte: number
-}
-
-const loadUser = async () => {
-    user.value = await fetchUser({ skip: 0, limit: 100000000 })
 }
 
 const columns: TableColumn<User>[] = [
@@ -73,6 +114,9 @@ const columns: TableColumn<User>[] = [
             'onUpdate:modelValue': async (val: string) => {
                 row.original.role = val
                 await updateRole(row.original.users_id, val)
+                // if (row.original.role === 'user') {
+                //     await updateFileSize(row.original.users_id, null)
+                // }
             }
         })
     },
@@ -189,8 +233,30 @@ onMounted(() => {
                     <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน..."
                         class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
                 </div>
+                <div class="flex items-center gap-4">
+                    <!-- วน loop จาก accountType แสดงเฉพาะ student และ personnel -->
+                    <template v-for="item in accountType" :key="item.account_type_id">
+                        <div v-if="item.type_name.trim() === 'student' || item.type_name.trim() === 'personnel'"
+                            class="flex items-center gap-1">
+                            <span class="text-sm whitespace-nowrap">
+                                {{ item.type_name.trim() === 'student' ? 'ค่าเริ่มต้นนักศึกษา' : 'ค่าเริ่มต้นอาจารย์'
+                                }}:
+                            </span>
+                            <UInput v-model="editingDefaults[item.account_type_id]" type="number" color="neutral"
+                                size="lg" class="w-25"
+                                @update:model-value="defaultsChanged[item.account_type_id] = true" />
+                            <template v-if="defaultsChanged[item.account_type_id]">
+                                <UButton icon="i-lucide-check" color="success" variant="ghost" size="xs"
+                                    @click="confirmDefault(item.account_type_id)" />
+                                <UButton icon="i-lucide-rotate-ccw" color="error" variant="ghost" size="xs"
+                                    @click="resetDefault(item.account_type_id)" />
+                            </template>
+                        </div>
+                    </template>
 
-                <USelect v-model="value" :items="role" color="neutral" size="lg" class="w-25" />
+                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600" />
+                    <USelect v-model="value" :items="role" color="neutral" size="lg" class="w-25" />
+                </div>
             </div>
 
             <!-- Table -->

@@ -64,7 +64,7 @@ export const useUser = () => {
 
   const changeFileSize = async (payload: {
     users_id: number;
-    file_size_byte: number;
+    file_size_byte: number | null;
   }) => {
     loading.value = true;
     try {
@@ -81,7 +81,7 @@ export const useUser = () => {
     }
   };
 
-  const accountTypes = async () => {
+  const defaultFilesize = async () => {
     loading.value = true;
     try {
       return await $fetch<AccountType[]>(`${apiBase}/account-types`, {
@@ -93,12 +93,29 @@ export const useUser = () => {
     }
   };
 
+  const updateDefaultFilesize = async (payload: {
+    account_type_id: number;
+    file_size_byte: number;
+  }) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/account-types`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: payload,
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     fetchUser,
     fetchRole,
     changeRole,
     changeFileSize,
-    accountTypes,
+    defaultFilesize,
+    updateDefaultFilesize,
     loading,
   };
 };
