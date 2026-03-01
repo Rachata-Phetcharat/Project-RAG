@@ -446,17 +446,5 @@ const hasData = computed(() => {
             </div>
         </div>
 
-        <!-- 3. Bar Chart - Full Width -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg">
-            <div class="flex items-center gap-2 mb-4">
-                <UIcon name="i-lucide-bar-chart-3" class="w-5 h-5 text-green-600 dark:text-green-400" />
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                    เปรียบเทียบแชนแนล
-                </h3>
-            </div>
-            <div class="h-80">
-                <Bar :data="barChartData" :options="barChartOptions" />
-            </div>
-        </div>
     </div>
 </template>

@@ -6,6 +6,7 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
 
 <template>
     <div>
+        <UToaster />
         <nav
             class="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
             <div class="mx-auto px-6 lg:px-10">
@@ -22,7 +23,7 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                         <div class="flex flex-col">
                             <span
                                 class="text-2xl font-bold bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                KmutnbLM
+                                KMUTNB ThinkHub
                             </span>
                             <!-- <span class="text-xs text-gray-500 dark:text-gray-400 font-medium -mt-1">
                                 Learning Platform

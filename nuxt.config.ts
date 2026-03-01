@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      title: "KmutnbLM",
+      title: "KMUTNB ThinkHub",
       link: [{ rel: "icon", type: "image/x-icon", href: "/logo.png" }],
     },
   },

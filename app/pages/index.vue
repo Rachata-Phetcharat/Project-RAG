@@ -117,7 +117,7 @@ onMounted(() => {
                     <br />
                     <span
                         class="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        kmutnbThinkHub
+                        KMUTNB ThinkHub
                     </span>
                 </h1>
 

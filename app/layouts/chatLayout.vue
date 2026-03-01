@@ -1,5 +1,6 @@
 <template>
     <div class="fixed inset-0 flex flex-col overflow-hidden bg-white dark:bg-gray-950">
+        <UToaster />
         <main class="flex-1 relative overflow-hidden">
             <slot />
         </main>
