@@ -2,7 +2,8 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const toast = useToast()
-const { apiKeys, fetchApiKeys, revokeApiKey, loading } = useCreateApi()
+const { apiKeys, fetchApiKeys, revokeApiKey, createApiKey, loading } = useCreateApi()
+const UBadge = resolveComponent('UBadge')
 
 const isCreateModalOpen = ref(false)
 const searchQuery = ref('')
@@ -27,6 +28,7 @@ interface ApiKeyRow {
     key_id: number
     name: string
     channel_name: string
+    channel_status: string
     key_hint: string
     created_at: string
 }
@@ -43,6 +45,20 @@ const columns: TableColumn<ApiKeyRow>[] = [
     {
         accessorKey: 'key_hint',
         header: 'Key Hint',
+    },
+    {
+        accessorKey: 'channel_status',
+        header: 'สถานะ',
+        cell: ({ row }) => {
+            const color = {
+                public: 'success' as const,
+                private: 'error' as const,
+            }[row.getValue('channel_status') as string]
+
+            return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
+                row.getValue('channel_status')
+            )
+        }
     },
     {
         accessorKey: 'created_at',
@@ -64,6 +80,10 @@ const copyText = async (text: string, id: string) => {
     copiedId.value = id
     setTimeout(() => (copiedId.value = null), 2000)
     toast.add({ title: 'คัดลอกแล้ว!', icon: 'i-lucide-check-circle', color: 'success', duration: 1500 })
+}
+
+const resetReveal = (id: number, channel_name: string) => {
+    revealedId.value = null
 }
 
 const openDeleteModal = (row: ApiKeyRow) => {
@@ -188,7 +208,7 @@ const onCreated = async () => {
                                 {{ revealedId === row.original.key_id ? row.original.key_hint :
                                     '••••••••••••••••••••••••••••••••••••••••••••••' }}
                             </span>
-                            <button
+                            <button v-if="row.original.channel_status === 'public'"
                                 @click="revealedId = revealedId === row.original.key_id ? null : row.original.key_id"
                                 class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                 <UIcon :name="revealedId === row.original.key_id ? 'i-lucide-eye-off' : 'i-lucide-eye'"
@@ -199,13 +219,15 @@ const onCreated = async () => {
 
                     <template #actions-cell="{ row }">
                         <div class="flex justify-end gap-1">
-                            <UButton :color="copiedId === `kh-${row.original.key_id}` ? 'success' : 'neutral'"
+                            <UButton v-if="row.original.channel_status === 'public'"
+                                :color="copiedId === `kh-${row.original.key_id}` ? 'success' : 'neutral'"
                                 variant="ghost" size="sm"
                                 :icon="copiedId === `kh-${row.original.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
-                                class="cursor-pointer"
                                 @click="copyText(row.original.key_hint, `kh-${row.original.key_id}`)" />
+                            <UButton v-if="row.original.channel_status === 'public'" color="neutral" variant="ghost"
+                                size="sm" icon="i-lucide-rotate-ccw" @click="openDeleteModal(row.original)" />
                             <UButton color="error" variant="ghost" size="sm" icon="i-lucide-trash-2"
-                                class="cursor-pointer" @click="openDeleteModal(row.original)" />
+                                @click="openDeleteModal(row.original)" />
                         </div>
                     </template>
                 </UTable>
