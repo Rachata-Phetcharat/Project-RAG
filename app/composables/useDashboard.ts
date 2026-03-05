@@ -1,10 +1,13 @@
 // composables/useDashboard.ts
 
-// เพิ่ม Interface ให้ครอบคลุมทั้งสองแบบ
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
+
 export interface DailyStatItem {
   date: string;
-  count?: number; // สำหรับ Questions
-  active_users?: number; // สำหรับ Users
+  count?: number; // Questions
+  active_users?: number; // Users
 }
 
 export interface DashboardStats {
@@ -13,187 +16,133 @@ export interface DashboardStats {
   data: DailyStatItem[];
 }
 
-export interface ChannelStatItem {
-  date: string;
-  Channel_public_count: string;
-  Channel_private_count: string;
-  Channel_pending_count: string;
-}
+type ChannelType = "public" | "private" | "pending";
+
+const CHANNEL_RESPONSE_KEY: Record<ChannelType, string> = {
+  public: "Channel_public_count",
+  private: "Channel_private_count",
+  pending: "Channel_pending_count",
+};
+
+// ─────────────────────────────────────────────
+// Composable
+// ─────────────────────────────────────────────
 
 export const useDashboard = () => {
   const config = useRuntimeConfig();
   const apiBase = config.public.apiBase;
   const authStore = useAuthStore();
+
+  // loading ควบคุมที่ composable ระดับเดียว ไม่กระจายใน each fetch
   const loading = ref(false);
 
   const getHeaders = () => ({
     Authorization: authStore.token ? `Bearer ${authStore.token}` : "",
   });
 
-  // ในส่วนของ getGrowth ใน useDashboard.ts
+  // ─────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────
 
   const getGrowth = (current: number, previous: number): string => {
-    // 1. ถ้าเท่ากันเป๊ะ หรือเป็น 0 ทั้งคู่
     if (current === previous) return "+0%";
-
-    // 2. ถ้าเมื่อวานเป็น 0 แต่แค่วันนี้มีเข้ามา (เช่น จาก 0 เป็น 1)
-    // แทนที่จะให้ขึ้น 100% เราอาจจะใช้คำว่า "+100%" แต่ Cap ไว้แค่ตัวเลขนี้
-    // หรือจะโชว์เป็น New (N/A) ก็ได้
     if (previous === 0) return "+100%";
 
     const diff = ((current - previous) / previous) * 100;
+    const capped = Math.min(Math.max(diff, -100), 100);
 
-    // 3. จำกัดเพดาน (Cap) ไม่ให้เกิน 100%
-    // และทำให้เป็นเลขจำนวนเต็มเพื่อไม่ให้ดูยุ่บยั่บ
-    const finalDiff = Math.min(Math.max(diff, -100), 100);
-
-    return `${finalDiff >= 0 ? "+" : ""}${finalDiff.toFixed(0)}%`;
+    return `${capped >= 0 ? "+" : ""}${capped.toFixed(0)}%`;
   };
 
-  // --- 1. สำหรับ Questions (ใช้ Key 'count') ---
-  const fetchQuestionsStats = async (params: any = {}) => {
-    loading.value = true;
+  const buildEmptyStats = (): DashboardStats => ({
+    total: 0,
+    growth: "+0%",
+    data: [],
+  });
+
+  // ─────────────────────────────────────────────
+  // Fetch: Questions (รายวัน)
+  // ─────────────────────────────────────────────
+
+  const fetchQuestionsStats = async (
+    params: Record<string, string> = {},
+  ): Promise<DashboardStats> => {
     try {
       const res = await $fetch<DailyStatItem[]>(
         `${apiBase}/questions/stats/daily`,
-        {
-          method: "GET",
-          headers: getHeaders(),
-          query: params,
-        },
+        { method: "GET", headers: getHeaders(), query: params },
       );
 
-      // หาค่าวันนี้ (ตัวสุดท้าย) และ เมื่อวาน (ตัวรองสุดท้าย)
-      const todayVal = res[res.length - 1]?.count || 0;
-      const yesterdayVal = res[res.length - 2]?.count || 0;
+      const todayVal = res.at(-1)?.count ?? 0;
+      const yesterdayVal = res.at(-2)?.count ?? 0;
 
       return {
         total: todayVal,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };
-    } catch (err) {
-      return { total: 0, growth: "+0%", data: [] };
-    } finally {
-      loading.value = false;
+    } catch {
+      return buildEmptyStats();
     }
   };
 
-  const fetchUsersStats = async (params: any = {}) => {
-    loading.value = true;
+  // ─────────────────────────────────────────────
+  // Fetch: Users (รายวัน)
+  // ─────────────────────────────────────────────
+
+  const fetchUsersStats = async (
+    params: Record<string, string> = {},
+  ): Promise<DashboardStats> => {
     try {
       const res = await $fetch<DailyStatItem[]>(
         `${apiBase}/users/stats/daily`,
-        {
-          method: "GET",
-          headers: getHeaders(),
-          query: params,
-        },
+        { method: "GET", headers: getHeaders(), query: params },
       );
 
-      const todayVal = res[res.length - 1]?.active_users || 0;
-      const yesterdayVal = res[res.length - 2]?.active_users || 0;
+      const todayVal = res.at(-1)?.active_users ?? 0;
+      const yesterdayVal = res.at(-2)?.active_users ?? 0;
 
       return {
         total: todayVal,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };
-    } catch (err) {
-      return { total: 0, growth: "+0%", data: [] };
-    } finally {
-      loading.value = false;
+    } catch {
+      return buildEmptyStats();
     }
   };
 
-  // --- 3. สำหรับ Channels ---
-  const fetchChannelsStatsPublic = async () => {
-    loading.value = true;
+  // ─────────────────────────────────────────────
+  // Fetch: Channels (ยอดรวม — ไม่มีกราฟรายวัน)
+  // ─────────────────────────────────────────────
+
+  const fetchChannelStats = async (
+    type: ChannelType,
+  ): Promise<DashboardStats> => {
     try {
-      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
-      const res = await $fetch<any>(`${apiBase}/channels/public/count`, {
-        method: "GET",
-        headers: getHeaders(),
-      });
+      const res = await $fetch<Record<string, unknown>>(
+        `${apiBase}/channels/${type}/count`,
+        { method: "GET", headers: getHeaders() },
+      );
 
-      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
-      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
-      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
-      const Channel_public_count =
-        typeof res === "object" ? res.Channel_public_count : parseInt(res);
+      const key = CHANNEL_RESPONSE_KEY[type];
+      const total =
+        typeof res === "object" ? Number(res[key]) || 0 : Number(res) || 0;
 
-      return {
-        total: Channel_public_count || 0,
-        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
-        data: [], // และไม่มีกราฟรายวัน
-      };
-    } catch (err) {
-      return { total: 0, growth: "+0%", data: [] };
-    } finally {
-      loading.value = false;
+      return { total, growth: "+0%", data: [] };
+    } catch {
+      return buildEmptyStats();
     }
   };
 
-  const fetchChannelsStatsPrivate = async () => {
-    loading.value = true;
-    try {
-      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
-      const res = await $fetch<any>(`${apiBase}/channels/private/count`, {
-        method: "GET",
-        headers: getHeaders(),
-      });
-
-      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
-      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
-      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
-      const Channel_private_count =
-        typeof res === "object" ? res.Channel_private_count : parseInt(res);
-
-      return {
-        total: Channel_private_count || 0,
-        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
-        data: [], // และไม่มีกราฟรายวัน
-      };
-    } catch (err) {
-      return { total: 0, growth: "+0%", data: [] };
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const fetchChannelsStatsPending = async () => {
-    loading.value = true;
-    try {
-      // เรียกไปที่ endpoint ตามรูปภาพที่คุณส่งมา
-      const res = await $fetch<any>(`${apiBase}/channels/pending/count`, {
-        method: "GET",
-        headers: getHeaders(),
-      });
-
-      // สมมติว่า API คืนค่ามาเป็นตัวเลขตรงๆ เช่น 42
-      // แต่ระบบคุณต้องการอาศัยข้อมูลย้อนหลังเพื่อคำนวณ Growth
-      // ถ้า API ตัวนี้คืนแค่ "เลขปัจจุบัน" เราจะคำนวณ Growth ไม่ได้ (จะเป็น +0%)
-      const Channel_pending_count =
-        typeof res === "object" ? res.Channel_pending_count : parseInt(res);
-
-      return {
-        total: Channel_pending_count || 0,
-        growth: "+0%", // เนื่องจาก endpoint นี้ดูเหมือนจะคืนแค่ยอดรวมปัจจุบัน
-        data: [], // และไม่มีกราฟรายวัน
-      };
-    } catch (err) {
-      return { total: 0, growth: "+0%", data: [] };
-    } finally {
-      loading.value = false;
-    }
-  };
+  // ─────────────────────────────────────────────
+  // Exports
+  // ─────────────────────────────────────────────
 
   return {
     loading,
     fetchQuestionsStats,
     fetchUsersStats,
-    fetchChannelsStatsPublic,
-    fetchChannelsStatsPrivate,
-    fetchChannelsStatsPending,
+    fetchChannelStats,
   };
 };
