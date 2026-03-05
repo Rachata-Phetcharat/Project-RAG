@@ -12,7 +12,7 @@ const menuItems = computed(() => [
     {
         label: 'จัดการผู้ใช้',
         icon: 'i-lucide-users',
-        to: '/admin/dashboard/users',
+        to: '/admin/dashboard/manage_users',
         color: 'from-blue-500 to-cyan-500'
     },
     {

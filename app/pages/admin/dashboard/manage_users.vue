@@ -114,9 +114,15 @@ const columns: TableColumn<User>[] = [
             'onUpdate:modelValue': async (val: string) => {
                 row.original.role = val
                 await updateRole(row.original.users_id, val)
-                // if (row.original.role === 'user') {
-                //     await updateFileSize(row.original.users_id, null)
-                // }
+                if (row.original.role === 'user') {
+                    // ถ้าเปลี่ยนเป็น user ให้รีเซ็ต file_size_byte เป็นค่าเริ่มต้นของ account_type นั้น
+                    const defaultForType = accountType.value?.find((a: any) => a.type_name.trim() === row.original.account_type.trim())
+                    if (defaultForType) {
+                        row.original.file_size_byte = defaultForType.file_size_byte
+                        delete editingFileSize.value[row.original.users_id]   // ล้าง cache ให้ cell re-read จาก row.original
+                        editingChanged.value[row.original.users_id] = false
+                    }
+                }
             }
         })
     },
@@ -124,56 +130,61 @@ const columns: TableColumn<User>[] = [
         accessorKey: 'file_size',
         header: 'ขนาดไฟล์ (MB)',
         cell: ({ row }) => {
-            const userId = row.original.users_id
-            if (editingFileSize.value[userId] === undefined) {
-                editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024)
-            }
+            if (row.original.role === 'admin') {
+                return h('span', { class: 'text-gray-500 italic' }, 'ไม่จำกัด')
+            } else {
+                const userId = row.original.users_id
+                if (editingFileSize.value[userId] === undefined) {
+                    editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024)
+                }
 
-            return h('div', { class: 'flex items-center gap-2' }, [
-                h(resolveComponent('UInput'), {
-                    modelValue: editingFileSize.value[userId],
-                    type: 'number',
-                    color: 'neutral',
-                    variant: 'subtle',
-                    class: 'w-24',
-                    disabled: row.original.role === 'user',
-                    'onUpdate:modelValue': (val: string) => {
-                        editingFileSize.value[userId] = Number(val)
-                        editingChanged.value[userId] = true // mark ว่าแก้แล้ว
-                    }
-                }),
-                // แสดงปุ่มเฉพาะตอนที่แก้ค่า
-                editingChanged.value[userId]
-                    ? h('div', { class: 'absolute right-30 items-center' }, [
-                        h(resolveComponent('UButton'), {
-                            icon: 'i-lucide-check',
-                            color: 'success',
-                            variant: 'ghost',
-                            size: 'xs',
-                            disabled: row.original.role === 'user',
-                            onClick: async () => {
-                                const fileSize = editingFileSize.value[userId]
-                                if (fileSize !== undefined) {
-                                    row.original.file_size_byte = fileSize * 1024 * 1024
-                                    await updateFileSize(userId, row.original.file_size_byte)
-                                    editingChanged.value[userId] = false
+                return h('div', { class: 'flex items-center gap-2' }, [
+                    h(resolveComponent('UInput'), {
+                        modelValue: editingFileSize.value[userId],
+                        type: 'number',
+                        color: 'neutral',
+                        variant: 'subtle',
+                        class: 'w-24',
+                        'onUpdate:modelValue': (val: string) => {
+                            editingFileSize.value[userId] = Number(val)
+                            editingChanged.value[userId] = true // mark ว่าแก้แล้ว
+                        }
+                    }),
+                    // แสดงปุ่มเฉพาะตอนที่แก้ค่า
+                    editingChanged.value[userId]
+                        ? h('div', { class: 'absolute right-30 items-center' }, [
+                            h(resolveComponent('UButton'), {
+                                icon: 'i-lucide-check',
+                                color: 'success',
+                                variant: 'ghost',
+                                size: 'xs',
+                                onClick: async () => {
+                                    const fileSize = editingFileSize.value[userId]
+                                    if (fileSize !== undefined) {
+                                        row.original.file_size_byte = fileSize * 1024 * 1024
+                                        await updateFileSize(userId, row.original.file_size_byte)
+                                        if (row.original.role === 'user') {
+                                            row.original.role = 'special'
+                                            await updateRole(userId, 'special')
+                                        }
+                                        editingChanged.value[userId] = false
+                                    }
                                 }
-                            }
-                        }),
-                        h(resolveComponent('UButton'), {
-                            icon: 'i-lucide-rotate-ccw',
-                            color: 'error',
-                            variant: 'ghost',
-                            size: 'xs',
-                            disabled: row.original.role === 'user',
-                            onClick: () => {
-                                editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024) // คืนค่าเดิม
-                                editingChanged.value[userId] = false // ซ่อนปุ่ม
-                            }
-                        })
-                    ])
-                    : null
-            ])
+                            }),
+                            h(resolveComponent('UButton'), {
+                                icon: 'i-lucide-rotate-ccw',
+                                color: 'error',
+                                variant: 'ghost',
+                                size: 'xs',
+                                onClick: () => {
+                                    editingFileSize.value[userId] = row.original.file_size_byte / (1024 * 1024) // คืนค่าเดิม
+                                    editingChanged.value[userId] = false // ซ่อนปุ่ม
+                                }
+                            })
+                        ])
+                        : null
+                ])
+            }
         }
     }
 ]
