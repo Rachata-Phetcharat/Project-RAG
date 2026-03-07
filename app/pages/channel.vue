@@ -16,6 +16,8 @@ const loadChannels = async () => {
     try {
         const data = await fetchMyChannels()
         channels.value = Array.isArray(data) ? data : []
+        // [Pagination] รีเซ็ตกลับหน้า 1 ทุกครั้งที่โหลดข้อมูลใหม่
+        currentPage.value = 1
     } catch (e) {
         errorMsg.value = 'โหลดข้อมูลแชนแนลไม่สำเร็จ'
     }
@@ -24,7 +26,6 @@ const loadChannels = async () => {
 const handleCreate = async (data: { title: string; description: string }) => {
     const id = await createChannel(data)
     await loadChannels()
-    // navigateTo(`/channels/${id}`)
 }
 
 const handleEdit = async (id: number, data: { title: string; description: string }) => {
@@ -39,6 +40,26 @@ const filteredChannels = computed(() => {
         ch.description?.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
 })
+
+// ========================================
+// [Pagination] ตัวแปรสำหรับ Pagination
+// ========================================
+const currentPage = ref(1)
+// ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแชนแนลที่แสดงต่อหน้า (ปัจจุบัน = 16)
+// หมายเหตุ: ใช้ 16 เพราะ "สร้างแชนแนลใหม่" card กินอีก 1 ช่องใน grid 4 คอลัมน์
+const pageSize = ref(15)
+
+// รีเซ็ตหน้า 1 เมื่อพิมพ์ค้นหา
+watch(searchQuery, () => { currentPage.value = 1 })
+
+// channels ที่แสดงในหน้านี้ — "สร้างใหม่" card แสดงทุกหน้า เลยแสดง card ได้แค่ pageSize ต่อหน้า
+const paginatedChannels = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    return filteredChannels.value.slice(start, start + pageSize.value)
+})
+
+// จำนวนหน้าทั้งหมด
+const totalPages = computed(() => Math.ceil(filteredChannels.value.length / pageSize.value))
 
 onMounted(() => {
     loadChannels()
@@ -66,13 +87,20 @@ onMounted(() => {
 
         <!-- Search & Action Bar -->
         <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
-            <div class="flex-1 max-w-md">
-                <div class="relative group">
-                    <UIcon name="i-lucide-search"
-                        class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                    <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล..."
-                        class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
+            <div class="flex items-center gap-4">
+                <div class="flex-1 max-w-md">
+                    <div class="relative group">
+                        <UIcon name="i-lucide-search"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                        <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล..."
+                            class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
+                    </div>
                 </div>
+                <!-- จำนวนรายการที่พบ -->
+                <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    พบ <span class="font-semibold text-blue-600 dark:text-blue-400">{{ filteredChannels.length }}</span>
+                    รายการ
+                </p>
             </div>
 
             <UButton size="lg" label="สร้างแชนแนลใหม่" color="primary" @click="isCreateModalOpen = true">
@@ -150,52 +178,63 @@ onMounted(() => {
                 <p class="text-gray-500 dark:text-gray-400">
                     ลองค้นหาด้วยคำอื่นหรือสร้างแชนแนลใหม่
                 </p>
+                <button @click="searchQuery = ''"
+                    class="mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                    ล้างการค้นหา
+                </button>
             </div>
 
             <!-- Grid -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Create New Card -->
-                <button type="button" @click="isCreateModalOpen = true"
-                    class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
-                    <div
-                        class="absolute inset-0 bg-linear-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
-                    </div>
-
-                    <div class="relative z-10 flex flex-col items-center gap-4">
-                        <div class="relative">
-                            <div
-                                class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300">
-                            </div>
-                            <div
-                                class="relative w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                <UIcon name="i-lucide-plus" class="w-8 h-8 text-white" />
-                            </div>
+            <div v-else>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Create New Card (แสดงทุกหน้า) -->
+                    <button type="button" @click="isCreateModalOpen = true"
+                        class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+                        <div
+                            class="absolute inset-0 bg-linear-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
                         </div>
 
-                        <div class="text-center">
-                            <p
-                                class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                สร้างแชนแนลใหม่
-                            </p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                เพิ่มแชนแนลเพื่อแบ่งปันความรู้
-                            </p>
-                        </div>
-                    </div>
-                </button>
+                        <div class="relative z-10 flex flex-col items-center gap-4">
+                            <div class="relative">
+                                <div
+                                    class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300">
+                                </div>
+                                <div
+                                    class="relative w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <UIcon name="i-lucide-plus" class="w-8 h-8 text-white" />
+                                </div>
+                            </div>
 
-                <!-- Channel Cards -->
-                <div v-for="ch in filteredChannels" :key="ch.channels_id">
-                    <ChannelCard :item="{
-                        channels_id: ch.channels_id,
-                        title: ch.title,
-                        description: ch.description,
-                        status: ch.status,
-                        created_by_name: ch.created_by_name,
-                        created_by_id: ch.created_by_id,
-                        created_at: ch.created_at,
-                        file_count: ch.file_count
-                    }" @load="loadChannels" />
+                            <div class="text-center">
+                                <p
+                                    class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    สร้างแชนแนลใหม่
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    เพิ่มแชนแนลเพื่อแบ่งปันความรู้
+                                </p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Channel Cards -->
+                    <div v-for="ch in paginatedChannels" :key="ch.channels_id">
+                        <ChannelCard :item="{
+                            channels_id: ch.channels_id,
+                            title: ch.title,
+                            description: ch.description,
+                            status: ch.status,
+                            created_by_name: ch.created_by_name,
+                            created_by_id: ch.created_by_id,
+                            created_at: ch.created_at,
+                            file_count: ch.file_count
+                        }" @load="loadChannels" />
+                    </div>
+                </div>
+
+                <!-- [Pagination] UPagination — แสดงเมื่อมีมากกว่า 1 หน้า -->
+                <div v-if="totalPages > 1" class="flex justify-center mt-10">
+                    <UPagination v-model:page="currentPage" :total="totalPages" :items-per-page="1" />
                 </div>
             </div>
         </div>

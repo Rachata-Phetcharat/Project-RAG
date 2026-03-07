@@ -24,6 +24,25 @@ const filteredKeys = computed(() => {
     )
 })
 
+// ========================================
+// [Pagination] ตัวแปรสำหรับ Pagination
+// ========================================
+const currentPage = ref(1)
+// ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแถวที่แสดงต่อหน้า (ปัจจุบัน = 10)
+const pageSize = ref(10)
+
+// รีเซ็ตหน้า 1 เมื่อพิมพ์ค้นหา
+watch(searchQuery, () => { currentPage.value = 1 })
+
+// rows ที่แสดงในหน้านี้
+const paginatedKeys = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    return filteredKeys.value.slice(start, start + pageSize.value)
+})
+
+// จำนวนหน้าทั้งหมด
+const totalPages = computed(() => Math.ceil(filteredKeys.value.length / pageSize.value))
+
 interface ApiKeyRow {
     key_id: number
     name: string
@@ -90,7 +109,7 @@ const refresh = async (key_id: number) => {
     if (index !== -1) {
         apiKeys.value[index] = {
             ...apiKeys.value[index],
-            key_hint: res.key_secret  // map key_secret → key_hint
+            key_hint: res.key_secret
         }
     }
 
@@ -132,13 +151,20 @@ const onCreated = async () => {
 
         <!-- Search & Action Bar -->
         <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
-            <div class="flex-1 max-w-md">
-                <div class="relative group">
-                    <UIcon name="i-lucide-search"
-                        class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                    <input v-model="searchQuery" type="text" placeholder="ค้นหา API Key..."
-                        class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
+            <div class="flex items-center gap-4">
+                <div class="flex-1 max-w-md">
+                    <div class="relative group">
+                        <UIcon name="i-lucide-search"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                        <input v-model="searchQuery" type="text" placeholder="ค้นหา API Key..."
+                            class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
+                    </div>
                 </div>
+                <!-- จำนวนรายการที่พบ -->
+                <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    พบ <span class="font-semibold text-blue-600 dark:text-blue-400">{{ filteredKeys.length }}</span>
+                    รายการ
+                </p>
             </div>
 
             <UButton size="lg" label="สร้าง API Key" color="primary" @click="isCreateModalOpen = true">
@@ -208,12 +234,17 @@ const onCreated = async () => {
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">ไม่พบ API Key ที่ค้นหา</h3>
                 <p class="text-gray-500 dark:text-gray-400">ลองค้นหาด้วยคำอื่น</p>
+                <button @click="searchQuery = ''"
+                    class="mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                    ล้างการค้นหา
+                </button>
             </div>
 
             <!-- Table -->
             <div v-else
                 class="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-900">
-                <UTable :data="filteredKeys" :columns="columns" class="w-full">
+                <!-- [Pagination] ส่ง paginatedKeys แทน filteredKeys ทั้งหมด -->
+                <UTable :data="paginatedKeys" :columns="columns" class="w-full">
                     <template #key_hint-cell="{ row }">
                         <div class="flex items-center gap-2">
                             <span class="font-mono text-xs text-gray-700 dark:text-gray-300">
@@ -243,6 +274,12 @@ const onCreated = async () => {
                         </div>
                     </template>
                 </UTable>
+
+                <!-- [Pagination] UPagination — แสดงเมื่อมีมากกว่า 1 หน้า -->
+                <div v-if="totalPages > 1"
+                    class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <UPagination v-model:page="currentPage" :total="filteredKeys.length" :items-per-page="pageSize" />
+                </div>
             </div>
         </div>
     </main>
