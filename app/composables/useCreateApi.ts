@@ -57,11 +57,25 @@ export const useCreateApi = () => {
     }
   };
 
+  const refreshApiKeys = async (key_id: number) => {
+    try {
+      const res = await $fetch(`${apiBase}/api-key/refresh`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: { key_id },
+      });
+      return res;
+    } catch (e) {
+      console.error("Refresh error", e);
+    }
+  };
+
   return {
     apiKeys,
+    loading,
     createApiKey,
     fetchApiKeys,
     revokeApiKey,
-    loading,
+    refreshApiKeys,
   };
 };

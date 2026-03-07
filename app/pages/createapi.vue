@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 
 const toast = useToast()
-const { apiKeys, fetchApiKeys, revokeApiKey, createApiKey, loading } = useCreateApi()
+const { apiKeys, fetchApiKeys, revokeApiKey, refreshApiKeys, loading } = useCreateApi()
 const UBadge = resolveComponent('UBadge')
 
 const isCreateModalOpen = ref(false)
@@ -82,8 +82,20 @@ const copyText = async (text: string, id: string) => {
     toast.add({ title: 'คัดลอกแล้ว!', icon: 'i-lucide-check-circle', color: 'success', duration: 1500 })
 }
 
-const resetReveal = (id: number, channel_name: string) => {
-    revealedId.value = null
+const refresh = async (key_id: number) => {
+    const res = await refreshApiKeys(key_id) as any
+    if (!res) return
+
+    const index = apiKeys.value.findIndex((k: any) => k.key_id === key_id)
+    if (index !== -1) {
+        apiKeys.value[index] = {
+            ...apiKeys.value[index],
+            key_hint: res.key_secret  // map key_secret → key_hint
+        }
+    }
+
+    revealedId.value = key_id
+    toast.add({ title: 'รีเฟรชข้อมูลแล้ว', icon: 'i-lucide-refresh-ccw', color: 'success', duration: 1500 })
 }
 
 const openDeleteModal = (row: ApiKeyRow) => {
@@ -225,7 +237,7 @@ const onCreated = async () => {
                                 :icon="copiedId === `kh-${row.original.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
                                 @click="copyText(row.original.key_hint, `kh-${row.original.key_id}`)" />
                             <UButton v-if="row.original.channel_status === 'public'" color="neutral" variant="ghost"
-                                size="sm" icon="i-lucide-rotate-ccw" @click="openDeleteModal(row.original)" />
+                                size="sm" icon="i-lucide-rotate-ccw" @click="refresh(row.original.key_id)" />
                             <UButton color="error" variant="ghost" size="sm" icon="i-lucide-trash-2"
                                 @click="openDeleteModal(row.original)" />
                         </div>

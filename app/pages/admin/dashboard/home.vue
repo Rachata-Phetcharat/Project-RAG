@@ -212,7 +212,7 @@ const statsCards = computed(() => [
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">เลือกช่วงเวลา:</span>
-                            <DashboardDateSelector v-model="dateRange" />
+                            <DateSelector v-model="dateRange" />
                         </div>
                     </div>
                 </div>
@@ -294,7 +294,7 @@ const statsCards = computed(() => [
 
             <!-- ── Charts ── -->
             <div class="mb-8">
-                <DashboardCharts :questions-data="questionsData" :users-data="usersData"
+                <Charts :questions-data="questionsData" :users-data="usersData"
                     :public-channels-data="publicChannelsData.total" :private-channels-data="privateChannelsData.total"
                     :pending-channels-data="pendingChannelsData.total" />
             </div>

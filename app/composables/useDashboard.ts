@@ -16,6 +16,18 @@ export interface DashboardStats {
   data: DailyStatItem[];
 }
 
+export interface ChannelStatsResult {
+  data: DailyStatItem[];
+  total: number;
+}
+
+export interface ChannelOption {
+  channels_id: number;
+  title: string;
+  description?: string | null;
+  status?: string;
+}
+
 type ChannelType = "public" | "private" | "pending";
 
 const CHANNEL_RESPONSE_KEY: Record<ChannelType, string> = {
@@ -33,7 +45,6 @@ export const useDashboard = () => {
   const apiBase = config.public.apiBase;
   const authStore = useAuthStore();
 
-  // loading ควบคุมที่ composable ระดับเดียว ไม่กระจายใน each fetch
   const loading = ref(false);
 
   const getHeaders = () => ({
@@ -59,9 +70,10 @@ export const useDashboard = () => {
     growth: "+0%",
     data: [],
   });
+  const buildEmptyChannel = (): ChannelStatsResult => ({ data: [], total: 0 });
 
   // ─────────────────────────────────────────────
-  // Fetch: Questions (รายวัน)
+  // Fetch: Questions รายวัน (ภาพรวม)
   // ─────────────────────────────────────────────
 
   const fetchQuestionsStats = async (
@@ -87,7 +99,7 @@ export const useDashboard = () => {
   };
 
   // ─────────────────────────────────────────────
-  // Fetch: Users (รายวัน)
+  // Fetch: Users รายวัน (ภาพรวม)
   // ─────────────────────────────────────────────
 
   const fetchUsersStats = async (
@@ -113,7 +125,7 @@ export const useDashboard = () => {
   };
 
   // ─────────────────────────────────────────────
-  // Fetch: Channels (ยอดรวม — ไม่มีกราฟรายวัน)
+  // Fetch: Channels ยอดรวม (ไม่มีกราฟรายวัน)
   // ─────────────────────────────────────────────
 
   const fetchChannelStats = async (
@@ -136,13 +148,86 @@ export const useDashboard = () => {
   };
 
   // ─────────────────────────────────────────────
+  // Fetch: Questions รายวัน เฉพาะ Channel
+  // GET /questions/stats/only-channel
+  // ─────────────────────────────────────────────
+
+  const fetchQuestionsByChannel = async (params: {
+    channel_id: number;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<ChannelStatsResult> => {
+    try {
+      const res = await $fetch<DailyStatItem[]>(
+        `${apiBase}/questions/stats/only-channel`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+          query: {
+            channel_id: params.channel_id,
+            start_date: params.start_date ?? undefined,
+            end_date: params.end_date ?? undefined,
+          },
+        },
+      );
+
+      const data = Array.isArray(res) ? res : [];
+      const total = data.reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+      return { data, total };
+    } catch {
+      return buildEmptyChannel();
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Fetch: Users รายวัน เฉพาะ Channel
+  // GET /users/stats/only-channel
+  // ─────────────────────────────────────────────
+
+  const fetchUsersByChannel = async (params: {
+    channel_id: number;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<ChannelStatsResult> => {
+    try {
+      const res = await $fetch<DailyStatItem[]>(
+        `${apiBase}/users/stats/only-channel`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+          query: {
+            channel_id: params.channel_id,
+            start_date: params.start_date ?? undefined,
+            end_date: params.end_date ?? undefined,
+          },
+        },
+      );
+
+      const data = Array.isArray(res) ? res : [];
+      const total = data.reduce(
+        (sum, item) => sum + (item.active_users ?? 0),
+        0,
+      );
+
+      return { data, total };
+    } catch {
+      return buildEmptyChannel();
+    }
+  };
+
+  // ─────────────────────────────────────────────
   // Exports
   // ─────────────────────────────────────────────
 
   return {
     loading,
+    // ภาพรวม
     fetchQuestionsStats,
     fetchUsersStats,
     fetchChannelStats,
+    // เฉพาะ Channel
+    fetchQuestionsByChannel,
+    fetchUsersByChannel,
   };
 };
