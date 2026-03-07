@@ -13,6 +13,13 @@ const channels = ref<any[]>([])
 const errorMsg = ref('')
 const searchQuery = ref('')
 
+// ========================================
+// [Pagination] ตัวแปรสำหรับ Pagination
+// ========================================
+const currentPage = ref(1)
+// ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแชนแนลที่แสดงต่อหน้า (ปัจจุบัน = 16)
+const pageSize = ref(16)
+
 const loadChannels = async () => {
     errorMsg.value = ''
     try {
@@ -49,6 +56,21 @@ const filteredChannels = computed(() => {
     return result
 })
 
+// [Pagination] รีเซ็ตหน้ากลับ 1 เมื่อมีการค้นหา
+watch(searchQuery, () => {
+    currentPage.value = 1
+})
+
+// [Pagination] แชนแนลที่แสดงในหน้านี้ (คำนวณจาก filteredChannels + currentPage)
+const paginatedChannels = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return filteredChannels.value.slice(start, end)
+})
+
+// [Pagination] จำนวนหน้าทั้งหมด (คำนวณจาก filteredChannels)
+const totalPages = computed(() => Math.ceil(filteredChannels.value.length / pageSize.value))
+
 onMounted(() => {
     loadChannels()
 })
@@ -82,13 +104,23 @@ onMounted(() => {
                 </div>
 
                 <!-- Search Bar -->
-                <div class="flex-1 max-w-md">
-                    <div class="relative group">
-                        <UIcon name="i-lucide-search"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                        <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล ผู้สร้าง หรือคำอธิบาย..."
-                            class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none" />
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 max-w-md">
+                        <div class="relative group">
+                            <UIcon name="i-lucide-search"
+                                class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                            <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล ผู้สร้าง หรือคำอธิบาย..."
+                                class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none" />
+                        </div>
                     </div>
+                    <!-- จำนวนรายการที่พบ -->
+                    <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        พบ
+                        <span class="font-semibold text-indigo-600 dark:text-indigo-400">
+                            {{ filteredChannels.length }}
+                        </span>
+                        รายการ
+                    </p>
                 </div>
             </div>
 
@@ -130,8 +162,9 @@ onMounted(() => {
 
                 <!-- Channels Grid -->
                 <div v-else>
+                    <!-- [Pagination] แสดงเฉพาะ paginatedChannels แทน filteredChannels ทั้งหมด -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <div v-for="ch in filteredChannels" :key="ch.channels_id">
+                        <div v-for="ch in paginatedChannels" :key="ch.channels_id">
                             <ChannelCard :item="{
                                 channels_id: ch.channels_id,
                                 title: ch.title,
@@ -144,21 +177,14 @@ onMounted(() => {
                             }" @load="loadChannels" />
                         </div>
                     </div>
-                </div>
-            </main>
 
-            <!-- Error Message -->
-            <div v-if="errorMsg" class="fixed bottom-6 right-6 max-w-md z-50">
-                <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-xl">
-                    <div class="flex items-start gap-3">
-                        <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                            <p class="font-medium text-red-800 dark:text-red-200">เกิดข้อผิดพลาด</p>
-                            <p class="text-sm text-red-700 dark:text-red-300 mt-1">{{ errorMsg }}</p>
-                        </div>
+                    <!-- [Pagination] UPagination — แสดงเมื่อมีมากกว่า 1 หน้า -->
+                    <div v-if="totalPages > 1" class="flex justify-center mt-10">
+                        <UPagination v-model:page="currentPage" :total="filteredChannels.length"
+                            :items-per-page="pageSize" />
                     </div>
                 </div>
-            </div>
+            </main>
         </main>
     </div>
 

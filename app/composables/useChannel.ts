@@ -26,7 +26,7 @@ export const useChannel = () => {
         query: {
           search_by_name: params.search || undefined,
           skip: params.skip ?? 0,
-          limit: params.limit ?? 20,
+          limit: params.limit ?? 100,
         },
       });
     } finally {
@@ -49,7 +49,7 @@ export const useChannel = () => {
         query: {
           search_by_name: params.search || undefined,
           skip: params.skip ?? 0,
-          limit: params.limit ?? 20,
+          limit: params.limit ?? 100,
         },
       });
     } finally {
@@ -72,7 +72,7 @@ export const useChannel = () => {
         query: {
           search_by_name: params.search || undefined,
           skip: params.skip ?? 0,
-          limit: params.limit ?? 20,
+          limit: params.limit ?? 100,
         },
       });
     } finally {
@@ -163,7 +163,7 @@ export const useChannel = () => {
         query: {
           search_by_name: params.search || undefined,
           skip: params.skip ?? 0,
-          limit: params.limit ?? 20,
+          limit: params.limit ?? 100,
         },
       });
     } finally {

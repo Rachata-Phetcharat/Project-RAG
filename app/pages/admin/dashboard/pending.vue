@@ -17,6 +17,8 @@ const loadChannels = async () => {
     try {
         const data = await fetchPendingChannels()
         channels.value = Array.isArray(data) ? data : []
+        // [Pagination] รีเซ็ตกลับหน้า 1 ทุกครั้งที่โหลดข้อมูลใหม่
+        currentPage.value = 1
     } catch (e) {
         errorMsg.value = 'โหลดข้อมูลแชนแนลไม่สำเร็จ'
     }
@@ -25,7 +27,6 @@ const loadChannels = async () => {
 const filteredChannels = computed(() => {
     let result = channels.value
 
-    // Search filter
     if (searchQuery.value) {
         result = result.filter(ch =>
             ch.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -33,26 +34,6 @@ const filteredChannels = computed(() => {
             ch.created_by_name?.toLowerCase().includes(searchQuery.value.toLowerCase())
         )
     }
-
-    // Time filter
-    // if (filterStatus.value !== 'all') {
-    //     const now = new Date()
-    //     result = result.filter(ch => {
-    //         const createdDate = new Date(ch.created_at)
-    //         const diffDays = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
-
-    //         switch (filterStatus.value) {
-    //             case 'today':
-    //                 return diffDays === 0
-    //             case 'week':
-    //                 return diffDays <= 7
-    //             case 'month':
-    //                 return diffDays <= 30
-    //             default:
-    //                 return true
-    //         }
-    //     })
-    // }
 
     return result
 })
@@ -78,15 +59,33 @@ const stats = computed(() => {
     }
 })
 
+// ========================================
+// [Pagination] ตัวแปรสำหรับ Pagination
+// ========================================
+const currentPage = ref(1)
+// ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแชนแนลที่แสดงต่อหน้า (ปัจจุบัน = 16)
+const pageSize = ref(16)
+
+// รีเซ็ตหน้า 1 เมื่อพิมพ์ค้นหา
+watch(searchQuery, () => { currentPage.value = 1 })
+
+// channels ที่แสดงในหน้านี้ (คำนวณจาก filteredChannels + currentPage)
+const paginatedChannels = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return filteredChannels.value.slice(start, end)
+})
+
+// จำนวนหน้าทั้งหมด (คำนวณจาก filteredChannels)
+const totalPages = computed(() => Math.ceil(filteredChannels.value.length / pageSize.value))
+
 onMounted(() => {
     loadChannels()
 })
 </script>
 
 <template>
-
     <div class="flex">
-
         <AdminSidebar />
 
         <main class="flex-1 p-6 md:p-8 overflow-auto mx-auto w-full">
@@ -116,7 +115,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Search & Filter Bar -->
-                <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <!-- Search -->
                     <div class="flex-1 max-w-md">
                         <div class="relative group">
@@ -126,6 +125,14 @@ onMounted(() => {
                                 class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none" />
                         </div>
                     </div>
+                    <!-- จำนวนรายการที่พบ -->
+                    <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        พบ
+                        <span class="font-semibold text-amber-600 dark:text-amber-400">
+                            {{ filteredChannels.length }}
+                        </span>
+                        รายการ
+                    </p>
                 </div>
             </div>
 
@@ -146,7 +153,7 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Empty State -->
+                <!-- Empty State (ไม่มีข้อมูลเลย) -->
                 <div v-else-if="!channels.length" class="relative">
                     <div
                         class="absolute inset-0 bg-linear-to-r from-amber-600/5 to-orange-600/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-3xl blur-2xl">
@@ -201,15 +208,9 @@ onMounted(() => {
 
                 <!-- Channels Grid -->
                 <div v-else>
-                    <div class="mb-4 flex items-center justify-between">
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            แสดง <span class="font-semibold text-amber-600 dark:text-amber-400">{{
-                                filteredChannels.length }}</span> จาก {{ channels.length }} คำขอ
-                        </p>
-                    </div>
-
+                    <!-- [Pagination] แสดงเฉพาะ paginatedChannels แทน filteredChannels ทั้งหมด -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <div v-for="ch in filteredChannels" :key="ch.channels_id">
+                        <div v-for="ch in paginatedChannels" :key="ch.channels_id">
                             <ChannelCard :item="{
                                 channels_id: ch.channels_id,
                                 title: ch.title,
@@ -221,6 +222,12 @@ onMounted(() => {
                                 file_count: ch.file_count
                             }" @load="loadChannels" />
                         </div>
+                    </div>
+
+                    <!-- [Pagination] UPagination — แสดงเมื่อมีมากกว่า 1 หน้า -->
+                    <div v-if="totalPages > 1" class="flex justify-center mt-10">
+                        <UPagination v-model:page="currentPage" :total="filteredChannels.length"
+                            :items-per-page="pageSize" />
                     </div>
                 </div>
             </main>
