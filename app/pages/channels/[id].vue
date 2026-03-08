@@ -176,7 +176,7 @@ watch(() => route.params.id, (newId) => {
         <!-- Main Content (แสดงเมื่อโหลดเสร็จแล้ว) -->
         <template v-else>
             <!-- Sidebar Component -->
-            <Sidebar v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"
+            <SidebarFileList v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"
                 :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
                 @update:sources="handleSourcesUpdate" />
             <!-- 
@@ -185,7 +185,8 @@ watch(() => route.params.id, (newId) => {
                 @update:sources="handleSourcesUpdate" /> -->
 
             <!-- Main Content Component -->
-            <MainContent :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount" />
+            <MainContentChat :channel-id="channelId" :channel-title="channelState.channelTitle"
+                :file-count="fileCount" />
         </template>
     </div>
 </template>

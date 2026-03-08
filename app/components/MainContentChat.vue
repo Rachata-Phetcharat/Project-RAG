@@ -243,7 +243,7 @@ watch(() => route.params.id, () => {
 
             <!-- Input Area -->
             <div
-                class="shrink-0 p-6 pb-8 z-10 bg-linear-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
+                class="shrink-0 p-6 pb-2 z-10 bg-linear-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
                 <div class="w-full max-w-5xl mx-auto">
                     <form @submit.prevent="handleSendMessage">
                         <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
