@@ -29,11 +29,7 @@ const updateFileSize = async (userId: number, fileSize: number) => {
 ============================================ */
 const channelId = computed(() => route.params.id as string)
 const isLoggedIn = computed(() => authStore.isLoggedIn)
-const fileCount = computed(() => {
-    return state.sources.length > 0
-        ? state.sources.length
-        : (state.totalFilesFromList || 0)
-})
+const fileCount = computed(() => state.sources.length)
 
 const isOwnerOrAdmin = computed(() => {
     if (!isLoggedIn.value) return false
@@ -129,6 +125,23 @@ const loadChannelData = async () => {
 /* ============================================
    File Upload Handler
 ============================================ */
+const handleOpenModal = () => {
+    if (fileCount.value >= 50) {
+        toast.add({
+            title: 'ถึงขีดจำกัดแล้ว',
+            description: 'ไม่สามารถเพิ่มไฟล์ได้อีก เนื่องจากมีไฟล์ครบ 50 ไฟล์แล้ว กรุณาลบไฟล์บางส่วนก่อน',
+            color: 'warning'
+        })
+        return
+    }
+    state.isModalOpen = true
+}
+
+const currentUsedSizeMB = computed(() => {
+    const bytes = state.sources.reduce((sum: number, f: any) => sum + (f.size_bytes || 0), 0)
+    return bytes / (1024 * 1024)
+})
+
 const handleFileUpload = async (event: any) => {
     const files = event.target?.files || event.dataTransfer?.files || event
 
@@ -137,12 +150,28 @@ const handleFileUpload = async (event: any) => {
     const fileArray = Array.from(files) as File[]
     const MAX_FILE_SIZE = allowedSize.value * 1024 * 1024
 
-    // ตรวจสอบขนาดไฟล์
-    const invalidFiles = fileArray.filter(f => f.size > MAX_FILE_SIZE)
-    if (invalidFiles.length > 0) {
+    // ตรวจสอบจำนวนไฟล์ไม่เกิน 50
+    if (fileCount.value + fileArray.length > 50) {
+        const remaining = 50 - fileCount.value
         toast.add({
-            title: 'ไฟล์ใหญ่เกินไป',
-            description: `${invalidFiles[0]?.name} มีขนาดเกิน ${allowedSize.value}MB`,
+            title: 'ไฟล์เกินขีดจำกัด',
+            description: remaining > 0
+                ? `สามารถเพิ่มได้อีก ${remaining} ไฟล์เท่านั้น (ปัจจุบัน ${fileCount.value}/50)`
+                : 'ไม่สามารถเพิ่มไฟล์ได้อีก เนื่องจากมีไฟล์ครบ 50 ไฟล์แล้ว',
+            color: 'warning'
+        })
+        return
+    }
+
+    // ตรวจสอบขนาดไฟล์
+    const totalNewSizeMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)
+    const totalAfterUpload = currentUsedSizeMB.value + totalNewSizeMB
+
+    if (totalAfterUpload > allowedSize.value && authStore.role !== 'admin') {
+        const remainingMB = (allowedSize.value - currentUsedSizeMB.value).toFixed(1)
+        toast.add({
+            title: 'ขนาดไฟล์เกินขีดจำกัด',
+            description: `ขนาดรวมจะเกิน ${allowedSize.value} MB (เหลือพื้นที่อีก ${remainingMB} MB)`,
             color: 'error'
         })
         return
@@ -241,7 +270,8 @@ watch(() => route.params.id, (newId) => {
             }">
                 <UButton block icon="i-heroicons-plus" color="primary" size="lg"
                     :disabled="loading || state.isUploading"
-                    class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                    class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                    @click.prevent="handleOpenModal">
                     <span class="flex items-center gap-2">
                         เพิ่มแหล่งที่มา
                     </span>
@@ -320,13 +350,6 @@ watch(() => route.params.id, (newId) => {
                                     :disabled="state.isUploading" @change="handleFileUpload" />
                             </div>
                         </div>
-
-                        <!-- Error Display -->
-                        <UAlert v-if="error" color="error" variant="soft" :title="error" :close-button="{
-                            icon: 'i-heroicons-x-mark-20-solid',
-                            color: 'error',
-                            variant: 'link'
-                        }" @close="clearError" />
                     </div>
 
                     <!-- Progress Footer -->
@@ -343,7 +366,31 @@ watch(() => route.params.id, (newId) => {
                                         {{ fileCount }}/50
                                     </span>
                                 </div>
-                                <UProgress :model-value="fileCount" :max="50" size="md" />
+                                <UProgress :model-value="fileCount"
+                                    :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'"
+                                    :max="50" size="md" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="p-6 bg-linear-to-br from-gray-50 to-transparent dark:from-gray-900/50 border-t border-gray-100 dark:border-gray-800">
+                        <div class="flex items-center gap-4">
+                            <UIcon name="i-heroicons-folder" class="w-5 h-5 text-gray-500 flex-shrink-0" />
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                                        ขนาดไฟล์รวม
+                                    </span>
+                                    <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                        {{ currentUsedSizeMB.toFixed(1) }} / {{ authStore.role === 'admin' ? "ไม่จำกัด"
+                                            :
+                                            `${allowedSize} MB` }}
+                                    </span>
+                                </div>
+                                <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
+                                    :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                                    size="md" />
                             </div>
                         </div>
                     </div>
@@ -408,23 +455,49 @@ watch(() => route.params.id, (newId) => {
         </div>
 
         <!-- Footer Progress -->
-        <div v-if="isOwnerOrAdmin"
-            class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
-            <div class="flex items-center gap-3">
-                <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500 flex-shrink-0" />
-                <div class="flex-1">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                            ใช้งานแล้ว
-                        </span>
-                        <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-                            {{ fileCount }}/50
-                        </span>
+        <div v-if="isOwnerOrAdmin">
+            <div
+                class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500 flex-shrink-0" />
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                                จำนวนแหล่งที่มา
+                            </span>
+                            <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                {{ fileCount }}/50
+                            </span>
+                        </div>
+                        <UProgress :model-value="fileCount"
+                            :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'" :max="50"
+                            size="md" />
                     </div>
-                    <UProgress :model-value="fileCount" :max="50" size="md" />
+                </div>
+            </div>
+
+            <div
+                class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <UIcon name="i-heroicons-cube" class="w-5 h-5 text-gray-500 flex-shrink-0" />
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                                ขนาดไฟล์รวม
+                            </span>
+                            <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                {{ currentUsedSizeMB.toFixed(1) }} / {{ authStore.role === 'admin' ? "ไม่จำกัด" :
+                                    `${allowedSize} MB` }}
+                            </span>
+                        </div>
+                        <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
+                            :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                            size="md" />
+                    </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Delete Modal Component -->
         <ModalDelete v-model:open="deleteModalState.isOpen" :item="fileToDelete"
