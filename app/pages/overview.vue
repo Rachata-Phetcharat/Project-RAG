@@ -6,7 +6,7 @@ import type { ChannelStatsResult } from "~/composables/useDashboard";
 // ─────────────────────────────────────────────
 
 definePageMeta({
-    middleware: ["auth", "admin"],
+    middleware: ["auth"],
     layout: "default",
 });
 

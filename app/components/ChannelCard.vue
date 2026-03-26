@@ -433,10 +433,11 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
                 </button>
 
                 <template #status-switch>
-                    <div class="flex items-center justify-between w-full px-2 py-1" @click.stop>
+                    <div class="flex items-center justify-between w-full py-1" @click.stop>
                         <div class="flex items-center gap-2 text-gray-700 dark:text-gray-200">
                             <UIcon name="i-lucide-globe" class="w-4.5 h-4.5 text-gray-500" />
-                            <span class="truncate">เข้าถึงสาธารณะ</span>
+                            <span class="truncate">{{ props.item.status === 'public' ? 'ปรับเป็นส่วนตัว' :
+                                'ปรับเป็นสาธารณะ' }}</span>
                         </div>
                         <USwitch v-model="isPublic" :disabled="statusLoading" />
                     </div>

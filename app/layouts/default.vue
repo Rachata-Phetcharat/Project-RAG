@@ -30,7 +30,7 @@ const layoutClass = computed(() => route.meta.layoutCustomClass || 'default-them
                         <div class="flex flex-col">
                             <span
                                 class="text-2xl font-bold bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                kmutnbThinkHub
+                                kmutnb ThinkHub
                             </span>
                             <!-- <span class="text-xs text-gray-500 dark:text-gray-400 font-medium -mt-1">
                                 Learning Platform

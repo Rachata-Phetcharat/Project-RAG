@@ -19,6 +19,8 @@ const props = defineProps<{
 ============================================ */
 const channelId = computed(() => route.params.id as string)
 const canSendMessage = computed(() => state.message.trim().length > 0)
+// แสดง chat area เมื่อมีไฟล์ หรือมีประวัติการสนทนาแล้ว
+const showChatArea = computed(() => props.fileCount > 0 || state.chatHistory.length > 0)
 
 /* ============================================
    State Management
@@ -163,8 +165,7 @@ watch(() => route.params.id, () => {
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="fileCount === 0 && state.chatHistory.length === 0"
-            class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
+        <div v-else-if="!showChatArea" class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
             <div class="relative">
                 <div
                     class="absolute inset-0 bg-linear-to-r from-primary-400 to-blue-500 rounded-full blur-3xl opacity-20 animate-pulse">
@@ -190,6 +191,21 @@ watch(() => route.params.id, () => {
             <!-- Chat Messages -->
             <div ref="chatContainer"
                 class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth bg-gradient-to-b from-transparent via-gray-50/30 to-transparent dark:via-gray-900/30">
+
+                <!-- Welcome prompt when files loaded but no messages yet -->
+                <div v-if="state.chatHistory.length === 0 && !state.isTyping"
+                    class="flex flex-col items-center justify-center h-full min-h-64 gap-5 text-center animate-fade-in">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-xl">
+                        <UIcon name="i-heroicons-sparkles" class="w-8 h-8 text-white" />
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">พร้อมแล้ว!</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-base max-w-sm">
+                            เอกสารของคุณถูกโหลดเรียบร้อยแล้ว ลองถามคำถามได้เลย
+                        </p>
+                    </div>
+                </div>
 
                 <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
                     :class="['flex max-w-5xl mx-auto animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']">

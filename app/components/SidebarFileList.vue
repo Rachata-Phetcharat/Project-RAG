@@ -11,6 +11,10 @@ const { loading, error, uploadFiles, downLoadFile, clearError, deleteFile } = us
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 const { changeFileSize } = useUser()
 
+const emit = defineEmits<{
+    'update:sources': [sources: any[]]
+}>()
+
 const allowedSize = computed(() => authStore.user?.file_size ? Math.floor(authStore.user.file_size / (1024 * 1024)) : 10) // แปลงจาก byte เป็น MB
 
 const updateFileSize = async (userId: number, fileSize: number) => {
@@ -104,6 +108,7 @@ const loadChannelData = async () => {
             state.channelTitle = currentChannel.title || 'ไม่พบชื่อช่อง'
             state.totalFilesFromList = currentChannel.file_count || 0
             state.sources = currentChannel.files || []
+            emit('update:sources', state.sources) // แจ้ง parent ทันที
         } else {
             toast.add({
                 title: 'ไม่พบข้อมูลช่อง',
@@ -196,6 +201,7 @@ const openDeleteModal = (file: any) => {
 
 const handleFileDeleted = (fileId: string | number) => {
     state.sources = state.sources.filter(f => f.files_id !== fileId)
+    emit('update:sources', state.sources) // แจ้ง parent หลังลบ
 }
 
 /* ============================================
@@ -287,7 +293,8 @@ watch(() => route.params.id, (newId) => {
                                         <div class="w-1 h-1 rounded-full bg-gray-400"></div>
                                         <div class="flex items-center gap-1.5">
                                             <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
-                                            <span>สูงสุด {{ allowedSize }} MB</span>
+                                            <span>{{ `${authStore.role === 'admin' ? "ไม่จำกัด" : `สูงสุด ${allowedSize}
+                                                MB`}` }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -358,7 +365,7 @@ watch(() => route.params.id, (newId) => {
 
             <!-- Empty State -->
             <div v-else-if="state.sources.length === 0"
-                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-linear-to-br from-gray-100/50 to-transparent dark:from-gray-800/30">
+                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-linear-to-br ">
                 <div
                     class="w-16 h-16 rounded-2xl bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-3">
                     <UIcon name="i-heroicons-document" class="w-8 h-8 text-gray-400" />
