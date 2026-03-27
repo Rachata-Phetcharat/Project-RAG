@@ -118,13 +118,13 @@ const STATUS_CONFIG = {
         gradient: 'from-emerald-500 to-green-500'
     },
     private: {
-        color: 'rose',
+        color: 'emerald',
         label: 'Private',
         icon: 'i-lucide-lock',
         gradient: 'from-rose-500 to-pink-500'
     },
     pending: {
-        color: 'amber',
+        color: 'emerald',
         label: 'Pending',
         icon: 'i-lucide-clock',
         gradient: 'from-amber-500 to-orange-500'

@@ -14,7 +14,7 @@ const table = useTemplateRef('table')
 const user = ref<User[]>([])
 const role = ref()
 const accountType = ref()
-const value = ref('user')
+const value = ref('all')
 const editingFileSize = ref<Record<number, number>>({})
 const editingChanged = ref<Record<number, boolean>>({})
 const editingDefaults = ref<Record<number, number>>({})   // ค่าที่กำลังแก้
@@ -197,8 +197,14 @@ const pagination = ref({
 const globalFilter = ref('')
 
 const userData = computed(() => {
+    if (value.value === 'all') return user.value
     return user.value.filter(u => u.role === value.value)
 })
+
+const roleWithAll = computed(() => [
+    { label: 'ทั้งหมด', value: 'all' },
+    ...(role.value ?? [])
+])
 
 onMounted(() => {
     loadUser()
@@ -239,7 +245,7 @@ onMounted(() => {
                 <div class="relative group">
                     <UIcon name="i-lucide-search"
                         class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                    <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน..."
+                    <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน"
                         class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -266,7 +272,7 @@ onMounted(() => {
                     <div
                         class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
                         <span class="text-xs">แสดงสิทธิ์ :</span>
-                        <USelect v-model="value" :items="role" color="neutral" size="sm" class="w-28" />
+                        <USelect v-model="value" :items="roleWithAll" color="neutral" size="sm" class="w-28" />
                     </div>
 
                 </div>

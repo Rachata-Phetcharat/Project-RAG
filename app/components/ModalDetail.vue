@@ -117,7 +117,7 @@ const statusConfig = computed(() => {
         </template>
 
         <template #footer>
-            <div class="flex items-center justify-end w-full">
+            <div class="flex items-center justify-start w-full">
                 <UButton color="neutral" variant="soft" @click="close"
                     class="px-6 py-2 rounded-xl font-bold cursor-pointer transition-transform hover:scale-105 active:scale-95">
                     ปิดหน้าต่าง

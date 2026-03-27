@@ -134,7 +134,6 @@ const summaryCards = computed(() => [
         label: "คำถามทั้งหมด (ช่วงนี้)",
         value: questionsStats.value.total.toLocaleString(),
         icon: "i-lucide-message-circle-question",
-        gradient: "from-blue-500 to-cyan-500",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
         textColor: "text-blue-600 dark:text-blue-400",
     },
@@ -142,41 +141,29 @@ const summaryCards = computed(() => [
         label: "ผู้ใช้งานรวม (ช่วงนี้)",
         value: usersStats.value.total.toLocaleString(),
         icon: "i-lucide-users",
-        gradient: "from-purple-500 to-pink-500",
         bgColor: "bg-purple-50 dark:bg-purple-900/20",
         textColor: "text-purple-600 dark:text-purple-400",
-    },
-    {
-        label: "วันที่มีข้อมูล",
-        value: `${questionsStats.value.data.length} วัน`,
-        icon: "i-lucide-calendar-days",
-        gradient: "from-green-500 to-emerald-500",
-        bgColor: "bg-green-50 dark:bg-green-900/20",
-        textColor: "text-green-600 dark:text-green-400",
-    },
+    }
 ]);
 </script>
 
 <template>
-    <main class="flex-1 p-6 md:p-8 overflow-auto mx-auto w-full">
+    <main class="flex-1 overflow-auto mx-auto w-full">
 
         <!-- ── Header ── -->
         <div class="mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <div
-                            class="absolute inset-0 bg-linear-to-r from-violet-500 to-fuchsia-500 rounded-xl blur-lg opacity-50" />
-                        <div class="relative p-3 bg-linear-to-br from-violet-500 to-fuchsia-500 rounded-xl shadow-lg">
-                            <UIcon name="i-lucide-bar-chart-2" class="w-7 h-7 text-white" />
+                        <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                            <UIcon name="i-lucide-layout-list" class="w-6 h-6 text-white dark:text-white" />
                         </div>
                     </div>
                     <div>
-                        <h1
-                            class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                        <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                             ภาพรวมแชนแนล
                         </h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             วิเคราะห์สถิติคำถามและผู้ใช้งานรายแชนแนล
                         </p>
                     </div>
@@ -285,27 +272,23 @@ const summaryCards = computed(() => [
         <!-- ── Stats + Chart ── -->
         <template v-else>
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div v-for="card in summaryCards" :key="card.label"
-                    class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
-                    <div
-                        :class="['absolute inset-0 bg-linear-to-br opacity-0 group-hover:opacity-5 transition-opacity', card.gradient]" />
+                    class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+
                     <div class="relative p-6">
                         <div class="flex items-start justify-between mb-4">
                             <div :class="['p-3 rounded-xl', card.bgColor]">
                                 <UIcon :name="card.icon" :class="['w-7 h-7', card.textColor]" />
                             </div>
                         </div>
-                        <p
-                            class="text-3xl font-bold text-gray-900 dark:text-white group-hover:scale-105 transition-transform origin-left inline-block">
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white  origin-left inline-block">
                             {{ card.value }}
                         </p>
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
                             {{ card.label }}
                         </p>
                     </div>
-                    <div
-                        :class="['absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 group-hover:opacity-100 transition-opacity', card.gradient]" />
                 </div>
             </div>
 

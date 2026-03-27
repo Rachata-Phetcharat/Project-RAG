@@ -85,19 +85,16 @@ onMounted(() => {
             <div class="mb-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="relative">
-                        <div
-                            class="absolute inset-0 bg-linear-to-r from-indigo-500 to-purple-500 rounded-xl blur-lg opacity-50">
-                        </div>
-                        <div class="relative p-3 bg-linear-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
-                            <UIcon name="i-lucide-layout-grid" class="w-7 h-7 text-white" />
+                        <div class="absolute inset-0 bg-slate-500 rounded-xl blur-lg opacity-20" />
+                        <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                            <UIcon name="i-lucide-tv-2" class="w-6 h-6 text-white dark:text-white" />
                         </div>
                     </div>
                     <div>
-                        <h1
-                            class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                        <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                             แชนแนลทั้งหมด
                         </h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             ดูและจัดการแชนแนลทั้งหมดในระบบ
                         </p>
                     </div>
@@ -108,15 +105,15 @@ onMounted(() => {
                     <div class="flex-1 max-w-md">
                         <div class="relative group">
                             <UIcon name="i-lucide-search"
-                                class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                            <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล ผู้สร้าง หรือคำอธิบาย..."
-                                class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none" />
+                                class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                            <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล"
+                                class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
                         </div>
                     </div>
                     <!-- จำนวนรายการที่พบ -->
                     <p class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         พบ
-                        <span class="font-semibold text-indigo-600 dark:text-indigo-400">
+                        <span class="font-semibold text-blue-600 dark:text-blue-400">
                             {{ filteredChannels.length }}
                         </span>
                         รายการ

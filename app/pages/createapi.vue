@@ -135,12 +135,11 @@ const onCreated = async () => {
     <!-- Header Section -->
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 bg-linear-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
-                <UIcon name="i-lucide-key-round" class="w-7 h-7 text-white" />
+            <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                <UIcon name="i-lucide-key-round" class="w-6 h-6 text-white dark:text-white" />
             </div>
             <div>
-                <h1
-                    class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                     API Keys
                 </h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -215,8 +214,7 @@ const onCreated = async () => {
                         สร้าง Key แรกเพื่อเชื่อมต่อแอปพลิเคชันกับแชนแนลของคุณ
                     </p>
                 </div>
-                <UButton size="xl" label="สร้าง API Key แรก" color="primary"
-                    class="shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                <UButton size="xl" label="สร้าง API Key แรก" color="primary" class=" "
                     @click="isCreateModalOpen = true">
                     <template #leading>
                         <UIcon name="i-lucide-sparkles" class="w-5 h-5" />

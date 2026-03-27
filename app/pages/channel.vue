@@ -71,15 +71,14 @@ onMounted(() => {
     <!-- Header Section -->
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-6">
-            <div class="p-3 bg-linear-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
-                <UIcon name="i-lucide-layout-grid" class="w-7 h-7 text-white" />
+            <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                <UIcon name="i-lucide-book-plus" class="w-6 h-6 text-white dark:text-white" />
             </div>
             <div>
-                <h1
-                    class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                     แชนแนลของฉัน
                 </h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                     จัดการและสร้างแชนแนลเพื่อแบ่งปันความรู้
                 </p>
             </div>
@@ -141,7 +140,7 @@ onMounted(() => {
                     </div>
                     <div
                         class="relative p-8 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full shadow-xl border border-blue-100 dark:border-blue-800">
-                        <UIcon name="i-lucide-folder-plus" class="w-20 h-20 text-blue-600 dark:text-blue-400" />
+                        <UIcon name="i-lucide-book-plus" class="w-20 h-20 text-blue-600 dark:text-blue-400" />
                     </div>
                 </div>
 
@@ -150,13 +149,11 @@ onMounted(() => {
                         เริ่มต้นการสร้างแชนแนล
                     </h2>
                     <p class="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
-                        คุณยังไม่มีแชนแนลใดๆ เลย<br />
                         สร้างแชนแนลแรกของคุณเพื่อเริ่มแบ่งปันความรู้และประสบการณ์
                     </p>
                 </div>
 
-                <UButton size="xl" label="สร้างแชนแนลแรกของคุณ" color="primary"
-                    class="shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                <UButton size="xl" label="สร้างแชนแนลแรกของคุณ" color="primary" class="shadow-blue-500/30"
                     @click="isCreateModalOpen = true">
                     <template #leading>
                         <UIcon name="i-lucide-sparkles" class="w-5 h-5" />
@@ -239,19 +236,6 @@ onMounted(() => {
             </div>
         </div>
     </main>
-
-    <!-- Error Message -->
-    <div v-if="errorMsg" class="fixed bottom-6 right-6 max-w-md">
-        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-xl">
-            <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div>
-                    <p class="font-medium text-red-800 dark:text-red-200">เกิดข้อผิดพลาด</p>
-                    <p class="text-sm text-red-700 dark:text-red-300 mt-1">{{ errorMsg }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Decorative Elements -->
     <div

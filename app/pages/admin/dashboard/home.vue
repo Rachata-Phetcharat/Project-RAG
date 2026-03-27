@@ -232,7 +232,7 @@ const statsCards = computed(() => [
                 <!-- Stat Cards -->
                 <template v-else>
                     <div v-for="stat in statsCards" :key="stat.label"
-                        class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                        class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
 
                         <div class="relative p-6">
                             <div class="flex items-start justify-between mb-4">
