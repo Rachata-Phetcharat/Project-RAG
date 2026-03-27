@@ -354,43 +354,49 @@ watch(() => route.params.id, (newId) => {
 
                     <!-- Progress Footer -->
                     <div
-                        class="p-6 bg-linear-to-br from-gray-50 to-transparent dark:from-gray-900/50 border-t border-gray-100 dark:border-gray-800">
-                        <div class="flex items-center gap-4">
-                            <UIcon name="i-heroicons-folder" class="w-5 h-5 text-gray-500 flex-shrink-0" />
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                        ขีดจำกัดแหล่งที่มา
-                                    </span>
-                                    <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                        {{ fileCount }}/50
+                        class="px-6 py-4 bg-gray-50/80 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-800">
+                        <div class="flex items-center gap-2 mb-3">
+                            <UIcon name="i-heroicons-signal" class="w-3.5 h-3.5 text-gray-400" />
+                            <span
+                                class="text-xs font-semibold uppercase tracking-wider text-gray-400">การใช้งานปัจจุบัน</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- File Count -->
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <UIcon name="i-heroicons-document-duplicate"
+                                            class="w-3.5 h-3.5 text-gray-400" />
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">แหล่งที่มา</span>
+                                    </div>
+                                    <span class="text-xs font-bold tabular-nums"
+                                        :class="fileCount >= 50 ? 'text-red-500' : fileCount >= 40 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                                        {{ fileCount }}<span class="font-normal text-gray-400">/50</span>
                                     </span>
                                 </div>
                                 <UProgress :model-value="fileCount"
                                     :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'"
-                                    :max="50" size="md" />
+                                    :max="50" size="sm" />
                             </div>
-                        </div>
-                    </div>
 
-                    <div
-                        class="p-6 bg-linear-to-br from-gray-50 to-transparent dark:from-gray-900/50 border-t border-gray-100 dark:border-gray-800">
-                        <div class="flex items-center gap-4">
-                            <UIcon name="i-heroicons-folder" class="w-5 h-5 text-gray-500 flex-shrink-0" />
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                                        ขนาดไฟล์รวม
-                                    </span>
-                                    <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                        {{ currentUsedSizeMB.toFixed(1) }} / {{ authStore.role === 'admin' ? "ไม่จำกัด"
-                                            :
-                                            `${allowedSize} MB` }}
+                            <!-- Storage Size -->
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <UIcon name="i-heroicons-circle-stack" class="w-3.5 h-3.5 text-gray-400" />
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">พื้นที่</span>
+                                    </div>
+                                    <span class="text-xs font-bold tabular-nums"
+                                        :class="currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                                        {{ currentUsedSizeMB.toFixed(1) }}
+                                        <span class="font-normal text-gray-400">
+                                            / {{ authStore.role === 'admin' ? '∞' : `${allowedSize} MB` }}
+                                        </span>
                                     </span>
                                 </div>
                                 <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
                                     :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
-                                    size="md" />
+                                    size="sm" />
                             </div>
                         </div>
                     </div>
@@ -437,7 +443,7 @@ watch(() => route.params.id, (newId) => {
                             {{ file.original_filename }}
                         </span>
                         <span class="text-xs text-gray-400 dark:text-gray-500">
-                            {{ (file.size_bytes / 1024).toFixed(1) }} MB
+                            {{ (file.size_bytes / (1024 * 1024)).toFixed(1) }} MB
                         </span>
                     </div>
                 </div>
@@ -455,45 +461,54 @@ watch(() => route.params.id, (newId) => {
         </div>
 
         <!-- Footer Progress -->
-        <div v-if="isOwnerOrAdmin">
-            <div
-                class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
-                <div class="flex items-center gap-3">
-                    <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-gray-500 flex-shrink-0" />
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                                จำนวนแหล่งที่มา
-                            </span>
-                            <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                {{ fileCount }}/50
-                            </span>
-                        </div>
-                        <UProgress :model-value="fileCount"
-                            :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'" :max="50"
-                            size="md" />
-                    </div>
+        <div v-if="isOwnerOrAdmin"
+            class="border-t border-gray-200/60 dark:border-gray-800/60 bg-linear-to-t from-gray-50/80 to-transparent dark:from-gray-900/60 backdrop-blur-sm">
+            <div class="px-4 py-3 space-y-3">
+                <!-- Header label -->
+                <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-signal" class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    <span class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        การใช้งาน
+                    </span>
                 </div>
-            </div>
 
-            <div
-                class="p-4 bg-linear-to-t from-gray-100/50 to-transparent dark:from-gray-900/50 border-t border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
-                <div class="flex items-center gap-3">
-                    <UIcon name="i-heroicons-cube" class="w-5 h-5 text-gray-500 flex-shrink-0" />
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                                ขนาดไฟล์รวม
-                            </span>
-                            <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-                                {{ currentUsedSizeMB.toFixed(1) }} / {{ authStore.role === 'admin' ? "ไม่จำกัด" :
-                                    `${allowedSize} MB` }}
-                            </span>
+                <!-- File Count -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <UIcon name="i-heroicons-document-duplicate"
+                                class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                            <span class="text-xs text-gray-500 dark:text-gray-400">จำนวนแหล่งที่มา</span>
                         </div>
-                        <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
-                            :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
-                            size="md" />
+                        <span class="text-xs font-bold tabular-nums"
+                            :class="fileCount >= 50 ? 'text-red-500' : fileCount >= 40 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                            {{ fileCount }}<span class="font-normal text-gray-400">/50</span>
+                        </span>
                     </div>
+                    <UProgress :model-value="fileCount"
+                        :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'" :max="50"
+                        size="sm" />
+                </div>
+
+                <!-- Storage Size -->
+                <div class="space-y-1.5 pb-1">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <UIcon name="i-heroicons-circle-stack"
+                                class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                            <span class="text-xs text-gray-500 dark:text-gray-400">พื้นที่จัดเก็บ</span>
+                        </div>
+                        <span class="text-xs font-bold tabular-nums"
+                            :class="currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                            {{ currentUsedSizeMB.toFixed(1) }}
+                            <span class="font-normal text-gray-400">
+                                / {{ authStore.role === 'admin' ? '∞' : `${allowedSize} MB` }}
+                            </span>
+                        </span>
+                    </div>
+                    <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
+                        :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                        size="sm" />
                 </div>
             </div>
         </div>

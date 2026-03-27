@@ -83,7 +83,7 @@ const items = computed(() => [
 
         <UDropdownMenu v-else :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
             :ui="{ content: 'w-48' }">
-            <UUser :name="authStore.displayName" :description="authStore.accountType"
+            <UUser :name="authStore.displayName" :description="authStore.role === 'admin' ? 'Admin' : 'Member'"
                 :avatar="{ src: `https://ui-avatars.com/api/?name=${authStore.displayName}&background=random` }" chip
                 size="sm" class="cursor-pointer transition-opacity hover:opacity-80 text-left" />
         </UDropdownMenu>
