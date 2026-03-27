@@ -233,43 +233,6 @@ export const useChannel = () => {
     }
   };
 
-  interface StorageUsage {
-    channel_id: string;
-    remaining_storage_bytes: number;
-    used_storage_bytes: number;
-    storage_limit_bytes: number;
-  }
-
-  const storage_user = async (id: number) => {
-    loading.value = true;
-    try {
-      const res = await $fetch<StorageUsage>(
-        `${apiBase}/channels/${id}/storage-usage`,
-        {
-          method: "GET",
-          headers: getHeaders(),
-        },
-      );
-
-      return {
-        ...res,
-        used_mb: (res.used_storage_bytes / (1024 * 1024)).toFixed(2),
-        limit_mb: (res.storage_limit_bytes / (1024 * 1024)).toFixed(2),
-        remaining_mb: (res.remaining_storage_bytes / (1024 * 1024)).toFixed(2),
-        used_percent:
-          res.storage_limit_bytes > 0
-            ? Math.round(
-                (res.used_storage_bytes / res.storage_limit_bytes) * 100,
-              )
-            : 0,
-      };
-    } catch (e) {
-      return null;
-    } finally {
-      loading.value = false;
-    }
-  };
-
   return {
     loading,
     fetchMyChannels,
@@ -285,6 +248,5 @@ export const useChannel = () => {
     ownerSetPrivateChannel,
     adminforceSetPublicChannel,
     adminforceSetPrivateChannel,
-    storage_user,
   };
 };

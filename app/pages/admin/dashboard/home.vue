@@ -110,7 +110,6 @@ const statsCards = computed(() => [
         value: questionsData.value.total.toLocaleString(),
         change: questionsData.value.growth,
         icon: "i-lucide-message-circle-question",
-        gradient: "from-blue-500 to-cyan-500",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
         textColor: "text-blue-600 dark:text-blue-400",
     },
@@ -119,7 +118,6 @@ const statsCards = computed(() => [
         value: usersData.value.total.toLocaleString(),
         change: usersData.value.growth,
         icon: "i-lucide-users",
-        gradient: "from-purple-500 to-pink-500",
         bgColor: "bg-purple-50 dark:bg-purple-900/20",
         textColor: "text-purple-600 dark:text-purple-400",
     },
@@ -128,7 +126,6 @@ const statsCards = computed(() => [
         value: publicChannelsData.value.total.toLocaleString(),
         change: publicChannelsData.value.growth,
         icon: "i-lucide-globe",
-        gradient: "from-green-500 to-emerald-500",
         bgColor: "bg-green-50 dark:bg-green-900/20",
         textColor: "text-green-600 dark:text-green-400",
     },
@@ -137,7 +134,6 @@ const statsCards = computed(() => [
         value: privateChannelsData.value.total.toLocaleString(),
         change: privateChannelsData.value.growth,
         icon: "i-lucide-lock",
-        gradient: "from-rose-500 to-pink-500",
         bgColor: "bg-rose-50 dark:bg-rose-900/20",
         textColor: "text-rose-600 dark:text-rose-400",
     },
@@ -146,7 +142,6 @@ const statsCards = computed(() => [
         value: pendingChannelsData.value.total.toLocaleString(),
         change: pendingChannelsData.value.growth,
         icon: "i-lucide-clock",
-        gradient: "from-amber-500 to-orange-500",
         bgColor: "bg-amber-50 dark:bg-amber-900/20",
         textColor: "text-amber-600 dark:text-amber-400",
     },
@@ -164,19 +159,16 @@ const statsCards = computed(() => [
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3">
                         <div class="relative">
-                            <div
-                                class="absolute inset-0 bg-linear-to-r from-indigo-500 to-purple-500 rounded-xl blur-lg opacity-50" />
-                            <div
-                                class="relative p-3 bg-linear-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
-                                <UIcon name="i-lucide-bar-chart-3" class="w-7 h-7 text-white" />
+                            <div class="absolute inset-0 bg-slate-500 rounded-xl blur-lg opacity-20" />
+                            <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                                <UIcon name="i-lucide-bar-chart-3" class="w-6 h-6 text-white dark:text-white" />
                             </div>
                         </div>
                         <div>
-                            <h1
-                                class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                            <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                                 แดชบอร์ดผู้ดูแลระบบ
                             </h1>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                                 ภาพรวมระบบและสถิติการใช้งาน
                             </p>
                         </div>
@@ -240,12 +232,7 @@ const statsCards = computed(() => [
                 <!-- Stat Cards -->
                 <template v-else>
                     <div v-for="stat in statsCards" :key="stat.label"
-                        class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default">
-                        <!-- Hover gradient overlay -->
-                        <div :class="[
-                            'absolute inset-0 bg-linear-to-br opacity-0 group-hover:opacity-5 transition-opacity',
-                            stat.gradient,
-                        ]" />
+                        class="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
 
                         <div class="relative p-6">
                             <div class="flex items-start justify-between mb-4">
@@ -273,8 +260,7 @@ const statsCards = computed(() => [
                             </div>
 
                             <div class="space-y-1">
-                                <p
-                                    class="text-3xl font-bold text-gray-900 dark:text-white group-hover:scale-105 transition-transform origin-left inline-block">
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white origin-left inline-block">
                                     {{ stat.value }}
                                 </p>
                                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -283,11 +269,6 @@ const statsCards = computed(() => [
                             </div>
                         </div>
 
-                        <!-- Bottom accent line -->
-                        <div :class="[
-                            'absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r opacity-0 group-hover:opacity-100 transition-opacity',
-                            stat.gradient,
-                        ]" />
                     </div>
                 </template>
             </div>
@@ -300,23 +281,4 @@ const statsCards = computed(() => [
             </div>
         </main>
     </div>
-
-    <!-- Error Toast -->
-    <div v-if="errorMsg" class="fixed bottom-6 right-6 max-w-md z-50">
-        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-xl">
-            <div class="flex items-start gap-3">
-                <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div>
-                    <p class="font-medium text-red-800 dark:text-red-200">เกิดข้อผิดพลาด</p>
-                    <p class="text-sm text-red-700 dark:text-red-300 mt-1">{{ errorMsg }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Background Decorations -->
-    <div
-        class="fixed top-20 right-20 w-72 h-72 bg-linear-to-br from-indigo-400 to-purple-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none" />
-    <div
-        class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none" />
 </template>

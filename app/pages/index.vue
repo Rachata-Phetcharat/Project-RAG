@@ -153,7 +153,7 @@ onMounted(() => {
                     </span>
                     <br />
                     <span
-                        class="bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        class="bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         KMUTNB ThinkHub
                     </span>
                 </h1>

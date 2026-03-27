@@ -218,19 +218,17 @@ onMounted(() => {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div class="flex items-center gap-3">
                         <div class="relative">
-                            <div
-                                class="absolute inset-0 bg-linear-to-r from-blue-500 to-cyan-500 rounded-xl blur-lg opacity-50" />
-                            <div class="relative p-3 bg-linear-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                                <UIcon name="i-lucide-users" class="w-7 h-7 text-white" />
+                            <div class="absolute inset-0 bg-slate-500 rounded-xl blur-lg opacity-20" />
+                            <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
+                                <UIcon name="i-lucide-users" class="w-6 h-6 text-white dark:text-white" />
                             </div>
                         </div>
                         <div>
-                            <h1
-                                class="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                            <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
                                 จัดการผู้ใช้
                             </h1>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                จัดการผู้ใช้งานและสิทธิของพวกเขาในระบบ
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                จัดการผู้ใช้งานและสิทธิ์ในระบบ
                             </p>
                         </div>
                     </div>
@@ -244,18 +242,17 @@ onMounted(() => {
                     <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน..."
                         class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
                 </div>
-                <div class="flex items-center gap-4">
-                    <!-- วน loop จาก accountType แสดงเฉพาะ student และ personnel -->
+                <div class="flex flex-wrap items-center gap-3">
                     <template v-for="item in accountType" :key="item.account_type_id">
                         <div v-if="item.type_name.trim() === 'student' || item.type_name.trim() === 'personnel'"
-                            class="flex items-center gap-1">
-                            <span class="text-sm whitespace-nowrap">
-                                {{ item.type_name.trim() === 'student' ? 'ค่าเริ่มต้นนักศึกษา' : 'ค่าเริ่มต้นอาจารย์'
-                                }}:
+                            class="flex items-center text-sm gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                {{ item.type_name.trim() === 'student' ? 'นักศึกษา :' : 'อาจารย์ :' }}
                             </span>
                             <UInput v-model="editingDefaults[item.account_type_id]" type="number" color="neutral"
-                                size="lg" class="w-25"
+                                size="sm" class="w-20"
                                 @update:model-value="defaultsChanged[item.account_type_id] = true" />
+                            <span class="text-xs text-gray-400">MB</span>
                             <template v-if="defaultsChanged[item.account_type_id]">
                                 <UButton icon="i-lucide-check" color="success" variant="ghost" size="xs"
                                     @click="confirmDefault(item.account_type_id)" />
@@ -265,8 +262,13 @@ onMounted(() => {
                         </div>
                     </template>
 
-                    <div class="w-px h-6 bg-gray-300 dark:bg-gray-600" />
-                    <USelect v-model="value" :items="role" color="neutral" size="lg" class="w-25" />
+                    <div class="w-px h-5 bg-gray-200 dark:bg-neutral-700" />
+                    <div
+                        class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+                        <span class="text-xs">แสดงสิทธิ์ :</span>
+                        <USelect v-model="value" :items="role" color="neutral" size="sm" class="w-28" />
+                    </div>
+
                 </div>
             </div>
 

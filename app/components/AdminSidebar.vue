@@ -7,25 +7,25 @@ const menuItems = computed(() => [
         label: 'แดชบอร์ด',
         icon: 'i-lucide-bar-chart-3',
         to: '/admin/dashboard/home',
-        color: 'from-indigo-500 to-purple-500'
+        color: 'bg-gray-200 dark:bg-gray-600'
     },
     {
         label: 'จัดการผู้ใช้',
         icon: 'i-lucide-users',
         to: '/admin/dashboard/manage_users',
-        color: 'from-blue-500 to-cyan-500'
+        color: 'bg-gray-200 dark:bg-gray-600'
     },
     {
         label: 'คำขอ',
         icon: 'i-lucide-clipboard-list',
         to: '/admin/dashboard/pending',
-        color: 'from-amber-500 to-yellow-500'
+        color: 'bg-gray-200 dark:bg-gray-600'
     },
     {
         label: 'แชนแนลทั้งหมด',
         icon: 'i-lucide-tv-2',
         to: '/admin/dashboard/all_channel',
-        color: 'from-indigo-500 to-purple-500'
+        color: 'bg-gray-200 dark:bg-gray-600'
     },
 ])
 
@@ -41,7 +41,7 @@ const isActive = (to: string) => {
 
     <!-- Sidebar ตรึงอยู่ใต้ navbar ตลอด -->
     <aside
-        class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col z-40"
+        class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
         style="height: calc(100vh - 80px)">
 
         <!-- Navigation Menu -->
@@ -49,8 +49,8 @@ const isActive = (to: string) => {
             <NuxtLink v-for="item in menuItems" :key="item.to" :to="item.to" :class="[
                 'flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
                 isActive(item.to)
-                    ? 'bg-linear-to-r ' + item.color + ' text-white shadow-lg'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-linear-to-r ' + item.color + ' text-gray-900 dark:text-white'
+                    : 'text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
             ]">
                 <!-- Animated background for active state -->
                 <div v-if="isActive(item.to)"
@@ -59,7 +59,7 @@ const isActive = (to: string) => {
                 <!-- Content -->
                 <div class="flex items-center gap-3 relative z-10">
                     <UIcon :name="item.icon"
-                        :class="['w-5 h-5', isActive(item.to) ? 'text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-current']" />
+                        :class="['w-5 h-5', isActive(item.to) ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-current']" />
                     <span class="font-medium text-sm">{{ item.label }}</span>
                 </div>
             </NuxtLink>

@@ -3,7 +3,7 @@ const loginWithSSO = () => {
     const config = {
         baseURL: 'https://sso.kmutnb.ac.th/auth/authorize',
         client_id: 'onlrLf2z7jJ4dtKyFAX5F4GeFJrrX2gS',
-        redirect_uri: 'https://project-rag-six.vercel.app/callback',
+        redirect_uri: 'http://localhost:3000/callback',
         scope: 'profile',
         state: Math.random().toString(36).substring(7)
     }
