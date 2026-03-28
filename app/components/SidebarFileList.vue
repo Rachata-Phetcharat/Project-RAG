@@ -17,13 +17,6 @@ const emit = defineEmits<{
 
 const allowedSize = computed(() => authStore.user?.file_size ? Math.floor(authStore.user.file_size / (1024 * 1024)) : 10) // แปลงจาก byte เป็น MB
 
-const updateFileSize = async (userId: number, fileSize: number) => {
-    await changeFileSize({ users_id: userId, file_size_byte: fileSize })
-    if (userId === authStore.user?.users_id) {
-        await authStore.fetchUser()  // ✅ refresh แล้ว allowedSize จะ re-compute เอง
-    }
-}
-
 /* ============================================
    Computed Properties
 ============================================ */

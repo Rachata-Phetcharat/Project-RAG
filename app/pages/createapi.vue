@@ -71,6 +71,7 @@ const columns: TableColumn<ApiKeyRow>[] = [
         cell: ({ row }) => {
             const color = {
                 public: 'success' as const,
+                pending: 'warning' as const,
                 private: 'error' as const,
             }[row.getValue('channel_status') as string]
 

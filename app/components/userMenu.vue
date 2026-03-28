@@ -55,9 +55,9 @@ const items = computed(() => [
 
         <!-- Notification Section (เหมือนเดิม) -->
         <UPopover v-if="authStore.isLoggedIn" arrow :popper="{ placement: 'bottom-end' }">
-            <UChip text="5" color="error" size="3xl" inset>
+            <!-- <UChip text="5" color="error" size="3xl" inset>
                 <UButton class="cursor-pointer" icon="i-lucide-bell" color="neutral" variant="ghost" />
-            </UChip>
+            </UChip> -->
 
             <template #content>
                 <div
@@ -83,7 +83,8 @@ const items = computed(() => [
 
         <UDropdownMenu v-else :items="items" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
             :ui="{ content: 'w-48' }">
-            <UUser :name="authStore.displayName" :description="authStore.role === 'admin' ? 'Admin' : 'Member'"
+            <UUser :name="authStore.displayName"
+                :description="authStore.role === 'admin' ? `${authStore.accountType} ( ${authStore.role} )` : `${authStore.accountType}`"
                 :avatar="{ src: `https://ui-avatars.com/api/?name=${authStore.displayName}&background=random` }" chip
                 size="sm" class="cursor-pointer transition-opacity hover:opacity-80 text-left" />
         </UDropdownMenu>

@@ -10,10 +10,9 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const config = useRuntimeConfig()
-const apiBase = config.public.apiBase
 const authStore = useAuthStore()
 const { createApiKey, fetchApiKeys, apiKeys, loading } = useCreateApi()
-const { fetchMyChannels } = useChannel()
+const { fetchMyChannels, fetchChannelDetail } = useChannel()
 
 // Form state
 const keyName = ref('')
@@ -34,10 +33,6 @@ const createdKey = ref<{
     created_at: string
 } | null>(null)
 const copied = ref(false)
-
-const getHeaders = () => ({
-    Authorization: authStore.token ? `Bearer ${authStore.token}` : '',
-})
 
 // Step 1: ดึง channels ของตัวเอง กรองเฉพาะที่เป็น public และยังไม่มี key
 const fetchAvailableChannels = async () => {
@@ -60,13 +55,11 @@ const fetchAvailableChannels = async () => {
 }
 
 // Step 2: พอเลือก channel → call /channels/{channel_id} เพื่อดึง detail จริง
-const fetchChannelDetail = async (channelId: string) => {
+const fetchChannelDetailHandler = async (channelId: string) => {
     loadingDetail.value = true
     selectedChannelDetail.value = null
     try {
-        const data = await $fetch<any>(`${apiBase}/channels/${channelId}`, {
-            headers: getHeaders(),
-        })
+        const data = await fetchChannelDetail(channelId)
         selectedChannelDetail.value = data
     } catch (e: any) {
         const status = e?.response?.status || e?.status
@@ -96,7 +89,7 @@ const channelOptions = computed(() =>
 
 // Watch เมื่อผู้ใช้เลือก channel → fetch detail
 watch(selectedChannelId, (id) => {
-    if (id) fetchChannelDetail(id)
+    if (id) fetchChannelDetailHandler(id)
     else selectedChannelDetail.value = null
 })
 
@@ -179,7 +172,7 @@ const close = () => {
                         {{ createdKey ? 'API Key สร้างสำเร็จ!' : 'สร้าง API Key ใหม่' }}
                     </h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ createdKey ? 'คัดลอก Key Secret ก่อนปิด จะไม่แสดงอีก' :
+                        {{ createdKey ? 'คัดลอก Key Secret' :
                             'เลือกแชนแนลสาธารณะที่ต้องการสร้าง Key' }}
                     </p>
                 </div>

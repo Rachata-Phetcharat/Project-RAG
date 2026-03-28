@@ -233,6 +233,18 @@ export const useChannel = () => {
     }
   };
 
+  const fetchChannelDetail = async (channelId: string) => {
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/channels/${channelId}`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     loading,
     fetchMyChannels,
@@ -248,5 +260,6 @@ export const useChannel = () => {
     ownerSetPrivateChannel,
     adminforceSetPublicChannel,
     adminforceSetPrivateChannel,
+    fetchChannelDetail,
   };
 };

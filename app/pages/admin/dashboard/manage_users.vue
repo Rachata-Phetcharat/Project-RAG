@@ -202,7 +202,7 @@ const userData = computed(() => {
 })
 
 const roleWithAll = computed(() => [
-    { label: 'ทั้งหมด', value: 'all' },
+    { label: 'all', value: 'all' },
     ...(role.value ?? [])
 ])
 

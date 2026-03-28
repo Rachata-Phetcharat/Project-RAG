@@ -131,14 +131,14 @@ watch(
 
 const summaryCards = computed(() => [
     {
-        label: "คำถามทั้งหมด (ช่วงนี้)",
+        label: "คำถามทั้งหมด",
         value: questionsStats.value.total.toLocaleString(),
         icon: "i-lucide-message-circle-question",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
         textColor: "text-blue-600 dark:text-blue-400",
     },
     {
-        label: "ผู้ใช้งานรวม (ช่วงนี้)",
+        label: "ผู้ใช้งานรวม",
         value: usersStats.value.total.toLocaleString(),
         icon: "i-lucide-users",
         bgColor: "bg-purple-50 dark:bg-purple-900/20",
