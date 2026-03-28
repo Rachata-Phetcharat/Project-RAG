@@ -5,6 +5,7 @@
 const route = useRoute()
 
 const { createSession, sendOllamaReply, loading: chatLoading } = useChat()
+const { render } = useMarkdown()
 
 /* ============================================
    Props
@@ -139,7 +140,7 @@ watch(() => route.params.id, () => {
     <main class="flex-1 flex-col relative min-w-0 flex">
         <!-- Header -->
         <div
-            class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 sticky top-0 z-20 border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
+            class="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-6 sticky top-0 z-20 ">
             <nav class="flex items-center justify-between py-5">
                 <div class="flex items-center gap-3">
                     <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" size="lg"
@@ -168,9 +169,6 @@ watch(() => route.params.id, () => {
         <div v-else-if="!showChatArea" class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
             <div class="relative">
                 <div
-                    class="absolute inset-0 bg-linear-to-r from-primary-400 to-blue-500 rounded-full blur-3xl opacity-20 animate-pulse">
-                </div>
-                <div
                     class="relative w-24 h-24 rounded-3xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-2xl">
                     <UIcon name="i-heroicons-chat-bubble-oval-left-ellipsis" class="w-12 h-12 text-white" />
                 </div>
@@ -189,8 +187,7 @@ watch(() => route.params.id, () => {
         <!-- Chat Area -->
         <div v-else class="flex flex-col flex-1 relative overflow-hidden">
             <!-- Chat Messages -->
-            <div ref="chatContainer"
-                class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth bg-gradient-to-b from-transparent via-gray-50/30 to-transparent dark:via-gray-900/30">
+            <div ref="chatContainer" class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth">
 
                 <!-- Welcome prompt when files loaded but no messages yet -->
                 <div v-if="state.chatHistory.length === 0 && !state.isTyping"
@@ -213,7 +210,7 @@ watch(() => route.params.id, () => {
 
                         <!-- User Message -->
                         <div v-if="msg.role === 'user'"
-                            class="bg-linear-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md shadow-lg text-base font-medium">
+                            class="bg-linear-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md text-base font-medium">
                             {{ msg.text }}
                         </div>
 
@@ -224,8 +221,8 @@ watch(() => route.params.id, () => {
                                     <UAvatar icon="i-heroicons-sparkles" size="md"
                                         class="bg-linear-to-br from-primary-500 to-blue-600 text-white shadow-lg" />
                                 </div>
-                                <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-base">
-                                    <p class="whitespace-pre-wrap">{{ msg.text }}</p>
+                                <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-xl">
+                                    <div class="markdown-body" v-html="render(msg.text)" />
                                     <!-- Copy Button -->
                                     <div class="flex justify-start pt-1" :class="index === lastBotIndex
                                         ? 'opacity-100'
@@ -258,8 +255,7 @@ watch(() => route.params.id, () => {
             </div>
 
             <!-- Input Area -->
-            <div
-                class="shrink-0 p-6 pb-2 z-10 bg-linear-to-t from-white via-white to-transparent dark:from-gray-900 dark:via-gray-900">
+            <div class="shrink-0 p-6 pb-2 z-10">
                 <div class="w-full max-w-5xl mx-auto">
                     <form @submit.prevent="handleSendMessage">
                         <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
@@ -325,5 +321,196 @@ watch(() => route.params.id, () => {
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(to bottom, rgba(156, 163, 175, 0.5), rgba(156, 163, 175, 0.7));
+}
+
+/* ตัวแชท */
+:deep(.markdown-body) {
+    line-height: 1.75;
+    font-size: 1rem;
+}
+
+:deep(.markdown-body p) {
+    margin: 0 0 0.75rem;
+}
+
+:deep(.markdown-body p:last-child) {
+    margin-bottom: 0;
+}
+
+:deep(.markdown-body ul),
+:deep(.markdown-body ol) {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+:deep(.markdown-body li) {
+    margin-bottom: 0.25rem;
+}
+
+:deep(.markdown-body strong) {
+    font-weight: 600;
+}
+</style>
+
+<!-- ไม่มี scoped — ใช้กับ v-html ได้โดยตรง -->
+<style>
+/* ── Code block layout ── */
+.code-block {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e1e4e8;
+    margin: 0.75rem 0;
+    font-size: 13px;
+}
+
+.code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    background: #f0f2f4;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.code-lang {
+    font-size: 12px;
+    color: #57606a;
+    font-family: 'Consolas', monospace;
+}
+
+.copy-code-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #57606a;
+    background: none;
+    border: 1px solid #d0d7de;
+    padding: 2px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.copy-code-btn:hover {
+    background: #d0d7de;
+}
+
+.copy-code-btn.copied {
+    color: #1a7f37;
+    border-color: #1a7f37;
+}
+
+.code-block pre {
+    margin: 0;
+    padding: 14px 16px;
+    background: #f8fafc;
+    overflow-x: auto;
+}
+
+.code-block pre code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.inline-code {
+    font-family: 'Consolas', monospace;
+    font-size: 0.875em;
+    background: rgba(175, 184, 193, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #0a3069;
+}
+
+/* ── Dark mode ── */
+.dark .code-block {
+    border-color: #30363d;
+}
+
+.dark .code-header {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+.dark .code-lang {
+    color: #8b949e;
+}
+
+.dark .copy-code-btn {
+    color: #8b949e;
+    border-color: #30363d;
+}
+
+.dark .copy-code-btn:hover {
+    background: #30363d;
+}
+
+.dark .copy-code-btn.copied {
+    color: #3fb950;
+    border-color: #3fb950;
+}
+
+.dark .code-block pre {
+    background: #0d1117;
+}
+
+.dark .inline-code {
+    background: rgba(110, 118, 129, 0.2);
+    color: #79c0ff;
+}
+
+/* ── Syntax tokens (dark) ── */
+.dark .hljs {
+    color: #e6edf3;
+}
+
+.dark .hljs-keyword {
+    color: #ff7b72;
+}
+
+.dark .hljs-string {
+    color: #a5d6ff;
+}
+
+.dark .hljs-number {
+    color: #f2cc60;
+}
+
+.dark .hljs-comment {
+    color: #8b949e;
+    font-style: italic;
+}
+
+.dark .hljs-function,
+.dark .hljs-title {
+    color: #d2a8ff;
+}
+
+.dark .hljs-type,
+.dark .hljs-class,
+.dark .hljs-literal,
+.dark .hljs-attr {
+    color: #79c0ff;
+}
+
+.dark .hljs-built_in {
+    color: #ffa657;
+}
+
+.dark .hljs-tag,
+.dark .hljs-name {
+    color: #7ee787;
+}
+
+.dark .hljs-operator {
+    color: #ff7b72;
+}
+
+.dark .hljs-variable,
+.dark .hljs-params {
+    color: #e6edf3;
 }
 </style>

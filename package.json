@@ -26,6 +26,8 @@
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "eslint": "^9.39.1",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.5",
     "nuxt": "^4.2.1",
     "pinia": "^3.0.4",
     "typescript": "^5.9.3",

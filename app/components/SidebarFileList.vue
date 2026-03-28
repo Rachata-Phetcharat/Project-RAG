@@ -7,7 +7,7 @@ const router = useRouter()
 const toast = useToast()
 const authStore = useAuthStore()
 
-const { loading, error, uploadFiles, downLoadFile, clearError, deleteFile } = useFileChannel()
+const { loading, error, uploadFiles, downLoadFile, deleteFile } = useFileChannel()
 const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
 const { changeFileSize } = useUser()
 
@@ -240,11 +240,11 @@ watch(() => route.params.id, (newId) => {
 
 <template>
     <aside
-        class="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex flex-col hidden md:flex shadow-xl">
+        class="w-80 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex flex-col hidden md:flex shadow-xl">
 
         <!-- Header with Gradient -->
         <div
-            class="p-4 border-b border-gray-100 dark:border-gray-800/50 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
+            class="p-4 border-b border-gray-200 dark:border-gray-600 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
             <div v-if="isOwnerOrAdmin" class="flex items-center gap-2 mb-4">
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
@@ -311,14 +311,14 @@ watch(() => route.params.id, (newId) => {
                                     <div class="flex items-center gap-4 text-sm text-gray-500">
                                         <div class="flex items-center gap-1.5">
                                             <UIcon name="i-heroicons-document-text" class="w-4 h-4" />
-                                            <span>PDF, TEXT</span>
+                                            <span>PDF หรือ TEXT</span>
                                         </div>
-                                        <div class="w-1 h-1 rounded-full bg-gray-400"></div>
+                                        <!-- <div class="w-1 h-1 rounded-full bg-gray-400"></div>
                                         <div class="flex items-center gap-1.5">
                                             <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
                                             <span>{{ `${authStore.role === 'admin' ? "ไม่จำกัด" : `สูงสุด ${allowedSize}
                                                 MB`}` }}</span>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
 
@@ -380,15 +380,16 @@ watch(() => route.params.id, (newId) => {
                                         <span class="text-xs text-gray-500 dark:text-gray-400">พื้นที่</span>
                                     </div>
                                     <span class="text-xs font-bold tabular-nums"
-                                        :class="currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
-                                        {{ currentUsedSizeMB.toFixed(1) }}
+                                        :class="authStore.role === 'admin' ? 'text-green-600' : currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                                        {{ authStore.role === 'admin' ? '∞' : currentUsedSizeMB.toFixed(1) }}
                                         <span class="font-normal text-gray-400">
                                             / {{ authStore.role === 'admin' ? '∞' : `${allowedSize} MB` }}
                                         </span>
                                     </span>
                                 </div>
-                                <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
-                                    :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                                <UProgress :model-value="authStore.role === 'admin' ? 1 : currentUsedSizeMB"
+                                    :max="authStore.role === 'admin' ? 1 : allowedSize"
+                                    :color="authStore.role === 'admin' ? 'primary' : currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
                                     size="sm" />
                             </div>
                         </div>
@@ -455,7 +456,7 @@ watch(() => route.params.id, (newId) => {
 
         <!-- Footer Progress -->
         <div v-if="isOwnerOrAdmin"
-            class="border-t border-gray-200/60 dark:border-gray-800/60 bg-linear-to-t from-gray-50/80 to-transparent dark:from-gray-900/60 backdrop-blur-sm">
+            class="border-t border-gray-200 dark:border-gray-600 bg-linear-to-t from-gray-50/80 to-transparent dark:from-gray-900/60 backdrop-blur-sm">
             <div class="px-4 py-3 space-y-3">
                 <!-- Header label -->
                 <div class="flex items-center gap-2">
@@ -492,15 +493,16 @@ watch(() => route.params.id, (newId) => {
                             <span class="text-xs text-gray-500 dark:text-gray-400">พื้นที่จัดเก็บ</span>
                         </div>
                         <span class="text-xs font-bold tabular-nums"
-                            :class="currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
-                            {{ currentUsedSizeMB.toFixed(1) }}
+                            :class="authStore.role === 'admin' ? 'text-green-600' : currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
+                            {{ authStore.role === 'admin' ? '∞' : currentUsedSizeMB.toFixed(1) }}
                             <span class="font-normal text-gray-400">
                                 / {{ authStore.role === 'admin' ? '∞' : `${allowedSize} MB` }}
                             </span>
                         </span>
                     </div>
-                    <UProgress :model-value="currentUsedSizeMB" :max="allowedSize"
-                        :color="currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                    <UProgress :model-value="authStore.role === 'admin' ? 1 : currentUsedSizeMB"
+                        :max="authStore.role === 'admin' ? 1 : allowedSize"
+                        :color="authStore.role === 'admin' ? 'primary' : currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
                         size="sm" />
                 </div>
             </div>

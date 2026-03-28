@@ -41,7 +41,7 @@ const isActive = (to: string) => {
 
     <!-- Sidebar ตรึงอยู่ใต้ navbar ตลอด -->
     <aside
-        class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
+        class="hidden lg:flex fixed top-80px left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
         style="height: calc(100vh - 80px)">
 
         <!-- Navigation Menu -->
