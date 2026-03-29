@@ -333,13 +333,14 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
 </script>
 
 <template>
-    <div class="group relative w-full">
+    <!-- [RESPONSIVE] w-full + min-w-0 ป้องกัน card ล้นออกนอก grid column -->
+    <div class="group relative w-full min-w-0">
         <!-- Card Container -->
         <NuxtLink :to="cardInfo.link"
-            class="block relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
+            class="block relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700  hover:shadow-2xl transition-all duration-300">
             <!-- Gradient Header -->
             <div :class="[
-                'h-15 bg-linear-to-br relative overflow-hidden',
+                'h-14 bg-linear-to-br relative overflow-hidden',
                 statusBadge.gradient
             ]">
                 <div class="absolute inset-0 bg-black/10"></div>
@@ -347,10 +348,11 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
                 <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
 
                 <!-- Status Badge on Header -->
-                <div class="absolute top-4 left-4">
+                <div class="absolute top-3 left-3">
                     <div
-                        class="flex items-center gap-2 px-3 py-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg">
-                        <UIcon :name="statusBadge.icon" class="w-4 h-4" :class="`text-${statusBadge.color}-600`" />
+                        class="flex items-center gap-1.5 px-2.5 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg">
+                        <UIcon :name="statusBadge.icon" class="w-3.5 h-3.5" :class="`text-${statusBadge.color}-600`" />
+                        <!-- [RESPONSIVE] ซ่อน label บนจอเล็กมาก ให้เห็นแค่ icon -->
                         <span class="text-sm font-semibold" :class="`text-${statusBadge.color}-600`">
                             {{ statusBadge.label }}
                         </span>
@@ -359,58 +361,38 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             </div>
 
             <!-- Content -->
-            <div class="p-6 space-y-4">
+            <!-- [RESPONSIVE] ลด padding บน mobile: p-4 แทน p-6 -->
+            <div class="p-4 sm:p-5 space-y-3">
                 <!-- Title & Description -->
                 <div>
+                    <!-- [RESPONSIVE] ลด font size title: text-base บน mobile, text-lg บน sm+ -->
                     <h3
-                        class="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        class="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
                         {{ cardInfo.title }}
                     </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                         {{ cardInfo.description }}
                     </p>
                 </div>
 
-                <div v-if="isLoggedIn" class="space-y-4">
-                    <!-- Stats -->
-                    <!-- <div class="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                            <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                <UIcon name="i-lucide-file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <span class="text-sm font-medium">
-                                {{ cardInfo.fileCount }} ไฟล์
-                            </span>
-                        </div>
-
-                        <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                            <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                                <UIcon name="i-lucide-calendar" class="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <span class="text-xs font-medium">
-                                {{ cardInfo.createdAtShort }}
-                            </span>
-                        </div>
-                    </div> -->
-
+                <div v-if="isLoggedIn" class="space-y-3">
                     <!-- Creator Info -->
-                    <div class="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                        <div class="relative">
+                    <div class="flex items-center gap-2 sm:gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <div class="relative shrink-0">
+                            <!-- [RESPONSIVE] avatar เล็กลงบน mobile -->
                             <div
-                                class="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-lg">
+                                class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold shadow-lg text-sm">
                                 {{ cardInfo.createdBy.charAt(0).toUpperCase() }}
                             </div>
                             <div
-                                class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full">
+                                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full">
                             </div>
                         </div>
+                        <!-- [RESPONSIVE] min-w-0 + truncate ป้องกันชื่อยาวดัน card -->
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white truncate">
                                 {{ cardInfo.createdBy }}
                             </p>
-                            <!-- <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                สร้างเมื่อ {{ cardInfo.createdAtShort }}
-                            </p> -->
                         </div>
                     </div>
                 </div>
@@ -423,13 +405,14 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
         </NuxtLink>
 
         <!-- Dropdown Menu (Floating) -->
-        <div v-if="isLoggedIn" class="absolute top-4 right-4 z-20" @click.stop>
+        <!-- [RESPONSIVE] ขยับปุ่ม dropdown ให้ไม่ชนกับ card edge -->
+        <div v-if="isLoggedIn" class="absolute top-3 right-3 z-20" @click.stop>
             <UDropdownMenu :items="dropdownItems" :content="{ align: 'end', side: 'bottom', sideOffset: 8 }"
                 :ui="{ content: 'w-56' }">
                 <button
-                    class="flex p-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+                    class="flex p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
                     aria-label="More actions">
-                    <UIcon name="i-lucide-more-vertical" class="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <UIcon name="i-lucide-more-vertical" class="w-4 h-4 text-gray-700 dark:text-gray-300" />
                 </button>
 
                 <template #status-switch>
@@ -445,9 +428,9 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
             </UDropdownMenu>
         </div>
 
-        <!-- Quick View Badge (Optional) -->
+        <!-- Quick View Badge — hidden on mobile to save space -->
         <div
-            class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            class="hidden sm:block absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div
                 class="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-xl shadow-lg text-sm font-medium">
                 <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />

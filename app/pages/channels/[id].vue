@@ -13,6 +13,9 @@ definePageMeta({
     layout: 'chat-layout',
 })
 
+// mobile sidebar state
+const sidebarOpen = ref(false)
+
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 
 const state = reactive({
@@ -142,7 +145,7 @@ watch(() => route.params.id, (newId) => {
         <!-- Loading Skeleton (แสดงตอน refresh หน้าใหม่) -->
         <template v-if="!channelState.isInitialized">
             <!-- Sidebar Skeleton -->
-            <aside
+            <aside v-if="authStore.isLoggedIn"
                 class="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex flex-col hidden md:flex shadow-xl">
                 <div class="p-6 border-b border-gray-100 dark:border-gray-800/50">
                     <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
@@ -156,17 +159,51 @@ watch(() => route.params.id, (newId) => {
 
             <!-- Main Content Skeleton -->
             <main class="flex-1 flex flex-col">
+                <!-- Header Skeleton -->
                 <div
                     class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 py-5 border-b border-gray-200/50 dark:border-gray-800/50">
                     <div class="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
-                <div class="flex-1 flex items-center justify-center">
-                    <div class="text-center space-y-4">
-                        <div class="w-16 h-16 border-4 border-primary-200 dark:border-primary-900 rounded-full mx-auto">
+
+                <!-- Chat Area Skeleton -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Messages Skeleton -->
+                    <div class="flex-1 p-6 sm:p-10 space-y-8 overflow-hidden">
+                        <!-- AI message skeleton -->
+                        <div class="flex justify-start max-w-5xl mx-auto w-full">
+                            <div class="flex gap-5 items-start w-full max-w-3xl">
+                                <div class="w-10 h-10 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse shrink-0">
+                                </div>
+                                <div class="space-y-2 flex-1">
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full"></div>
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-16 h-16 border-4 border-primary-600 rounded-full border-t-transparent animate-spin absolute inset-0 mx-auto"
-                            style="margin-top: -4rem;"></div>
-                        <p class="text-gray-500 mt-16">กำลังโหลดข้อมูล...</p>
+                        <!-- User message skeleton -->
+                        <div class="flex justify-end max-w-5xl mx-auto w-full">
+                            <div class="h-10 w-56 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                        </div>
+                        <!-- AI message skeleton (shorter) -->
+                        <div class="flex justify-start max-w-5xl mx-auto w-full">
+                            <div class="flex gap-5 items-start w-full max-w-3xl">
+                                <div class="w-10 h-10 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse shrink-0">
+                                </div>
+                                <div class="space-y-2 flex-1">
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/3"></div>
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-5/6"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Skeleton -->
+                    <div class="shrink-0 pb-2 px-2 z-10">
+                        <div class="w-full max-w-5xl mx-auto space-y-3">
+                            <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
+                            <div class="h-3 w-64 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mx-auto"></div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -176,16 +213,12 @@ watch(() => route.params.id, (newId) => {
         <template v-else>
             <!-- Sidebar Component -->
             <SidebarFileList v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"
-                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
-                @update:sources="handleSourcesUpdate" />
-            <!-- 
-            <Sidebar :channel-id="channelId" :sources="channelState.sources"
-                :total-files="channelState.totalFilesFromList" :loading="channelState.loading"
-                @update:sources="handleSourcesUpdate" /> -->
+                :total-files="channelState.totalFilesFromList" :loading="channelState.loading" :open="sidebarOpen"
+                @update:open="sidebarOpen = $event" @update:sources="handleSourcesUpdate" />
 
             <!-- Main Content Component -->
-            <MainContentChat :channel-id="channelId" :channel-title="channelState.channelTitle"
-                :file-count="fileCount" />
+            <MainContentChat :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount"
+                @open-sidebar="sidebarOpen = true" />
         </template>
     </div>
 </template>

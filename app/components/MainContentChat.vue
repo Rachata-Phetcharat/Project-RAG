@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import auth from '~/middleware/auth';
+
 /* ============================================
    Imports & Composables
 ============================================ */
@@ -6,6 +8,7 @@ const route = useRoute()
 
 const { createSession, sendOllamaReply, loading: chatLoading } = useChat()
 const { render } = useMarkdown()
+const authStore = useAuthStore()
 
 /* ============================================
    Props
@@ -14,6 +17,10 @@ const props = defineProps<{
     channelTitle: string
     fileCount: number
 }>()
+
+const emit = defineEmits<{ 'open-sidebar': [] }>()
+
+// mobile: ปุ่มเปิด sidebar ส่ง event ขึ้น parent
 
 /* ============================================
    Computed Properties
@@ -140,20 +147,29 @@ watch(() => route.params.id, () => {
     <main class="flex-1 flex-col relative min-w-0 flex">
         <!-- Header -->
         <div
-            class="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-6 sticky top-0 z-20 ">
-            <nav class="flex items-center justify-between py-5">
-                <div class="flex items-center gap-3">
-                    <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" size="lg"
+            class="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-3 sm:px-6 sticky top-0 z-20">
+            <nav class="flex items-center justify-between py-3 sm:py-5">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" size="md"
                         @click="$router.back()"
-                        class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-xl"
+                        class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-xl shrink-0"
                         aria-label="ย้อนกลับ" />
-                    <div class="w-1 h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600"></div>
-                    <h1
-                        class="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
+                    <div class="w-1 h-6 sm:h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 shrink-0">
+                    </div>
+                    <h1 class="text-base sm:text-2xl font-bold  text-gray-900  dark:text-white">
                         {{ channelTitle }}
                     </h1>
                 </div>
-                <UserMenu />
+                <div v-if="authStore.isLoggedIn" class="flex items-center gap-2 shrink-0">
+                    <!-- [RESPONSIVE] ปุ่มเปิด sidebar เฉพาะ mobile -->
+                    <UButton icon="i-lucide-menu" color="neutral" variant="ghost" size="md" class="lg:hidden"
+                        :badge="fileCount > 0 ? String(fileCount) : undefined" aria-label="ดูไฟล์"
+                        @click="emit('open-sidebar')" />
+                    <UserMenu compact="Default" class="hidden lg:flex" />
+                </div>
+                <div v-else class="flex items-center gap-2 shrink-0">
+                    <ButtomLogin />
+                </div>
             </nav>
         </div>
 
@@ -199,7 +215,7 @@ watch(() => route.params.id, () => {
                     <div class="space-y-2">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">พร้อมแล้ว!</h3>
                         <p class="text-gray-500 dark:text-gray-400 text-base max-w-sm">
-                            เอกสารของคุณถูกโหลดเรียบร้อยแล้ว ลองถามคำถามได้เลย
+                            เอกสารพร้อมแล้ว ถามมาได้เลยครับ 😊
                         </p>
                     </div>
                 </div>
@@ -210,28 +226,35 @@ watch(() => route.params.id, () => {
 
                         <!-- User Message -->
                         <div v-if="msg.role === 'user'"
-                            class="bg-linear-to-r from-primary-500 to-primary-600 text-white px-6 py-4 rounded-3xl rounded-tr-md text-base font-medium">
+                            class="bg-gray-200/50 dark:bg-gray-700 dark:text-white text-gray-900 px-4 py-3 rounded-lg  text-base font-medium">
                             {{ msg.text }}
                         </div>
 
                         <!-- AI Message -->
                         <div v-else class="group">
-                            <div class="flex gap-5">
-                                <div class="flex-shrink-0">
-                                    <UAvatar icon="i-heroicons-sparkles" size="md"
-                                        class="bg-linear-to-br from-primary-500 to-blue-600 text-white shadow-lg" />
+                            <div class="flex gap-5 lg:flex-row flex-col items-start">
+                                <div class="shrink-0">
+                                    <UAvatar icon="i-heroicons-sparkles" size="xl" :ui="{
+                                        root: 'rounded-2xl bg-blue-500',
+                                        icon: 'text-gray-100 w-5 h-5 lg:w-6 sm:h-6'
+                                    }" />
                                 </div>
-                                <div class="space-y-4 w-full text-gray-800 dark:text-gray-200 leading-8 text-xl">
+                                <div
+                                    class="space-y-4 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-8 text-xl">
                                     <div class="markdown-body" v-html="render(msg.text)" />
                                     <!-- Copy Button -->
-                                    <div class="flex justify-start pt-1" :class="index === lastBotIndex
+                                    <div class="flex justify-start" :class="index === lastBotIndex
                                         ? 'opacity-100'
                                         : 'opacity-0 group-hover:opacity-100 transition-opacity duration-200'">
-                                        <UButton
-                                            :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                                            size="xs" color="neutral" variant="ghost"
-                                            class="absolute text-gray-400 hover:text-primary-500 transition-colors"
-                                            @click="copyMessage(msg)" />
+                                        <UTooltip :delay-duration="0" text="คัดลอกข้อความ" :ui="{
+                                            content: 'bg-gray-900/90 text-white dark:text-gray-900 dark:bg-gray-100 text-md rounded-md px-2 py-1'
+                                        }">
+                                            <UButton
+                                                :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                                                size="xl" color="neutral" variant="ghost"
+                                                class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                                                @click="copyMessage(msg)" />
+                                        </UTooltip>
                                     </div>
                                 </div>
                             </div>
@@ -255,13 +278,13 @@ watch(() => route.params.id, () => {
             </div>
 
             <!-- Input Area -->
-            <div class="shrink-0 p-6 pb-2 z-10">
+            <div class="shrink-0 pb-2 px-2 z-10 bg-transparent">
                 <div class="w-full max-w-5xl mx-auto">
                     <form @submit.prevent="handleSendMessage">
                         <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
                             :rows="1" autoresize :disabled="state.isTyping"
                             @keydown.enter.exact.prevent="handleSendMessage"
-                            class="shadow-2xl border-2 border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 focus-within:ring-4 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
+                            class="border border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-100 dark:bg-gray-800 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
                             :ui="{
                                 root: 'relative',
                                 base: 'pl-6 pr-14 py-5 text-base'
@@ -327,6 +350,8 @@ watch(() => route.params.id, () => {
 :deep(.markdown-body) {
     line-height: 1.75;
     font-size: 1rem;
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 :deep(.markdown-body p) {
@@ -361,6 +386,8 @@ watch(() => route.params.id, () => {
     border: 1px solid #e1e4e8;
     margin: 0.75rem 0;
     font-size: 13px;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .code-header {

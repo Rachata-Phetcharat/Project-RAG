@@ -193,7 +193,7 @@ const chartOptions = computed(() => ({
 <template>
     <div class="space-y-6">
         <!-- ── Header (dashboard mode เท่านั้น) ── -->
-        <div v-if="mode === 'dashboard'" class="flex items-center gap-3">
+        <!-- <div v-if="mode === 'dashboard'" class="flex items-center gap-3">
             <div class="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg">
                 <UIcon name="i-lucide-line-chart" class="w-6 h-6 text-white" />
             </div>
@@ -205,18 +205,19 @@ const chartOptions = computed(() => ({
                     วิเคราะห์แนวโน้มและสถิติการใช้งาน
                 </p>
             </div>
-        </div>
+        </div> -->
 
         <!-- ── Chart Card ── -->
         <div
             class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
 
-            <!-- Tab Bar -->
+            <!-- Tab Bar — [RESPONSIVE] px เล็กลง, day count ซ่อนบน mobile -->
             <div class="flex border-b border-gray-200 dark:border-gray-700">
                 <button v-for="tab in tabs" :key="tab.key"
-                    class="relative flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors" :class="activeTab === tab.key
-                            ? tabActiveClass
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    class="relative flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium transition-colors"
+                    :class="activeTab === tab.key
+                        ? tabActiveClass
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         " @click="activeTab = tab.key">
                     <UIcon :name="tab.icon" class="w-4 h-4" />
                     {{ tab.label }}
@@ -225,25 +226,28 @@ const chartOptions = computed(() => ({
                         :class="['absolute bottom-0 left-0 right-0 h-0.5 rounded-t', tabUnderlineClass]" />
                 </button>
 
-                <div class="ml-auto flex items-center px-6">
-                    <span class="text-xs text-gray-400 dark:text-gray-500">
+                <div class="ml-auto flex items-center px-3 sm:px-6">
+                    <span class="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
                         {{ activeDayCount }} วัน
+                    </span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 sm:hidden">
+                        {{ activeDayCount }}ว.
                     </span>
                 </div>
             </div>
 
-            <!-- Chart Body -->
-            <div class="p-6">
+            <!-- Chart Body — [RESPONSIVE] p-3 บน mobile, h-56 sm:h-80 -->
+            <div class="p-3 sm:p-6">
                 <!-- Empty State -->
-                <div v-if="!hasData" class="flex flex-col items-center justify-center h-80 gap-3">
-                    <UIcon name="i-lucide-inbox" class="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                <div v-if="!hasData" class="flex flex-col items-center justify-center h-48 sm:h-80 gap-3">
+                    <UIcon name="i-lucide-inbox" class="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 dark:text-gray-600" />
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         ไม่มีข้อมูลในช่วงเวลาที่เลือก
                     </p>
                 </div>
 
                 <!-- Line Chart -->
-                <div v-else class="h-80">
+                <div v-else class="h-56 sm:h-80">
                     <Line :key="chartKey" :data="activeChartData" :options="chartOptions" />
                 </div>
             </div>

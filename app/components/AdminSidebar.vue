@@ -1,6 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
 
+// Mobile slideover state
+const isMobileOpen = ref(false)
+
 // Admin Navigation Menu Items
 const menuItems = computed(() => [
     {
@@ -30,21 +33,23 @@ const menuItems = computed(() => [
 ])
 
 // Check if menu item is active
-const isActive = (to: string) => {
-    return route.path.includes(to)
-}
+const isActive = (to: string) => route.path.includes(to)
+
+// ปิด slideover เมื่อเปลี่ยนหน้า
+watch(() => route.path, () => {
+    isMobileOpen.value = false
+})
 </script>
 
 <template>
-    <!-- Spacer ให้ content ข้างๆ ไม่ถูก sidebar บัง -->
+    <!-- ══════════════════════════════════
+         Desktop: Spacer + Fixed Aside
+    ══════════════════════════════════ -->
     <div class="hidden lg:block w-64 shrink-0"></div>
 
-    <!-- Sidebar ตรึงอยู่ใต้ navbar ตลอด -->
     <aside
-        class="hidden lg:flex fixed top-80px left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
+        class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
         style="height: calc(100vh - 80px)">
-
-        <!-- Navigation Menu -->
         <nav class="flex-1 px-4 py-6 space-y-2">
             <NuxtLink v-for="item in menuItems" :key="item.to" :to="item.to" :class="[
                 'flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
@@ -52,11 +57,8 @@ const isActive = (to: string) => {
                     ? 'bg-linear-to-r ' + item.color + ' text-gray-900 dark:text-white'
                     : 'text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
             ]">
-                <!-- Animated background for active state -->
                 <div v-if="isActive(item.to)"
-                    :class="['absolute inset-0 bg-linear-to-r opacity-0 group-hover:opacity-10', item.color]"></div>
-
-                <!-- Content -->
+                    :class="['absolute inset-0 bg-linear-to-r opacity-0 group-hover:opacity-10', item.color]" />
                 <div class="flex items-center gap-3 relative z-10">
                     <UIcon :name="item.icon"
                         :class="['w-5 h-5', isActive(item.to) ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-current']" />

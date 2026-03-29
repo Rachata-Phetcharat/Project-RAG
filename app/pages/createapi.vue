@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 
+definePageMeta({
+    middleware: 'auth'
+})
+
 const toast = useToast()
 const { apiKeys, fetchApiKeys, revokeApiKey, refreshApiKeys, loading } = useCreateApi()
 const UBadge = resolveComponent('UBadge')
@@ -69,11 +73,12 @@ const columns: TableColumn<ApiKeyRow>[] = [
         accessorKey: 'channel_status',
         header: 'สถานะ',
         cell: ({ row }) => {
-            const color = {
+            const colorMap = {
                 public: 'success' as const,
                 pending: 'warning' as const,
                 private: 'error' as const,
-            }[row.getValue('channel_status') as string]
+            }
+            const color = colorMap[row.getValue('channel_status') as keyof typeof colorMap]
 
             return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
                 row.getValue('channel_status')
@@ -227,14 +232,16 @@ const onCreated = async () => {
         <!-- มี key แล้ว -->
         <div v-else>
             <!-- ค้นหาแล้วไม่เจอ -->
-            <div v-if="searchQuery && !filteredKeys.length" class="text-center py-20">
-                <div class="inline-flex items-center justify-center p-6 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-                    <UIcon name="i-lucide-search-x" class="w-12 h-12 text-gray-400" />
+            <div v-if="searchQuery && !filteredKeys.length" class="text-center py-12 sm:py-20">
+                <div
+                    class="inline-flex items-center justify-center p-5 sm:p-6 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+                    <UIcon name="i-lucide-search-x" class="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">ไม่พบ API Key ที่ค้นหา</h3>
-                <p class="text-gray-500 dark:text-gray-400">ลองค้นหาด้วยคำอื่น</p>
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">ไม่พบ API Key ที่ค้นหา
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">ลองค้นหาด้วยคำอื่น</p>
                 <button @click="searchQuery = ''"
-                    class="mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                    class="mt-4 px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
                     ล้างการค้นหา
                 </button>
             </div>
@@ -242,39 +249,94 @@ const onCreated = async () => {
             <!-- Table -->
             <div v-else
                 class="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white dark:bg-gray-900">
-                <!-- [Pagination] ส่ง paginatedKeys แทน filteredKeys ทั้งหมด -->
-                <UTable :data="paginatedKeys" :columns="columns" class="w-full">
-                    <template #key_hint-cell="{ row }">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono text-xs text-gray-700 dark:text-gray-300">
-                                {{ revealedId === row.original.key_id ? row.original.key_hint :
-                                    '••••••••••••••••••••••••••••••••••••••••••••••' }}
+
+                <!-- [RESPONSIVE] Desktop Table — ซ่อนบน mobile -->
+                <div class="hidden sm:block overflow-x-auto">
+                    <UTable :data="paginatedKeys" :columns="columns" class="w-full">
+                        <template #key_hint-cell="{ row }">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-xs text-gray-700 dark:text-gray-300">
+                                    {{ revealedId === row.original.key_id ? row.original.key_hint :
+                                        '••••••••••••••••••••••••••••••••••••' }}
+                                </span>
+                                <button v-if="row.original.channel_status === 'public'"
+                                    @click="revealedId = revealedId === row.original.key_id ? null : row.original.key_id"
+                                    class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <UIcon
+                                        :name="revealedId === row.original.key_id ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                                        class="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                                </button>
+                            </div>
+                        </template>
+                        <template #actions-cell="{ row }">
+                            <div class="flex justify-end gap-1">
+                                <UButton v-if="row.original.channel_status === 'public'"
+                                    :color="copiedId === `kh-${row.original.key_id}` ? 'success' : 'neutral'"
+                                    variant="ghost" size="sm"
+                                    :icon="copiedId === `kh-${row.original.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
+                                    @click="copyText(row.original.key_hint, `kh-${row.original.key_id}`)" />
+                                <UButton v-if="row.original.channel_status === 'public'" color="neutral" variant="ghost"
+                                    size="sm" icon="i-lucide-rotate-ccw" @click="refresh(row.original.key_id)" />
+                                <UButton color="error" variant="ghost" size="sm" icon="i-lucide-trash-2"
+                                    @click="openDeleteModal(row.original)" />
+                            </div>
+                        </template>
+                    </UTable>
+                </div>
+
+                <!-- [RESPONSIVE] Mobile Card List — แสดงเฉพาะบน mobile แทน table -->
+                <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+                    <div v-for="row in paginatedKeys" :key="row.key_id" class="p-4 space-y-3">
+                        <!-- ชื่อ Key + สถานะ -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ row.name }}
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{{ row.channel_name
+                                    }}
+                                </p>
+                            </div>
+                            <UBadge
+                                :color="({ public: 'success', pending: 'warning', private: 'error' })[row.channel_status as string] ?? 'neutral'"
+                                variant="subtle" class="capitalize shrink-0 text-xs">
+                                {{ row.channel_status }}
+                            </UBadge>
+                        </div>
+
+                        <!-- Key Hint -->
+                        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
+                            <span class="font-mono text-xs text-gray-700 dark:text-gray-300 flex-1 truncate">
+                                {{ revealedId === row.key_id ? row.key_hint : '••••••••••••••••••••••••' }}
                             </span>
-                            <button v-if="row.original.channel_status === 'public'"
-                                @click="revealedId = revealedId === row.original.key_id ? null : row.original.key_id"
-                                class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                <UIcon :name="revealedId === row.original.key_id ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                                    class="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                            <button v-if="row.channel_status === 'public'"
+                                @click="revealedId = revealedId === row.key_id ? null : row.key_id"
+                                class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shrink-0">
+                                <UIcon :name="revealedId === row.key_id ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                                    class="w-3.5 h-3.5 text-gray-400" />
                             </button>
                         </div>
-                    </template>
 
-                    <template #actions-cell="{ row }">
-                        <div class="flex justify-end gap-1">
-                            <UButton v-if="row.original.channel_status === 'public'"
-                                :color="copiedId === `kh-${row.original.key_id}` ? 'success' : 'neutral'"
-                                variant="ghost" size="sm"
-                                :icon="copiedId === `kh-${row.original.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
-                                @click="copyText(row.original.key_hint, `kh-${row.original.key_id}`)" />
-                            <UButton v-if="row.original.channel_status === 'public'" color="neutral" variant="ghost"
-                                size="sm" icon="i-lucide-rotate-ccw" @click="refresh(row.original.key_id)" />
-                            <UButton color="error" variant="ghost" size="sm" icon="i-lucide-trash-2"
-                                @click="openDeleteModal(row.original)" />
+                        <!-- วันที่ + Actions -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-400 dark:text-gray-500">
+                                {{ new Date(row.created_at).toLocaleString('th-TH') }}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <UButton v-if="row.channel_status === 'public'"
+                                    :color="copiedId === `kh-${row.key_id}` ? 'success' : 'neutral'" variant="ghost"
+                                    size="xs"
+                                    :icon="copiedId === `kh-${row.key_id}` ? 'i-lucide-check' : 'i-lucide-copy'"
+                                    @click="copyText(row.key_hint, `kh-${row.key_id}`)" />
+                                <UButton v-if="row.channel_status === 'public'" color="neutral" variant="ghost"
+                                    size="xs" icon="i-lucide-rotate-ccw" @click="refresh(row.key_id)" />
+                                <UButton color="error" variant="ghost" size="xs" icon="i-lucide-trash-2"
+                                    @click="openDeleteModal(row)" />
+                            </div>
                         </div>
-                    </template>
-                </UTable>
+                    </div>
+                </div>
 
-                <!-- [Pagination] UPagination — แสดงเมื่อมีมากกว่า 1 หน้า -->
+                <!-- Pagination -->
                 <div v-if="totalPages > 1"
                     class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                     <UPagination v-model:page="currentPage" :total="filteredKeys.length" :items-per-page="pageSize" />

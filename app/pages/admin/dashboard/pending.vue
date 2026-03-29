@@ -102,7 +102,7 @@ onMounted(() => {
                     <div>
                         <div class="flex items-center gap-2 mb-1">
                             <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
-                                คำขอแชนแนลรอดำเนินการ
+                                คำขอแชนแนล
                             </h1>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">

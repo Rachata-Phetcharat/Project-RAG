@@ -21,5 +21,8 @@ const loginWithSSO = () => {
 </script>
 
 <template>
-    <UButton label="เข้าสู่ระบบ" icon="i-lucide-log-in" color="primary" size="xl" block @click="loginWithSSO" />
+    <div class="flex lg:flex-row gap-4 p-4">
+        <UColorModeButton class="cursor-pointer" />
+        <UButton label="เข้าสู่ระบบ" icon="i-lucide-log-in" color="primary" size="lg" block @click="loginWithSSO" />
+    </div>
 </template>

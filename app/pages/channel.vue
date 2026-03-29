@@ -184,9 +184,9 @@ onMounted(() => {
             <!-- Grid -->
             <div v-else>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Create New Card (แสดงทุกหน้า) -->
+                    <!-- Create New Card — ซ่อนบน mobile มีปุ่มด้านบนแทนแล้ว -->
                     <button type="button" @click="isCreateModalOpen = true"
-                        class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+                        class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 min-h-[240px] hidden sm:flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
                         <div
                             class="absolute inset-0 bg-linear-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
                         </div>

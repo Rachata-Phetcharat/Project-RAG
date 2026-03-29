@@ -217,24 +217,29 @@ const summaryCards = computed(() => [
 
                     <div class="border-t border-gray-100 dark:border-gray-700" />
 
-                    <!-- Date Range -->
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <UIcon name="i-lucide-calendar-range" class="w-5 h-5 text-gray-500" />
+                    <!-- Date Range — [RESPONSIVE] stack แนวตั้งบน mobile -->
+                    <div class="flex flex-col gap-3">
+                        <!-- วันที่แสดงผล -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <UIcon name="i-lucide-calendar-range"
+                                class="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">ช่วงเวลา:</span>
-                            <div class="flex items-center gap-2 text-sm flex-wrap">
+                            <!-- mobile: แสดงสั้น, sm+: แสดงเต็ม -->
+                            <div class="flex items-center gap-2 text-sm">
                                 <span
-                                    class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white">
+                                    class="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white text-xs sm:text-sm">
                                     {{ formatDateThai(dateRange.start) }}
                                 </span>
-                                <UIcon name="i-lucide-arrow-right" class="w-4 h-4 text-gray-400" />
+                                <UIcon name="i-lucide-arrow-right"
+                                    class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 shrink-0" />
                                 <span
-                                    class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white">
+                                    class="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg font-medium text-gray-900 dark:text-white text-xs sm:text-sm">
                                     {{ formatDateThai(dateRange.end) }}
                                 </span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <!-- DateSelector -->
+                        <div class="flex items-center gap-2">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">เลือกช่วงเวลา:</span>
                             <DateSelector v-model="dateRange" />
                         </div>
@@ -258,8 +263,8 @@ const summaryCards = computed(() => [
 
         <!-- ── Loading ── -->
         <template v-else-if="loading">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div v-for="i in 3" :key="i"
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div v-for="i in 2" :key="i"
                     class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg flex flex-col items-center justify-center gap-4 py-10">
                     <div class="p-5 bg-violet-50 dark:bg-violet-900/20 rounded-full">
                         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-violet-500" />
@@ -293,28 +298,11 @@ const summaryCards = computed(() => [
             </div>
 
             <!-- Chart -->
-            <Charts mode="channel" accent-color="violet" :channel-questions="questionsStats"
-                :channel-users="usersStats" />
-        </template>
-
-        <!-- Error Toast -->
-        <div v-if="errorMsg" class="fixed bottom-6 right-6 max-w-md z-50">
-            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-lg shadow-xl">
-                <div class="flex items-start gap-3">
-                    <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p class="font-medium text-red-800 dark:text-red-200">เกิดข้อผิดพลาด</p>
-                        <p class="text-sm text-red-700 dark:text-red-300 mt-1">{{ errorMsg }}</p>
-                    </div>
-                </div>
+            <div class="mb-8">
+                <Charts mode="channel" accent-color="violet" :channel-questions="questionsStats"
+                    :channel-users="usersStats" />
             </div>
-        </div>
-
+        </template>
     </main>
 
-    <!-- Background Decorations -->
-    <div
-        class="fixed top-20 right-20 w-72 h-72 bg-linear-to-br from-violet-400 to-fuchsia-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none" />
-    <div
-        class="fixed bottom-20 left-20 w-96 h-96 bg-linear-to-br from-fuchsia-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none" />
 </template>

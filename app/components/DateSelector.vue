@@ -81,7 +81,8 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
 </script>
 
 <template>
-    <UPopover :content="{ align: 'start' }" :modal="true">
+    <!-- [RESPONSIVE] w-[calc(100vw-2rem)] บน mobile ป้องกัน popover ล้นจอ -->
+    <UPopover :content="{ align: 'start' }" :modal="true" :ui="{ content: 'max-w-[calc(100vw-2rem)] sm:max-w-none' }">
         <UButton color="neutral" variant="subtle" icon="i-heroicons-calendar-days" class="group">
             <span class="truncate">
                 <template v-if="selected.start && selected.end">
@@ -100,16 +101,27 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
         </UButton>
 
         <template #content>
-            <div class="flex items-stretch divide-x divide-gray-200 dark:divide-gray-800">
-                <div class="hidden sm:flex flex-col py-2">
+            <!-- [RESPONSIVE] mobile: stack แนวตั้ง, sm+: แถวข้าง -->
+            <div
+                class="flex flex-col sm:flex-row sm:items-stretch sm:divide-x divide-gray-200 dark:divide-gray-800 w-full">
+
+                <!-- Range shortcuts — mobile: wrap หลายบรรทัด, sm+: list แนวตั้ง -->
+                <div class="flex flex-wrap sm:flex-col gap-1 px-2 py-2 border-b sm:border-b-0 sm:py-2 sm:min-w-[140px]">
                     <UButton v-for="(range, index) in ranges" :key="index" :label="range.label" color="neutral"
-                        variant="ghost" class="rounded-none px-6 justify-start font-normal"
+                        variant="ghost"
+                        class="sm:rounded-none sm:px-6 sm:justify-start font-normal rounded-full px-3 text-xs sm:text-sm"
                         :class="[isRangeSelected(range) ? 'bg-gray-100 dark:bg-gray-800 font-medium' : '']" truncate
                         @click="selectRange(range)" />
                 </div>
 
+                <!-- Calendar — mobile: 1 เดือน, sm+: 2 เดือน -->
                 <div class="p-2">
-                    <UCalendar v-model="calendarRange" :number-of-months="2" range />
+                    <div class="hidden sm:block">
+                        <UCalendar v-model="calendarRange" :number-of-months="2" range />
+                    </div>
+                    <div class="sm:hidden">
+                        <UCalendar v-model="calendarRange" :number-of-months="1" range />
+                    </div>
                 </div>
             </div>
         </template>

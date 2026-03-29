@@ -3,35 +3,46 @@
    Imports & Composables
 ============================================ */
 const route = useRoute()
-const router = useRouter()
 const toast = useToast()
 const authStore = useAuthStore()
 
+// ลบ fetchPublicChannels, fetchMyChannels, fetchAllChannels ออก เพราะ parent โหลดให้แล้ว
 const { loading, error, uploadFiles, downLoadFile, deleteFile } = useFileChannel()
-const { fetchPublicChannels, fetchMyChannels, fetchAllChannels } = useChannel()
-const { changeFileSize } = useUser()
 
 const emit = defineEmits<{
     'update:sources': [sources: any[]]
+    'update:open': [value: boolean]
+    'refresh': []
 }>()
 
-const allowedSize = computed(() => authStore.user?.file_size ? Math.floor(authStore.user.file_size / (1024 * 1024)) : 10) // แปลงจาก byte เป็น MB
+// [RESPONSIVE] รับ open state จาก parent สำหรับ mobile slideover
+const props = defineProps<{
+    open?: boolean
+    channelId?: string
+    sources?: any[]
+    totalFiles?: number
+    loading?: boolean
+    isOwner?: boolean // ✅ รับ isOwner จาก parent แทนที่จะเช็คเอง
+}>()
+
+const closeSlide = () => emit('update:open', false)
+
+const allowedSize = computed(() => authStore.user?.file_size ? Math.floor(authStore.user.file_size / (1024 * 1024)) : 10)
 
 /* ============================================
    Computed Properties
 ============================================ */
 const channelId = computed(() => route.params.id as string)
 const isLoggedIn = computed(() => authStore.isLoggedIn)
-const fileCount = computed(() => state.sources.length)
+
+// ✅ ใช้ props.sources แทน state.sources (ข้อมูลมาจาก parent แล้ว)
+const sources = computed(() => props.sources ?? [])
+const fileCount = computed(() => sources.value.length)
 
 const isOwnerOrAdmin = computed(() => {
     if (!isLoggedIn.value) return false
-
-    // ถ้าเป็น admin ให้แสดงทุกอย่าง
     if (authStore.role === 'admin') return true
-
-    // ตรวจสอบว่าช่องนี้อยู่ในรายการ "My Channels" หรือไม่
-    return state.isOwner
+    return props.isOwner ?? false
 })
 
 /* ============================================
@@ -40,10 +51,6 @@ const isOwnerOrAdmin = computed(() => {
 const state = reactive({
     isModalOpen: false,
     isUploading: false,
-    channelTitle: '',
-    sources: [] as any[],
-    totalFilesFromList: 0,
-    isOwner: false
 })
 
 const deleteModalState = reactive({
@@ -51,68 +58,32 @@ const deleteModalState = reactive({
     selectedFile: null as any
 })
 
-/* ============================================
-   Data Loading
-============================================ */
-const loadChannelData = async () => {
-    if (!channelId.value) return
+// Mobile action sheet
+const actionSheet = reactive({
+    isOpen: false,
+    selectedFile: null as any
+})
 
-    try {
-        let currentChannel = null
-        state.isOwner = false // รีเซ็ตก่อน
+const openActionSheet = (file: any) => {
+    actionSheet.selectedFile = file
+    actionSheet.isOpen = true
+}
 
-        // ถ้าเป็น admin ใช้ fetchAllChannels
-        if (authStore.role === 'admin') {
-            const adminResponse: any = await fetchAllChannels({ limit: 100 })
-            currentChannel = adminResponse?.find((c: any) =>
-                String(c.channels_id) === String(channelId.value)
-            )
-            state.isOwner = true // admin มีสิทธิ์เหมือนเจ้าของ
-        }
-        // ถ้า login แล้ว ลองหาใน My Channels
-        else if (authStore.token) {
-            const myChannelsResponse: any = await fetchMyChannels({ limit: 100 })
-            currentChannel = myChannelsResponse?.find((c: any) =>
-                String(c.channels_id) === String(channelId.value)
-            )
+const closeActionSheet = () => {
+    actionSheet.isOpen = false
+    actionSheet.selectedFile = null
+}
 
-            // ถ้าเจอใน My Channels แสดงว่าเป็นเจ้าของ
-            if (currentChannel) {
-                state.isOwner = true
-            }
-        }
+const actionSheetDownload = async () => {
+    const file = actionSheet.selectedFile
+    closeActionSheet()
+    await handleDownload(file)
+}
 
-        // ถ้าไม่เจอใน My Channels หรือไม่ได้ login ให้ลองหาใน Public Channels
-        if (!currentChannel) {
-            const publicResponse: any = await fetchPublicChannels({ limit: 100 })
-            currentChannel = publicResponse?.find((c: any) =>
-                String(c.channels_id) === String(channelId.value)
-            )
-            // ถ้าเจอใน Public แต่ไม่ได้อยู่ใน My Channels แสดงว่าไม่ใช่เจ้าของ
-            state.isOwner = false
-        }
-
-        // อัปเดตข้อมูล
-        if (currentChannel) {
-            state.channelTitle = currentChannel.title || 'ไม่พบชื่อช่อง'
-            state.totalFilesFromList = currentChannel.file_count || 0
-            state.sources = currentChannel.files || []
-            emit('update:sources', state.sources) // แจ้ง parent ทันที
-        } else {
-            toast.add({
-                title: 'ไม่พบข้อมูลช่อง',
-                description: 'คุณไม่มีสิทธิ์เข้าถึงช่องนี้',
-                color: 'warning'
-            })
-            router.push('/')
-        }
-    } catch (err: any) {
-        toast.add({
-            title: 'เกิดข้อผิดพลาด',
-            description: 'ไม่สามารถโหลดข้อมูลช่องได้',
-            color: 'error'
-        })
-    }
+const actionSheetDelete = () => {
+    const file = actionSheet.selectedFile
+    closeActionSheet()
+    openDeleteModal(file)
 }
 
 /* ============================================
@@ -131,20 +102,16 @@ const handleOpenModal = () => {
 }
 
 const currentUsedSizeMB = computed(() => {
-    const bytes = state.sources.reduce((sum: number, f: any) => sum + (f.size_bytes || 0), 0)
+    const bytes = sources.value.reduce((sum: number, f: any) => sum + (f.size_bytes || 0), 0)
     return bytes / (1024 * 1024)
 })
 
-const handleFileUpload = async (event: any) => {
-    const files = event.target?.files || event.dataTransfer?.files || event
-
+const handleFileUpload = async (files: File[]) => {
     if (!files || files.length === 0) return
 
-    const fileArray = Array.from(files) as File[]
     const MAX_FILE_SIZE = allowedSize.value * 1024 * 1024
 
-    // ตรวจสอบจำนวนไฟล์ไม่เกิน 50
-    if (fileCount.value + fileArray.length > 50) {
+    if (fileCount.value + files.length > 50) {
         const remaining = 50 - fileCount.value
         toast.add({
             title: 'ไฟล์เกินขีดจำกัด',
@@ -156,8 +123,7 @@ const handleFileUpload = async (event: any) => {
         return
     }
 
-    // ตรวจสอบขนาดไฟล์
-    const totalNewSizeMB = fileArray.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)
+    const totalNewSizeMB = files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)
     const totalAfterUpload = currentUsedSizeMB.value + totalNewSizeMB
 
     if (totalAfterUpload > allowedSize.value && authStore.role !== 'admin') {
@@ -172,12 +138,14 @@ const handleFileUpload = async (event: any) => {
 
     try {
         state.isUploading = true
-        await uploadFiles(channelId.value, fileArray)
-        await loadChannelData()
+        await uploadFiles(channelId.value, files)
+
+        // ✅ emit ให้ parent reload แทนที่จะ fetch เอง
+        emit('refresh')
 
         toast.add({
             title: 'สำเร็จ',
-            description: `อัปโหลดไฟล์ ${fileArray.length} ไฟล์เรียบร้อย`,
+            description: `อัปโหลดไฟล์ ${files.length} ไฟล์เรียบร้อย`,
             color: 'success'
         })
 
@@ -222,186 +190,47 @@ const openDeleteModal = (file: any) => {
 }
 
 const handleFileDeleted = (fileId: string | number) => {
-    state.sources = state.sources.filter(f => f.files_id !== fileId)
-    emit('update:sources', state.sources) // แจ้ง parent หลังลบ
+    // ✅ emit ให้ parent อัปเดต sources แทน
+    const updated = sources.value.filter((f: any) => f.files_id !== fileId)
+    emit('update:sources', updated)
 }
 
-/* ============================================
-   Lifecycle Hooks
-============================================ */
-onMounted(() => {
-    loadChannelData()
-})
-
-watch(() => route.params.id, (newId) => {
-    if (newId) loadChannelData()
-})
+// ✅ ลบ loadChannelData(), onMounted, และ watch ออกทั้งหมด เพราะ parent จัดการแล้ว
 </script>
 
 <template>
+    <!-- [RESPONSIVE] Desktop: aside ปกติ, Mobile: USlideover slide จากขวา -->
+
+    <!-- ===== Desktop Sidebar ===== -->
     <aside
-        class="w-80 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex flex-col hidden md:flex shadow-xl">
+        class="w-80 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col hidden lg:flex shadow-xl">
 
         <!-- Header with Gradient -->
         <div
-            class="p-4 border-b border-gray-200 dark:border-gray-600 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
-            <div v-if="isOwnerOrAdmin" class="flex items-center gap-2 mb-4">
-                <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
-                    แหล่งข้อมูล
-                </h2>
-            </div>
-            <div v-else class="flex items-center">
+            class="p-3 border-b border-gray-200 dark:border-gray-600 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
+            <div class="flex items-center gap-2 mb-4">
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
                 </h2>
             </div>
 
-            <!-- Upload Modal Button -->
-            <UModal v-if="isOwnerOrAdmin" v-model="state.isModalOpen" :ui="{
-                content: 'sm:max-w-[900px]',
-                overlay: 'backdrop-blur-sm'
-            }">
+            <!-- Upload Button → ModalFileUpload -->
+            <ModalFileUpload v-if="isOwnerOrAdmin" v-model="state.isModalOpen" :file-count="fileCount"
+                :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize" :is-uploading="state.isUploading"
+                :loading="loading" @upload="handleFileUpload">
                 <UButton block icon="i-heroicons-plus" color="primary" size="lg"
                     :disabled="loading || state.isUploading"
                     class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     @click.prevent="handleOpenModal">
-                    <span class="flex items-center gap-2">
-                        เพิ่มแหล่งที่มา
-                    </span>
+                    <span class="flex items-center gap-2">เพิ่มแหล่งที่มา</span>
                 </UButton>
-
-                <template #header>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 rounded-xl bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
-                            <UIcon name="i-heroicons-document-plus" class="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">เพิ่มแหล่งที่มา</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                อัปโหลดเอกสารเพื่อให้ AI วิเคราะห์ข้อมูล
-                            </p>
-                        </div>
-                    </div>
-                </template>
-
-                <template #body>
-                    <div class="p-6 space-y-6">
-                        <!-- Upload Zone -->
-                        <div class="relative group">
-                            <div
-                                class="border-3 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl h-64 flex flex-col items-center justify-center bg-linear-to-br from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-900/50 hover:from-primary-50 hover:to-blue-50 dark:hover:from-primary-950/20 dark:hover:to-blue-950/20 hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300 cursor-pointer group-hover:shadow-2xl group-hover:scale-[1.01]">
-
-                                <!-- Default State -->
-                                <div v-if="!state.isUploading"
-                                    class="flex flex-col items-center text-center space-y-4 pointer-events-none">
-                                    <div
-                                        class="w-16 h-16 bg-linear-to-br from-primary-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                        <UIcon name="i-heroicons-cloud-arrow-up" class="w-8 h-8" />
-                                    </div>
-                                    <h4 class="text-xl font-bold text-gray-800 dark:text-gray-100">
-                                        อัปโหลดแหล่งข้อมูล
-                                    </h4>
-                                    <p class="text-gray-600 dark:text-gray-300 text-base">
-                                        ลากและวาง หรือ
-                                        <span class="text-primary-600 dark:text-primary-400 font-semibold">
-                                            คลิกเพื่อเลือกไฟล์
-                                        </span>
-                                    </p>
-                                    <div class="flex items-center gap-4 text-sm text-gray-500">
-                                        <div class="flex items-center gap-1.5">
-                                            <UIcon name="i-heroicons-document-text" class="w-4 h-4" />
-                                            <span>PDF หรือ TEXT</span>
-                                        </div>
-                                        <!-- <div class="w-1 h-1 rounded-full bg-gray-400"></div>
-                                        <div class="flex items-center gap-1.5">
-                                            <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
-                                            <span>{{ `${authStore.role === 'admin' ? "ไม่จำกัด" : `สูงสุด ${allowedSize}
-                                                MB`}` }}</span>
-                                        </div> -->
-                                    </div>
-                                </div>
-
-                                <!-- Loading State -->
-                                <div v-else class="flex flex-col items-center gap-4">
-                                    <div class="relative">
-                                        <div
-                                            class="w-16 h-16 border-4 border-primary-200 dark:border-primary-900 rounded-full">
-                                        </div>
-                                        <div
-                                            class="w-16 h-16 border-4 border-primary-600 rounded-full border-t-transparent animate-spin absolute inset-0">
-                                        </div>
-                                    </div>
-                                    <p class="text-gray-700 dark:text-gray-200 font-medium text-lg">
-                                        กำลังอัปโหลด...
-                                    </p>
-                                </div>
-
-                                <!-- File Input -->
-                                <input type="file" multiple accept=".pdf,.txt"
-                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    :disabled="state.isUploading" @change="handleFileUpload" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Progress Footer -->
-                    <div
-                        class="px-6 py-4 bg-gray-50/80 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-800">
-                        <div class="flex items-center gap-2 mb-3">
-                            <UIcon name="i-heroicons-signal" class="w-3.5 h-3.5 text-gray-400" />
-                            <span
-                                class="text-xs font-semibold uppercase tracking-wider text-gray-400">การใช้งานปัจจุบัน</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <!-- File Count -->
-                            <div class="space-y-1.5">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-1.5">
-                                        <UIcon name="i-heroicons-document-duplicate"
-                                            class="w-3.5 h-3.5 text-gray-400" />
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">แหล่งที่มา</span>
-                                    </div>
-                                    <span class="text-xs font-bold tabular-nums"
-                                        :class="fileCount >= 50 ? 'text-red-500' : fileCount >= 40 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
-                                        {{ fileCount }}<span class="font-normal text-gray-400">/50</span>
-                                    </span>
-                                </div>
-                                <UProgress :model-value="fileCount"
-                                    :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'"
-                                    :max="50" size="sm" />
-                            </div>
-
-                            <!-- Storage Size -->
-                            <div class="space-y-1.5">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-1.5">
-                                        <UIcon name="i-heroicons-circle-stack" class="w-3.5 h-3.5 text-gray-400" />
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">พื้นที่</span>
-                                    </div>
-                                    <span class="text-xs font-bold tabular-nums"
-                                        :class="authStore.role === 'admin' ? 'text-green-600' : currentUsedSizeMB >= allowedSize ? 'text-red-500' : currentUsedSizeMB >= allowedSize * 0.8 ? 'text-amber-500' : 'text-primary-600 dark:text-primary-400'">
-                                        {{ authStore.role === 'admin' ? '∞' : currentUsedSizeMB.toFixed(1) }}
-                                        <span class="font-normal text-gray-400">
-                                            / {{ authStore.role === 'admin' ? '∞' : `${allowedSize} MB` }}
-                                        </span>
-                                    </span>
-                                </div>
-                                <UProgress :model-value="authStore.role === 'admin' ? 1 : currentUsedSizeMB"
-                                    :max="authStore.role === 'admin' ? 1 : allowedSize"
-                                    :color="authStore.role === 'admin' ? 'primary' : currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
-                                    size="sm" />
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </UModal>
+            </ModalFileUpload>
         </div>
 
         <!-- File List -->
         <div class="flex-1 overflow-y-auto p-3 space-y-2">
             <!-- Loading State -->
-            <div v-if="loading && state.sources.length === 0" class="flex items-center justify-center h-32">
+            <div v-if="props.loading && sources.length === 0" class="flex items-center justify-center h-32">
                 <div class="relative">
                     <div class="w-10 h-10 border-3 border-primary-200 dark:border-primary-900 rounded-full"></div>
                     <div
@@ -411,8 +240,8 @@ watch(() => route.params.id, (newId) => {
             </div>
 
             <!-- Empty State -->
-            <div v-else-if="state.sources.length === 0"
-                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-linear-to-br ">
+            <div v-else-if="sources.length === 0"
+                class="flex flex-col items-center justify-center h-48 text-center px-4 py-8 rounded-2xl bg-linear-to-br">
                 <div
                     class="w-16 h-16 rounded-2xl bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mb-3">
                     <UIcon name="i-heroicons-document" class="w-8 h-8 text-gray-400" />
@@ -422,7 +251,7 @@ watch(() => route.params.id, (newId) => {
             </div>
 
             <!-- File Items -->
-            <div v-for="(file, index) in state.sources" :key="file.files_id"
+            <div v-for="(file, index) in sources" :key="file.files_id"
                 class="flex items-center justify-between p-3 rounded-xl hover:bg-linear-to-r hover:from-primary-50 hover:to-transparent dark:hover:from-primary-950/30 group transition-all duration-300 hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-primary-200 dark:hover:border-primary-900"
                 :style="{ animationDelay: `${index * 50}ms` }">
                 <div class="flex items-center gap-3 truncate flex-1 min-w-0">
@@ -441,13 +270,9 @@ watch(() => route.params.id, (newId) => {
                         </span>
                     </div>
                 </div>
-
-                <!-- Download Button -->
                 <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost"
                     size="sm" @click.stop="handleDownload(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
-
-                <!-- Delete Button -->
                 <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
                     @click.stop="openDeleteModal(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
@@ -458,15 +283,12 @@ watch(() => route.params.id, (newId) => {
         <div v-if="isOwnerOrAdmin"
             class="border-t border-gray-200 dark:border-gray-600 bg-linear-to-t from-gray-50/80 to-transparent dark:from-gray-900/60 backdrop-blur-sm">
             <div class="px-4 py-3 space-y-3">
-                <!-- Header label -->
                 <div class="flex items-center gap-2">
                     <UIcon name="i-heroicons-signal" class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                     <span class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                         การใช้งาน
                     </span>
                 </div>
-
-                <!-- File Count -->
                 <div class="space-y-1.5">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1.5">
@@ -483,8 +305,6 @@ watch(() => route.params.id, (newId) => {
                         :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'" :max="50"
                         size="sm" />
                 </div>
-
-                <!-- Storage Size -->
                 <div class="space-y-1.5 pb-1">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1.5">
@@ -507,13 +327,175 @@ watch(() => route.params.id, (newId) => {
                 </div>
             </div>
         </div>
-
-
-        <!-- Delete Modal Component -->
-        <ModalDelete v-model:open="deleteModalState.isOpen" :item="fileToDelete"
-            :delete-handler="(id) => deleteFile(id)" title="คุณต้องการลบไฟล์"
-            description="การลบจะไม่สามารถย้อนกลับได้และไฟล์นี้จะถูกลบออกถาวร" @deleted="handleFileDeleted" />
     </aside>
+
+    <!-- ===== Mobile Slideover ===== -->
+    <USlideover :open="props.open" side="right" :ui="{ content: 'max-w-xs w-full' }"
+        @update:open="(val) => emit('update:open', val)">
+        <template #content>
+            <div class="flex flex-col h-full bg-white dark:bg-neutral-800">
+
+                <!-- Slideover Header -->
+                <div
+                    class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-neutral-700">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base font-bold text-gray-900 dark:text-white">แหล่งข้อมูล</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <UColorModeButton class="cursor-pointer" />
+                        <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
+                            @click="closeSlide" />
+                    </div>
+                </div>
+
+                <div class="border-b border-gray-100 dark:border-neutral-700">
+                    <UserMenu compact="Mobile" class="lg:hidden" />
+                </div>
+
+                <!-- Upload Button (Mobile) → ModalFileUpload -->
+                <div v-if="isOwnerOrAdmin" class="px-3 pt-3">
+                    <ModalFileUpload v-model="state.isModalOpen" :file-count="fileCount"
+                        :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize"
+                        :is-uploading="state.isUploading" :loading="loading" @upload="handleFileUpload">
+                        <UButton block icon="i-heroicons-plus" color="primary" size="lg"
+                            :disabled="loading || state.isUploading"
+                            class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                            @click.prevent="handleOpenModal">
+                            <span class="flex items-center gap-2">เพิ่มแหล่งที่มา</span>
+                        </UButton>
+                    </ModalFileUpload>
+                </div>
+
+                <!-- File List (Mobile) -->
+                <div class="flex-1 overflow-y-auto p-3 space-y-2 mt-2">
+                    <div v-if="props.loading && sources.length === 0" class="flex items-center justify-center h-32">
+                        <div class="relative">
+                            <div class="w-10 h-10 border-3 border-primary-200 dark:border-primary-900 rounded-full">
+                            </div>
+                            <div
+                                class="w-10 h-10 border-3 border-primary-600 rounded-full border-t-transparent animate-spin absolute inset-0">
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else-if="sources.length === 0"
+                        class="flex flex-col items-center justify-center h-48 text-center px-4">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-3">
+                            <UIcon name="i-heroicons-document" class="w-7 h-7 text-gray-400" />
+                        </div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">ยังไม่มีไฟล์</p>
+                        <p class="text-xs text-gray-400 mt-1">เริ่มเพิ่มแหล่งข้อมูลของคุณ</p>
+                    </div>
+                    <div v-for="(file, index) in sources" :key="file.files_id"
+                        class="flex items-center gap-3 p-3 rounded-xl active:bg-primary-50 dark:active:bg-primary-950/30 transition-all border border-transparent active:border-primary-100 dark:active:border-primary-900 cursor-pointer select-none"
+                        @click="isOwnerOrAdmin ? openActionSheet(file) : undefined">
+                        <div
+                            class="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+                            <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-primary-500" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{
+                                file.original_filename }}</p>
+                            <p class="text-xs text-gray-400">{{ (file.size_bytes / (1024 * 1024)).toFixed(1) }} MB</p>
+                        </div>
+                        <UIcon v-if="isOwnerOrAdmin" name="i-heroicons-ellipsis-vertical"
+                            class="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                    </div>
+                </div>
+
+                <!-- Mobile Action Sheet — UDrawer -->
+                <UDrawer v-model:open="actionSheet.isOpen" direction="bottom" :handle="true"
+                    :ui="{ container: 'max-w-sm mx-auto px-4 pb-6 pt-2' }">
+                    <template #header>
+                        <div class="flex items-center gap-3 px-1">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
+                                <UIcon name="i-heroicons-document-text" class="w-5 h-5 text-primary-500" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                                    {{ actionSheet.selectedFile?.original_filename }}
+                                </p>
+                                <p class="text-xs text-gray-400 mt-0.5">
+                                    {{ actionSheet.selectedFile
+                                        ? ((actionSheet.selectedFile.size_bytes / (1024 * 1024)).toFixed(1)) + ' MB'
+                                        : '' }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template #body>
+                        <div class="space-y-2 pt-2">
+                            <button
+                                class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-neutral-700/60 active:bg-primary-50 dark:active:bg-primary-950/40 transition-colors text-left"
+                                @click="actionSheetDownload">
+                                <div
+                                    class="w-9 h-9 rounded-xl bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center shrink-0">
+                                    <UIcon name="i-heroicons-arrow-down-tray"
+                                        class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">ดาวน์โหลด</p>
+                                    <p class="text-xs text-gray-400">บันทึกไฟล์ลงเครื่อง</p>
+                                </div>
+                            </button>
+
+                            <button
+                                class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-neutral-700/60 active:bg-red-50 dark:active:bg-red-950/40 transition-colors text-left"
+                                @click="actionSheetDelete">
+                                <div
+                                    class="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0">
+                                    <UIcon name="i-heroicons-trash" class="w-5 h-5 text-red-500 dark:text-red-400" />
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-red-600 dark:text-red-400">ลบไฟล์</p>
+                                    <p class="text-xs text-gray-400">ลบออกถาวร ไม่สามารถกู้คืนได้</p>
+                                </div>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template #footer>
+                        <UButton block color="neutral" variant="soft" size="lg" class="rounded-2xl"
+                            @click="closeActionSheet">
+                            ยกเลิก
+                        </UButton>
+                    </template>
+                </UDrawer>
+
+                <!-- Footer Progress (Mobile) -->
+                <div v-if="isOwnerOrAdmin" class="border-t border-gray-200 dark:border-gray-600 px-4 py-3 space-y-2">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">การใช้งาน</p>
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>ไฟล์</span>
+                        <span class="font-bold" :class="fileCount >= 50 ? 'text-red-500' : 'text-primary-600'">{{
+                            fileCount }}/50</span>
+                    </div>
+                    <UProgress :model-value="fileCount"
+                        :color="fileCount >= 50 ? 'error' : fileCount >= 40 ? 'warning' : 'primary'" :max="50"
+                        size="sm" />
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>พื้นที่</span>
+                        <span class="font-bold"
+                            :class="currentUsedSizeMB >= allowedSize ? 'text-red-500' : 'text-primary-600'">
+                            {{ authStore.role === 'admin' ? '∞' : currentUsedSizeMB.toFixed(1) }} / {{ authStore.role
+                                === 'admin' ? '∞' : `${allowedSize} MB` }}
+                        </span>
+                    </div>
+                    <UProgress :model-value="authStore.role === 'admin' ? 1 : currentUsedSizeMB"
+                        :max="authStore.role === 'admin' ? 1 : allowedSize"
+                        :color="authStore.role === 'admin' ? 'primary' : currentUsedSizeMB >= allowedSize ? 'error' : currentUsedSizeMB >= allowedSize * 0.8 ? 'warning' : 'primary'"
+                        size="sm" />
+                </div>
+            </div>
+        </template>
+    </USlideover>
+
+    <!-- Delete Modal Component -->
+    <ModalDelete v-model:open="deleteModalState.isOpen" :item="fileToDelete" :delete-handler="(id) => deleteFile(id)"
+        title="คุณต้องการลบไฟล์" description="การลบจะไม่สามารถย้อนกลับได้และไฟล์นี้จะถูกลบออกถาวร"
+        @deleted="handleFileDeleted" />
 </template>
 
 <style scoped>
