@@ -175,10 +175,10 @@ onMounted(() => {
                 <p class="text-gray-500 dark:text-gray-400">
                     ลองค้นหาด้วยคำอื่นหรือสร้างแชนแนลใหม่
                 </p>
-                <button @click="searchQuery = ''"
-                    class="mt-4 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                <UButton @click="searchQuery = ''"
+                    class="mt-4 px-4 py-2 text-md bg-blue-100 dark:bg-blue-400 text-blue-700 dark:text-gray-900 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-500 transition-colors">
                     ล้างการค้นหา
-                </button>
+                </UButton>
             </div>
 
             <!-- Grid -->

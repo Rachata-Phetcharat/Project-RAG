@@ -144,21 +144,19 @@ onMounted(() => {
         <!-- ─── Header ─── -->
         <!-- [RESPONSIVE] ลด mb, text ขนาดเล็กลงบนมือถือ, text-center เฉพาะ mobile -->
         <header class="mb-8 sm:mb-12 lg:mb-16 relative">
-            <div
+            <!-- <div
                 class="absolute inset-0 bg-linear-to-r from-blue-600/10 to-indigo-600/10 dark:from-blue-500/20 dark:to-indigo-500/20 rounded-3xl blur-3xl -z-10">
-            </div>
+            </div> -->
             <!-- [RESPONSIVE] text-center เฉพาะ mobile, left บน md ขึ้นไป -->
             <div class="text-center sm:text-left space-y-3 sm:space-y-4">
 
                 <!-- [RESPONSIVE] ลด font size: mobile=3xl, sm=4xl, md=5xl, lg=6xl (เดิม 5xl/6xl/7xl) -->
                 <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-                    <span
-                        class="bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                    <span class=" text-gray-900  dark:text-white">
                         ยินดีต้อนรับสู่
                     </span>
                     <br />
-                    <span
-                        class="bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                    <span class="text-gray-900  dark:text-white">
                         KMUTNB ThinkHub
                     </span>
                 </h1>
@@ -236,10 +234,10 @@ onMounted(() => {
                     <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">ไม่พบแชนแนลที่ค้นหา
                     </h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">ลองค้นหาด้วยคำอื่น</p>
-                    <button @click="searchQuery = ''"
-                        class="mt-4 px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                    <UButton @click="searchQuery = ''"
+                        class="mt-4 px-4 py-2 text-md bg-blue-100 dark:bg-blue-400 text-blue-700 dark:text-gray-900 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-500 transition-colors">
                         ล้างการค้นหา
-                    </button>
+                    </UButton>
                 </div>
 
                 <div v-else-if="filteredChannels.length > 0">

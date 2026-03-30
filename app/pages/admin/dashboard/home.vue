@@ -22,10 +22,20 @@ interface DateRange {
     end: Date;
 }
 
-const dateRange = ref<DateRange>({
-    start: new Date(new Date().setDate(new Date().getDate() - 7)),
-    end: new Date(),
-});
+// ✅ FIX: สร้าง start/end อย่างถูกต้อง และ end ต้องเป็น 23:59:59
+// เพื่อให้ครอบคลุมทั้งวันสุดท้าย ตรงกับที่ DateSelector ส่ง
+const makeDefaultRange = (): DateRange => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
+
+    return { start, end };
+};
+
+const dateRange = ref<DateRange>(makeDefaultRange());
 
 const formatDate = (date: Date) =>
     [
@@ -109,6 +119,7 @@ const statsCards = computed(() => [
         label: "คำถามทั้งหมด",
         value: questionsData.value.total.toLocaleString(),
         change: questionsData.value.growth,
+        showGrowth: true,
         icon: "i-lucide-message-circle-question",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
         textColor: "text-blue-600 dark:text-blue-400",
@@ -117,6 +128,7 @@ const statsCards = computed(() => [
         label: "ผู้ใช้งาน",
         value: usersData.value.total.toLocaleString(),
         change: usersData.value.growth,
+        showGrowth: true,
         icon: "i-lucide-users",
         bgColor: "bg-purple-50 dark:bg-purple-900/20",
         textColor: "text-purple-600 dark:text-purple-400",
@@ -125,6 +137,7 @@ const statsCards = computed(() => [
         label: "แชนแนลสาธารณะ",
         value: publicChannelsData.value.total.toLocaleString(),
         change: publicChannelsData.value.growth,
+        showGrowth: false,
         icon: "i-lucide-globe",
         bgColor: "bg-green-50 dark:bg-green-900/20",
         textColor: "text-green-600 dark:text-green-400",
@@ -133,6 +146,7 @@ const statsCards = computed(() => [
         label: "แชนแนลส่วนตัว",
         value: privateChannelsData.value.total.toLocaleString(),
         change: privateChannelsData.value.growth,
+        showGrowth: false,
         icon: "i-lucide-lock",
         bgColor: "bg-rose-50 dark:bg-rose-900/20",
         textColor: "text-rose-600 dark:text-rose-400",
@@ -141,6 +155,7 @@ const statsCards = computed(() => [
         label: "คำขอรอดำเนินการ",
         value: pendingChannelsData.value.total.toLocaleString(),
         change: pendingChannelsData.value.growth,
+        showGrowth: false,
         icon: "i-lucide-clock",
         bgColor: "bg-amber-50 dark:bg-amber-900/20",
         textColor: "text-amber-600 dark:text-amber-400",
@@ -241,7 +256,7 @@ const statsCards = computed(() => [
                                 </div>
 
                                 <!-- Growth Badge -->
-                                <div :class="[
+                                <div v-if="stat.showGrowth" :class="[
                                     'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold',
                                     stat.change?.startsWith('+')
                                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'

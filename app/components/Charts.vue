@@ -105,9 +105,10 @@ const formatLabel = (dateString: string) =>
         day: "numeric", month: "short",
     });
 
-const chartKey = computed(() =>
-    `${activeTab.value}-${resolvedQuestions.value.data.length}-${resolvedUsers.value.data.length}`
-);
+const chartKey = computed(() => {
+    const src = activeTab.value === "questions" ? resolvedQuestions.value : resolvedUsers.value;
+    return `${activeTab.value}-${src.data.length}-${src.total}`;
+});
 
 const activeSource = computed(() =>
     activeTab.value === "questions" ? resolvedQuestions.value : resolvedUsers.value

@@ -15,6 +15,17 @@ definePageMeta({
 // ─────────────────────────────────────────────
 
 const { fetchQuestionsByChannel, fetchUsersByChannel } = useDashboard();
+
+// ── Growth helper (today vs yesterday จาก data[]) ──
+const calcGrowth = (data: { count?: number; active_users?: number }[], field: "count" | "active_users"): string => {
+    const today = data.at(-1)?.[field] ?? 0;
+    const yesterday = data.at(-2)?.[field] ?? 0;
+    if (today === yesterday) return "+0%";
+    if (yesterday === 0) return "+100%";
+    const diff = ((today - yesterday) / yesterday) * 100;
+    const capped = Math.min(Math.max(diff, -100), 100);
+    return `${capped >= 0 ? "+" : ""}${capped.toFixed(0)}%`;
+};
 const { fetchMyChannels } = useChannel();
 
 // loading ของหน้านี้เอง (composable loading ไม่ได้ถูก set จาก fetch เหล่านี้)
@@ -29,10 +40,17 @@ interface DateRange {
     end: Date;
 }
 
-const dateRange = ref<DateRange>({
-    start: new Date(new Date().setDate(new Date().getDate() - 7)),
-    end: new Date(),
-});
+// ✅ FIX: end ต้องเป็น 23:59:59 เพื่อให้ครอบคลุมทั้งวัน
+const makeDefaultRange = (): DateRange => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+};
+
+const dateRange = ref<DateRange>(makeDefaultRange());
 
 const formatDate = (date: Date) =>
     [
@@ -133,6 +151,7 @@ const summaryCards = computed(() => [
     {
         label: "คำถามทั้งหมด",
         value: questionsStats.value.total.toLocaleString(),
+        change: calcGrowth(questionsStats.value.data, "count"),
         icon: "i-lucide-message-circle-question",
         bgColor: "bg-blue-50 dark:bg-blue-900/20",
         textColor: "text-blue-600 dark:text-blue-400",
@@ -140,6 +159,7 @@ const summaryCards = computed(() => [
     {
         label: "ผู้ใช้งานรวม",
         value: usersStats.value.total.toLocaleString(),
+        change: calcGrowth(usersStats.value.data, "active_users"),
         icon: "i-lucide-users",
         bgColor: "bg-purple-50 dark:bg-purple-900/20",
         textColor: "text-purple-600 dark:text-purple-400",
@@ -285,6 +305,23 @@ const summaryCards = computed(() => [
                         <div class="flex items-start justify-between mb-4">
                             <div :class="['p-3 rounded-xl', card.bgColor]">
                                 <UIcon :name="card.icon" :class="['w-7 h-7', card.textColor]" />
+                            </div>
+                            <!-- Growth Badge -->
+                            <div :class="[
+                                'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold',
+                                card.change?.startsWith('+')
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    : card.change?.startsWith('-')
+                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                            ]">
+                                <UIcon :name="card.change?.startsWith('+')
+                                    ? 'i-lucide-trending-up'
+                                    : card.change?.startsWith('-')
+                                        ? 'i-lucide-trending-down'
+                                        : 'i-lucide-minus'
+                                    " class="w-3 h-3" />
+                                {{ card.change }}
                             </div>
                         </div>
                         <p class="text-3xl font-bold text-gray-900 dark:text-white  origin-left inline-block">

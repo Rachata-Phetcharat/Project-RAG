@@ -240,10 +240,10 @@ const onCreated = async () => {
                 <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">ไม่พบ API Key ที่ค้นหา
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">ลองค้นหาด้วยคำอื่น</p>
-                <button @click="searchQuery = ''"
-                    class="mt-4 px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                <UButton @click="searchQuery = ''"
+                    class="mt-4 px-4 py-2 text-md bg-blue-100 dark:bg-blue-400 text-blue-700 dark:text-gray-900 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-500 transition-colors">
                     ล้างการค้นหา
-                </button>
+                </UButton>
             </div>
 
             <!-- Table -->

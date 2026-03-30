@@ -207,7 +207,7 @@ const handleFileDeleted = (fileId: string | number) => {
 
         <!-- Header with Gradient -->
         <div
-            class="p-3 border-b border-gray-200 dark:border-gray-600 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
+            class="p-2 border-b border-gray-200 dark:border-gray-600 bg-linear-to-br from-primary-50/50 to-transparent dark:from-primary-950/20">
             <div class="flex items-center gap-2 mb-4">
                 <h2 class="font-bold text-gray-800 dark:text-gray-100 text-lg">
                     แหล่งข้อมูล
@@ -215,14 +215,12 @@ const handleFileDeleted = (fileId: string | number) => {
             </div>
 
             <!-- Upload Button → ModalFileUpload -->
-            <ModalFileUpload v-if="isOwnerOrAdmin" v-model="state.isModalOpen" :file-count="fileCount"
+            <ModalFileUpload v-model="state.isModalOpen" :file-count="fileCount"
                 :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize" :is-uploading="state.isUploading"
                 :loading="loading" @upload="handleFileUpload">
                 <UButton block icon="i-heroicons-plus" color="primary" size="lg"
-                    :disabled="loading || state.isUploading"
-                    class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                    @click.prevent="handleOpenModal">
-                    <span class="flex items-center gap-2">เพิ่มแหล่งที่มา</span>
+                    :disabled="loading || state.isUploading" @click.prevent="handleOpenModal">
+                    <span class="flex items-center gap-2 text-md">เพิ่มแหล่งที่มา</span>
                 </UButton>
             </ModalFileUpload>
         </div>
@@ -270,17 +268,17 @@ const handleFileDeleted = (fileId: string | number) => {
                         </span>
                     </div>
                 </div>
-                <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost"
-                    size="sm" @click.stop="handleDownload(file)"
+                <UButton icon="i-heroicons-arrow-down-tray" color="primary" variant="ghost" size="sm"
+                    @click.stop="handleDownload(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
-                <UButton v-if="isOwnerOrAdmin" icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
+                <UButton icon="i-heroicons-trash" color="error" variant="ghost" size="sm"
                     @click.stop="openDeleteModal(file)"
                     class="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110" />
             </div>
         </div>
 
         <!-- Footer Progress -->
-        <div v-if="isOwnerOrAdmin"
+        <div
             class="border-t border-gray-200 dark:border-gray-600 bg-linear-to-t from-gray-50/80 to-transparent dark:from-gray-900/60 backdrop-blur-sm">
             <div class="px-4 py-3 space-y-3">
                 <div class="flex items-center gap-2">
@@ -353,7 +351,7 @@ const handleFileDeleted = (fileId: string | number) => {
                 </div>
 
                 <!-- Upload Button (Mobile) → ModalFileUpload -->
-                <div v-if="isOwnerOrAdmin" class="px-3 pt-3">
+                <div class="px-3 pt-3">
                     <ModalFileUpload v-model="state.isModalOpen" :file-count="fileCount"
                         :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize"
                         :is-uploading="state.isUploading" :loading="loading" @upload="handleFileUpload">
@@ -398,7 +396,7 @@ const handleFileDeleted = (fileId: string | number) => {
                                 file.original_filename }}</p>
                             <p class="text-xs text-gray-400">{{ (file.size_bytes / (1024 * 1024)).toFixed(1) }} MB</p>
                         </div>
-                        <UIcon v-if="isOwnerOrAdmin" name="i-heroicons-ellipsis-vertical"
+                        <UIcon name="i-heroicons-ellipsis-vertical"
                             class="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
                     </div>
                 </div>

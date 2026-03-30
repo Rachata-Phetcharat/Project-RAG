@@ -14,7 +14,12 @@ const table = useTemplateRef('table')
 const user = ref<User[]>([])
 const role = ref()
 const accountType = ref()
-const value = ref('all')
+const value = ref<string>('all')
+
+// USelect อาจ emit object → แปลงให้เป็น string เสมอ
+const onRoleFilterChange = (val: any) => {
+    value.value = typeof val === 'object' ? val?.value ?? 'all' : val ?? 'all'
+}
 // ── Modal: ขนาดไฟล์เริ่มต้น ───────────────────────────────────
 const isFilesizeModalOpen = ref(false)
 
@@ -23,8 +28,19 @@ const loadUser = async () => {
 }
 
 const itemsRole = async () => {
-    role.value = await fetchRole()
+    const res = await fetchRole()
+    console.log('[DEBUG] fetchRole raw:', JSON.stringify(res))
+    role.value = res
 }
+
+// normalize ทุกรูปแบบที่ API อาจส่งมา → เป็น { label, value }[] เสมอ
+const roleItems = computed<{ label: string; value: string }[]>(() => {
+    if (!role.value) return []
+    return (role.value as any[]).map((r: any) => {
+        const v = typeof r === 'string' ? r : (r.value ?? r.role ?? r.name ?? r.role_name ?? String(r))
+        return { label: v, value: v }
+    })
+})
 
 const itemsAccountTypes = async () => {
     accountType.value = await defaultFilesize()
@@ -86,15 +102,18 @@ const columns: TableColumn<User>[] = [
         header: 'สิทธิ์',
         cell: ({ row }) => h(resolveComponent('USelect'), {
             modelValue: row.original.role,
-            items: role.value,
+            items: roleItems.value,
             color: 'neutral',
             variant: 'subtle',
             class: 'w-26',
             disabled: row.original.username === authStore.user?.username,
-            'onUpdate:modelValue': async (val: string) => {
-                row.original.role = val
-                await updateRole(row.original.users_id, val)
-                if (val === 'user') {
+            'onUpdate:modelValue': async (val: any) => {
+                // USelect อาจ emit เป็น string หรือ { label, value } ขึ้นอยู่กับ version
+                const roleVal = typeof val === 'object' ? val?.value : val
+                if (!roleVal) return
+                row.original.role = roleVal
+                await updateRole(row.original.users_id, roleVal)
+                if (roleVal === 'user') {
                     const defaultForType = accountType.value?.find((a: any) => a.type_name.trim() === row.original.account_type.trim())
                     if (defaultForType) {
                         row.original.file_size_byte = defaultForType.file_size_byte
@@ -107,19 +126,21 @@ const columns: TableColumn<User>[] = [
         accessorKey: 'file_size',
         header: 'ขนาดไฟล์ (MB)',
         cell: ({ row }) => {
-            if (row.original.role === 'admin') {
-                return h('span', { class: 'text-gray-500 italic text-sm' }, 'ไม่จำกัด')
-            }
+            const isAdmin = row.original.role === 'admin'
+            const isSelf = row.original.username === authStore.user?.username
             const mb = (row.original.file_size_byte / (1024 * 1024)).toFixed(0)
             return h('div', { class: 'flex items-center gap-2' }, [
-                h('span', { class: 'text-sm tabular-nums' }, `${mb} MB`),
-                h(resolveComponent('UButton'), {
+                h('span', { class: isAdmin ? 'text-gray-500 italic text-sm' : 'text-sm tabular-nums' },
+                    isAdmin ? 'ไม่จำกัด' : `${mb} MB`
+                ),
+                // แสดงปุ่มดินสอเสมอ ยกเว้นตัวเอง
+                !isSelf ? h(resolveComponent('UButton'), {
                     icon: 'i-lucide-pencil',
                     color: 'neutral',
                     variant: 'ghost',
                     size: 'xs',
                     onClick: () => openUserEdit(row.original)
-                })
+                }) : null
             ])
         }
     }
@@ -131,6 +152,10 @@ const pagination = ref({
 })
 
 const globalFilter = ref('')
+
+// force UTable re-render เมื่อ filter เปลี่ยน
+const tableKey = ref(0)
+watch(value, () => { tableKey.value++ })
 
 // ── Mobile pagination ──────────────────────────────────────────
 const mobilePage = ref(1)
@@ -159,8 +184,9 @@ const mobileTotalPages = computed(() =>
 )
 
 const userData = computed(() => {
-    if (value.value === 'all') return user.value
-    return user.value.filter(u => u.role === value.value)
+    // spread เพื่อให้ array reference เปลี่ยนทุกครั้ง → UTable re-render
+    if (value.value === 'all') return [...user.value]
+    return user.value.filter(u => u.role?.toLowerCase() === value.value?.toLowerCase())
 })
 
 // ── Modal: แก้ไขรายคน ──────────────────────────────────────────
@@ -207,8 +233,8 @@ const handleSaveUser = async (userId: number, newRole: string, fileSizeByte: num
 }
 
 const roleWithAll = computed(() => [
-    { label: 'all', value: 'all' },
-    ...(role.value ?? [])
+    { label: 'ทั้งหมด', value: 'all' },
+    ...roleItems.value
 ])
 
 const roleBadgeColor = (r: string): 'error' | 'warning' | 'neutral' => {
@@ -278,7 +304,8 @@ onMounted(() => {
                     <div
                         class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
                         <span class="text-xs">แสดงสิทธิ์ :</span>
-                        <USelect v-model="value" :items="roleWithAll" color="neutral" size="sm" class="w-28" />
+                        <USelect :model-value="value" :items="roleWithAll" color="neutral" size="sm" class="w-28"
+                            @update:model-value="onRoleFilterChange" />
                     </div>
                 </div>
             </div>
@@ -321,8 +348,8 @@ onMounted(() => {
                 <template v-else>
                     <!-- ── Desktop Table (sm ขึ้นไป) ─────────────────────── -->
                     <div class="hidden sm:block overflow-x-auto">
-                        <UTable ref="table" v-model:pagination="pagination" v-model:global-filter="globalFilter"
-                            :data="userData" :columns="columns"
+                        <UTable :key="tableKey" ref="table" v-model:pagination="pagination"
+                            v-model:global-filter="globalFilter" :data="userData" :columns="columns"
                             :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
                             class="flex-1 w-full" />
 
@@ -369,9 +396,9 @@ onMounted(() => {
                                 </p>
                             </div>
 
-                            <!-- ปุ่มแก้ไข → เปิด ModalUserEdit -->
-                            <UButton icon="i-lucide-pencil" color="neutral" variant="ghost" size="sm" class="shrink-0"
-                                @click="openUserEdit(u)" />
+                            <!-- ปุ่มแก้ไข → เปิด ModalUserEdit (ซ่อนถ้าเป็นตัวเอง) -->
+                            <UButton v-if="u.username !== authStore.user?.username" icon="i-lucide-pencil"
+                                color="neutral" variant="ghost" size="sm" class="shrink-0" @click="openUserEdit(u)" />
                         </div>
 
                         <!-- Pagination มือถือ -->

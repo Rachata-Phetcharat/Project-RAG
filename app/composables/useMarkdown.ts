@@ -1,27 +1,18 @@
 import { marked, Renderer } from "marked";
-import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js";
-
-// ── Highlight extension ───────────────────────────────────────────────────────
-marked.use(
-  markedHighlight({
-    emptyLangClass: "hljs",
-    langPrefix: "hljs language-",
-    highlight(code, lang) {
-      const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
-      return hljs.highlight(code, { language }).value;
-    },
-  }),
-);
 
 // ── Custom renderer ───────────────────────────────────────────────────────────
 const renderer = new Renderer();
 
 // Wrap <pre><code> ด้วย .code-block + copy button header
 renderer.code = ({ text, lang }) => {
+  // text ที่เข้ามาคือ raw source code (plain text) เสมอ
+  // ต้อง highlight เองแค่ครั้งเดียวที่นี่
   const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
   const highlighted = hljs.highlight(text, { language }).value;
-  const escaped = text
+
+  // เก็บ raw source สำหรับปุ่ม copy (escape เฉพาะ HTML attribute)
+  const escapedForAttr = text
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/`/g, "&#96;");
@@ -32,7 +23,7 @@ renderer.code = ({ text, lang }) => {
     <span class="code-lang">${language}</span>
     <button
       class="copy-code-btn"
-      data-code="${escaped}"
+      data-code="${escapedForAttr}"
       onclick="
         const btn = this;
         navigator.clipboard.writeText(btn.dataset.code).then(() => {

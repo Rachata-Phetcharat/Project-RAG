@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import auth from '~/middleware/auth';
-
 /* ============================================
    Imports & Composables
 ============================================ */
@@ -20,14 +18,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'open-sidebar': [] }>()
 
-// mobile: ปุ่มเปิด sidebar ส่ง event ขึ้น parent
-
 /* ============================================
    Computed Properties
 ============================================ */
 const channelId = computed(() => route.params.id as string)
 const canSendMessage = computed(() => state.message.trim().length > 0)
-// แสดง chat area เมื่อมีไฟล์ หรือมีประวัติการสนทนาแล้ว
 const showChatArea = computed(() => props.fileCount > 0 || state.chatHistory.length > 0)
 
 /* ============================================
@@ -62,7 +57,6 @@ const handleSendMessage = async () => {
 
     const userText = state.message.trim()
 
-    // 1. เพิ่มข้อความ User
     state.chatHistory.push({
         id: Date.now(),
         role: 'user',
@@ -73,7 +67,6 @@ const handleSendMessage = async () => {
     state.message = ''
     state.isTyping = true
 
-    // เลื่อนทันทีเพื่อให้เห็นข้อความที่เพิ่งส่ง + typing indicator
     await scrollToBottom('smooth')
 
     try {
@@ -86,7 +79,6 @@ const handleSendMessage = async () => {
             copied: false
         })
 
-        // เลื่อนอีกครั้งหลังจาก AI ตอบกลับมา
         await scrollToBottom('smooth')
     } catch (err) {
         state.chatHistory.pop()
@@ -119,7 +111,6 @@ const lastBotIndex = computed(() =>
    Auto Scroll
 ============================================ */
 const scrollToBottom = async (behavior: 'smooth' | 'instant' = 'smooth') => {
-    // ใช้ await nextTick เพื่อรอให้ Vue render DOM ใหม่ให้เสร็จก่อน
     await nextTick()
     if (chatContainer.value) {
         chatContainer.value.scrollTo({
@@ -137,18 +128,21 @@ onMounted(() => {
 })
 
 watch(() => route.params.id, () => {
-    // Reset chat when channel changes
     state.chatHistory = []
     initChatSession()
 })
 </script>
 
 <template>
-    <main class="flex-1 flex-col relative min-w-0 flex">
+    <!--
+        min-w-0 + min-h-0 สำคัญมากใน flexbox
+        ป้องกัน flex child ขยายเกิน parent
+    -->
+    <main class="flex-1 flex flex-col relative min-w-0 min-h-0 overflow-hidden">
         <!-- Header -->
         <div
-            class="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-3 sm:px-6 sticky top-0 z-20">
-            <nav class="flex items-center justify-between py-3 sm:py-5">
+            class="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 px-3 sm:px-6 sticky top-0 z-20 shrink-0">
+            <nav class="flex items-center justify-between py-3 sm:py-4">
                 <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                     <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" size="md"
                         @click="$router.back()"
@@ -156,12 +150,12 @@ watch(() => route.params.id, () => {
                         aria-label="ย้อนกลับ" />
                     <div class="w-1 h-6 sm:h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 shrink-0">
                     </div>
-                    <h1 class="text-base sm:text-2xl font-bold  text-gray-900  dark:text-white">
+                    <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                         {{ channelTitle }}
                     </h1>
                 </div>
                 <div v-if="authStore.isLoggedIn" class="flex items-center gap-2 shrink-0">
-                    <!-- [RESPONSIVE] ปุ่มเปิด sidebar เฉพาะ mobile -->
+                    <!-- ปุ่มเปิด sidebar เฉพาะ mobile/tablet (< lg) -->
                     <UButton icon="i-lucide-menu" color="neutral" variant="ghost" size="md" class="lg:hidden"
                         :badge="fileCount > 0 ? String(fileCount) : undefined" aria-label="ดูไฟล์"
                         @click="emit('open-sidebar')" />
@@ -174,73 +168,77 @@ watch(() => route.params.id, () => {
         </div>
 
         <!-- Loading State -->
-        <div v-if="chatLoading && state.chatHistory.length === 0" class="flex-1 flex items-center justify-center">
+        <div v-if="chatLoading && state.chatHistory.length === 0"
+            class="flex-1 flex items-center justify-center min-h-0">
             <div class="text-center space-y-4">
                 <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500" />
                 <p class="text-gray-500">กำลังเตรียมห้องสนทนา...</p>
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div v-else-if="!showChatArea" class="flex-1 flex flex-col items-center justify-center gap-8 px-4 text-center">
+        <!-- Empty State (ยังไม่มีไฟล์และไม่มีประวัติ) -->
+        <div v-else-if="!showChatArea"
+            class="flex-1 flex flex-col items-center justify-center gap-6 sm:gap-8 px-4 text-center min-h-0">
             <div class="relative">
                 <div
-                    class="relative w-24 h-24 rounded-3xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-2xl">
-                    <UIcon name="i-heroicons-chat-bubble-oval-left-ellipsis" class="w-12 h-12 text-white" />
+                    class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-2xl">
+                    <UIcon name="i-heroicons-chat-bubble-oval-left-ellipsis"
+                        class="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                 </div>
             </div>
-            <div class="space-y-3">
+            <div class="space-y-2 sm:space-y-3">
                 <h2
-                    class="text-3xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                    class="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     เริ่มต้นการสนทนา
                 </h2>
-                <p class="text-gray-600 dark:text-gray-400 max-w-md text-lg">
+                <p class="text-gray-600 dark:text-gray-400 max-w-sm text-base sm:text-lg px-4">
                     เพิ่มแหล่งข้อมูลของคุณแล้วถามคำถามเกี่ยวกับเอกสารเหล่านั้นได้เลย
                 </p>
             </div>
         </div>
 
         <!-- Chat Area -->
-        <div v-else class="flex flex-col flex-1 relative overflow-hidden">
+        <div v-else class="flex flex-col flex-1 relative overflow-hidden min-h-0">
             <!-- Chat Messages -->
-            <div ref="chatContainer" class="flex-1 w-full overflow-y-auto p-6 sm:p-10 space-y-8 scroll-smooth">
+            <div ref="chatContainer"
+                class="flex-1 w-full overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 scroll-smooth min-h-0">
 
                 <!-- Welcome prompt when files loaded but no messages yet -->
                 <div v-if="state.chatHistory.length === 0 && !state.isTyping"
-                    class="flex flex-col items-center justify-center h-full min-h-64 gap-5 text-center animate-fade-in">
+                    class="flex flex-col items-center justify-center h-full min-h-48 sm:min-h-64 gap-4 sm:gap-5 text-center animate-fade-in">
                     <div
-                        class="w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-xl">
-                        <UIcon name="i-heroicons-sparkles" class="w-8 h-8 text-white" />
+                        class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-linear-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-xl">
+                        <UIcon name="i-heroicons-sparkles" class="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                     </div>
                     <div class="space-y-2">
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">พร้อมแล้ว!</h3>
-                        <p class="text-gray-500 dark:text-gray-400 text-base max-w-sm">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">พร้อมแล้ว!</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm sm:text-base max-w-xs sm:max-w-sm px-4">
                             เอกสารพร้อมแล้ว ถามมาได้เลยครับ 😊
                         </p>
                     </div>
                 </div>
 
                 <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
-                    :class="['flex max-w-5xl mx-auto animate-fade-in', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-                    <div :class="['max-w-3xl', msg.role === 'user' ? 'w-fit' : 'w-full']">
+                    :class="['flex max-w-5xl mx-auto animate-fade-in w-full', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+                    <div :class="['max-w-[85%] sm:max-w-3xl', msg.role === 'user' ? 'w-fit' : 'w-full']">
 
                         <!-- User Message -->
                         <div v-if="msg.role === 'user'"
-                            class="bg-gray-200/50 dark:bg-gray-700 dark:text-white text-gray-900 px-4 py-3 rounded-lg  text-base font-medium">
+                            class="bg-gray-200/50 dark:bg-gray-700 dark:text-white text-gray-900 px-4 py-3 rounded-lg text-sm sm:text-base font-medium">
                             {{ msg.text }}
                         </div>
 
                         <!-- AI Message -->
                         <div v-else class="group">
-                            <div class="flex gap-5 lg:flex-row flex-col items-start">
-                                <div class="shrink-0">
-                                    <UAvatar icon="i-heroicons-sparkles" size="xl" :ui="{
+                            <div class="flex gap-3 sm:gap-5 flex-row items-start">
+                                <div class="shrink-0 mt-0.5">
+                                    <UAvatar icon="i-heroicons-sparkles" size="lg" :ui="{
                                         root: 'rounded-2xl bg-blue-500',
-                                        icon: 'text-gray-100 w-5 h-5 lg:w-6 sm:h-6'
+                                        icon: 'text-gray-100 w-5 h-5'
                                     }" />
                                 </div>
                                 <div
-                                    class="space-y-4 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-8 text-xl">
+                                    class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
                                     <div class="markdown-body" v-html="render(msg.text)" />
                                     <!-- Copy Button -->
                                     <div class="flex justify-start" :class="index === lastBotIndex
@@ -251,7 +249,7 @@ watch(() => route.params.id, () => {
                                         }">
                                             <UButton
                                                 :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                                                size="xl" color="neutral" variant="ghost"
+                                                size="lg" color="neutral" variant="ghost"
                                                 class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
                                                 @click="copyMessage(msg)" />
                                         </UTooltip>
@@ -277,33 +275,33 @@ watch(() => route.params.id, () => {
                 </div>
             </div>
 
-            <!-- Input Area -->
-            <div class="shrink-0 pb-2 px-2 z-10 bg-transparent">
-                <div class="w-full max-w-5xl mx-auto">
-                    <form @submit.prevent="handleSendMessage">
-                        <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
-                            :rows="1" autoresize :disabled="state.isTyping"
-                            @keydown.enter.exact.prevent="handleSendMessage"
-                            class="border border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-100 dark:bg-gray-800 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300 hover:shadow-3xl"
-                            :ui="{
-                                root: 'relative',
-                                base: 'pl-6 pr-14 py-5 text-base'
-                            }">
-                            <template #trailing>
-                                <div class="absolute right-4 bottom-auto top-0 flex items-center h-full">
-                                    <UChatPromptSubmit @click="handleSendMessage" size="md" color="primary"
-                                        :disabled="!canSendMessage || state.isTyping" icon="i-heroicons-paper-airplane"
-                                        class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
-                                        :class="{
-                                            'scale-0 opacity-0 rotate-90': !canSendMessage,
-                                            'scale-100 opacity-100 rotate-0 hover:scale-110': canSendMessage
-                                        }" />
-                                </div>
-                            </template>
-                        </UChatPrompt>
-                    </form>
-                    <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-3">
-                        กด Enter เพื่อส่งข้อความ · Shift + Enter เพื่อขึ้นบรรทัดใหม่
+            <div class="w-full max-w-5xl mx-auto px-3 sm:px-4">
+                <form @submit.prevent="handleSendMessage">
+                    <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
+                        :rows="1" autoresize :disabled="state.isTyping" @keydown.enter.exact.prevent="handleSendMessage"
+                        class="border border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-100 dark:bg-gray-800 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300"
+                        :ui="{
+                            root: 'relative',
+                            base: 'pl-4 sm:pl-6 pr-12 sm:pr-14 py-3 sm:py-4 text-sm sm:text-base'
+                        }">
+                        <template #trailing>
+                            <div class="absolute right-3 sm:right-4 bottom-auto top-0 flex items-center h-full">
+                                <UChatPromptSubmit @click="handleSendMessage" size="md" color="primary"
+                                    :disabled="!canSendMessage || state.isTyping" icon="i-heroicons-paper-airplane"
+                                    class="transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl" :class="{
+                                        'scale-0 opacity-0 rotate-90': !canSendMessage,
+                                        'scale-100 opacity-100 rotate-0 hover:scale-110': canSendMessage
+                                    }" />
+                            </div>
+                        </template>
+                    </UChatPrompt>
+                </form>
+            </div>
+
+            <div class="shrink-0 input-area-wrapper z-10">
+                <div class="w-full max-w-5xl mx-auto px-3 sm:px-4 pt-2 pb-3">
+                    <p class="text-center text-sm text-gray-400 dark:text-gray-500 mt-2 hidden sm:block">
+                        ข้อความจะหายไปเมื่อคุณออกจากห้องนี้ และอาจะมีความผิดพลาดได้
                     </p>
                 </div>
             </div>
@@ -328,8 +326,16 @@ watch(() => route.params.id, () => {
     animation: fade-in 0.5s ease-out forwards;
 }
 
+/* 
+    Safe area สำหรับ iPhone (notch/home indicator)
+    env(safe-area-inset-bottom) = ความสูงของ home indicator บน iPhone X+
+*/
+.input-area-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
 .overflow-y-auto::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
@@ -339,7 +345,6 @@ watch(() => route.params.id, () => {
 .overflow-y-auto::-webkit-scrollbar-thumb {
     background: linear-gradient(to bottom, rgba(156, 163, 175, 0.3), rgba(156, 163, 175, 0.5));
     border-radius: 99px;
-    transition: background 0.3s;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {

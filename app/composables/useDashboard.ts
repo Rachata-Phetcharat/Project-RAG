@@ -87,9 +87,10 @@ export const useDashboard = () => {
 
       const todayVal = res.at(-1)?.count ?? 0;
       const yesterdayVal = res.at(-2)?.count ?? 0;
+      const totalVal = res.reduce((sum, item) => sum + (item.count ?? 0), 0);
 
       return {
-        total: todayVal,
+        total: totalVal,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };
@@ -113,9 +114,13 @@ export const useDashboard = () => {
 
       const todayVal = res.at(-1)?.active_users ?? 0;
       const yesterdayVal = res.at(-2)?.active_users ?? 0;
+      const totalVal = res.reduce(
+        (sum, item) => sum + (item.active_users ?? 0),
+        0,
+      );
 
       return {
-        total: todayVal,
+        total: totalVal,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };

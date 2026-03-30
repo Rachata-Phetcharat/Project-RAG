@@ -52,8 +52,8 @@ const channelState = reactive({
     channelTitle: '',
     sources: [] as any[],
     totalFilesFromList: 0,
-    loading: true, // เริ่มต้นเป็น true เพื่อแสดง loading state
-    isInitialized: false // เช็คว่าโหลดข้อมูลครั้งแรกเสร็จแล้วหรือยัง
+    loading: true,
+    isInitialized: false
 })
 
 /* ============================================
@@ -72,7 +72,6 @@ const loadChannelData = async () => {
             isChannelOwned = true
         } else if (authStore.token) {
             response = await fetchMyChannels({ limit: 100 })
-            // isChannelOwned จะเช็คหลังจาก findChannel
         }
 
         const findChannel = (list: any[]) =>
@@ -80,16 +79,14 @@ const loadChannelData = async () => {
 
         let currentChannel = response ? findChannel(response as any[]) : null
 
-        // ✅ ถ้าเจอใน My Channels = เป็นเจ้าของ
         if (currentChannel && authStore.role !== 'admin') {
             isChannelOwned = true
         }
 
-        // ถ้าไม่เจอให้ดึงจาก Public
         if (!currentChannel) {
             const publicRes = await fetchPublicChannels({ limit: 100 })
             currentChannel = findChannel(publicRes as any[])
-            isChannelOwned = false // Public = ไม่ใช่เจ้าของ
+            isChannelOwned = false
         }
 
         if (currentChannel) {
@@ -140,13 +137,17 @@ watch(() => route.params.id, (newId) => {
 </script>
 
 <template>
-    <div class="flex h-screen overflow-hidden">
+    <!-- 
+        ใช้ h-full แทน h-screen เพราะ parent layout (chatLayout.vue) จัดการ height ด้วย 100dvh แล้ว
+        overflow-hidden เพื่อป้องกัน scroll ของตัว container นี้เอง
+    -->
+    <div class="flex h-full overflow-hidden">
 
-        <!-- Loading Skeleton (แสดงตอน refresh หน้าใหม่) -->
+        <!-- Loading Skeleton -->
         <template v-if="!channelState.isInitialized">
-            <!-- Sidebar Skeleton -->
+            <!-- Sidebar Skeleton (desktop lg+) -->
             <aside v-if="authStore.isLoggedIn"
-                class="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex flex-col hidden md:flex shadow-xl">
+                class="w-80 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 flex-col hidden lg:flex shadow-xl">
                 <div class="p-6 border-b border-gray-100 dark:border-gray-800/50">
                     <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
                     <div class="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -158,18 +159,13 @@ watch(() => route.params.id, (newId) => {
             </aside>
 
             <!-- Main Content Skeleton -->
-            <main class="flex-1 flex flex-col">
-                <!-- Header Skeleton -->
+            <main class="flex-1 flex flex-col min-w-0 min-h-0">
                 <div
-                    class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 py-5 border-b border-gray-200/50 dark:border-gray-800/50">
+                    class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/50 dark:border-gray-800/50 shrink-0">
                     <div class="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
-
-                <!-- Chat Area Skeleton -->
-                <div class="flex-1 flex flex-col overflow-hidden">
-                    <!-- Messages Skeleton -->
-                    <div class="flex-1 p-6 sm:p-10 space-y-8 overflow-hidden">
-                        <!-- AI message skeleton -->
+                <div class="flex-1 flex flex-col overflow-hidden min-h-0">
+                    <div class="flex-1 p-4 sm:p-10 space-y-8 overflow-hidden">
                         <div class="flex justify-start max-w-5xl mx-auto w-full">
                             <div class="flex gap-5 items-start w-full max-w-3xl">
                                 <div class="w-10 h-10 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse shrink-0">
@@ -181,35 +177,20 @@ watch(() => route.params.id, (newId) => {
                                 </div>
                             </div>
                         </div>
-                        <!-- User message skeleton -->
                         <div class="flex justify-end max-w-5xl mx-auto w-full">
                             <div class="h-10 w-56 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
                         </div>
-                        <!-- AI message skeleton (shorter) -->
-                        <div class="flex justify-start max-w-5xl mx-auto w-full">
-                            <div class="flex gap-5 items-start w-full max-w-3xl">
-                                <div class="w-10 h-10 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse shrink-0">
-                                </div>
-                                <div class="space-y-2 flex-1">
-                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-2/3"></div>
-                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-5/6"></div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-
-                    <!-- Chat Input Skeleton -->
-                    <div class="shrink-0 pb-2 px-2 z-10">
-                        <div class="w-full max-w-5xl mx-auto space-y-3">
-                            <div class="h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
-                            <div class="h-3 w-64 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mx-auto"></div>
+                    <div class="shrink-0 pb-safe-area pb-4 px-3 sm:px-4">
+                        <div class="w-full max-w-5xl mx-auto">
+                            <div class="h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
                         </div>
                     </div>
                 </div>
             </main>
         </template>
 
-        <!-- Main Content (แสดงเมื่อโหลดเสร็จแล้ว) -->
+        <!-- Main Content -->
         <template v-else>
             <!-- Sidebar Component -->
             <SidebarFileList v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"

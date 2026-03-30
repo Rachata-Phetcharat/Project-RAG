@@ -80,7 +80,7 @@ onMounted(() => {
     <div class="flex">
         <AdminSidebar />
 
-        <main class="flex-1 p-6 md:p-8 overflow-auto mx-auto w-full">
+        <main class="flex-1 p-6 md:p-8 mx-auto w-full">
             <!-- Header Section -->
             <div class="mb-8">
                 <div class="flex items-center gap-3 mb-6">
@@ -139,6 +139,41 @@ onMounted(() => {
                     </div>
                 </div>
 
+                <!-- Empty State (ไม่มีข้อมูลเลย) -->
+                <div v-else-if="!channels.length" class="relative">
+                    <div
+                        class="absolute inset-0 bg-linear-to-r from-amber-600/5 to-orange-600/5 dark:from-amber-500/10 dark:to-orange-500/10 rounded-3xl blur-2xl">
+                    </div>
+                    <div
+                        class="relative flex flex-col items-center justify-center gap-8 px-4 text-center bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm py-5 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                        <div class="relative">
+                            <div
+                                class="absolute inset-0 bg-linear-to-r from-blue-500 to-indigo-500 rounded-full blur-2xl opacity-20 animate-pulse">
+                            </div>
+                            <div
+                                class="relative p-8 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full shadow-xl border border-blue-100 dark:border-blue-800">
+                                <UIcon name="i-lucide-inbox" class="w-20 h-20 text-blue-600 dark:text-blue-400" />
+                            </div>
+                        </div>
+
+                        <div class="max-w-md">
+                            <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                                ไม่มีแชนแนลในตอนนี้
+                            </h2>
+                            <p class="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
+                                ดูเหมือนว่าจะยังไม่มีแชนแนลใดๆ ถูกสร้างขึ้นในระบบ
+                                คุณสามารถรอให้ผู้ใช้สร้างแชนแนลใหม่ หรือสร้างแชนแนลเองได้เลย!
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                            <UIcon name="i-lucide-check-circle" class="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <span
+                                class="text-sm font-medium text-green-700 dark:text-green-300">ทุกอย่างเรียบร้อย</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- No Search Results -->
                 <div v-else-if="searchQuery && !filteredChannels.length" class="text-center py-20">
                     <div
@@ -151,10 +186,10 @@ onMounted(() => {
                     <p class="text-gray-500 dark:text-gray-400">
                         ลองค้นหาด้วยคำอื่น
                     </p>
-                    <button @click="searchQuery = ''"
-                        class="mt-4 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors">
+                    <UButton @click="searchQuery = ''"
+                        class="mt-3 px-4 py-1.5 text-md bg-blue-100 dark:bg-blue-400 text-blue-700 dark:text-gray-900 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-500 transition-colors">
                         ล้างการค้นหา
-                    </button>
+                    </UButton>
                 </div>
 
                 <!-- Channels Grid -->

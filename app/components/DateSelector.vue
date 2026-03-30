@@ -41,9 +41,13 @@ const calendarRange = computed({
     }),
     set: (newValue: { start: any, end: any }) => {
         if (newValue.start && newValue.end) {
+            // ✅ FIX: end ต้องเป็น end-of-day เพื่อให้ครอบคลุมทั้งวัน
+            const endJs = newValue.end.toDate(getLocalTimeZone())
+            endJs.setHours(23, 59, 59, 999)
+
             selected.value = {
                 start: newValue.start.toDate(getLocalTimeZone()),
-                end: newValue.end.toDate(getLocalTimeZone())
+                end: endJs
             }
         }
     }
@@ -73,9 +77,13 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
     else if (range.months) startDate = startDate.subtract({ months: range.months })
     else if (range.years) startDate = startDate.subtract({ years: range.years })
 
+    // ✅ FIX: end ต้องเป็น end-of-day (23:59:59) เพื่อให้ API query ครอบคลุมทั้งวัน
+    const endJs = endDate.toDate(getLocalTimeZone())
+    endJs.setHours(23, 59, 59, 999)
+
     selected.value = {
         start: startDate.toDate(getLocalTimeZone()),
-        end: endDate.toDate(getLocalTimeZone())
+        end: endJs
     }
 }
 </script>
@@ -87,7 +95,8 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
             <span class="truncate">
                 <template v-if="selected.start && selected.end">
                     <!-- {{ df.format(selected.start) }} - {{ df.format(selected.end) }}  -->
-                    {{ranges.find(r => isRangeSelected(r)) ? `${ranges.find(r => isRangeSelected(r))!.label}` : ''}}
+                    {{ranges.find(r => isRangeSelected(r)) ? ranges.find(r => isRangeSelected(r))!.label :
+                        `${df.format(selected.start)} - ${df.format(selected.end)}`}}
                 </template>
                 <template v-else>
                     เลือกวันที่
