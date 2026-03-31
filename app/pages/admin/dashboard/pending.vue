@@ -66,6 +66,15 @@ const currentPage = ref(1)
 // ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแชนแนลที่แสดงต่อหน้า (ปัจจุบัน = 16)
 const pageSize = ref(16)
 
+// [Pagination] เลื่อนขึ้นบนเมื่อเปลี่ยนหน้า
+const channelGridRef = ref<HTMLElement | null>(null)
+
+watch(currentPage, () => {
+    nextTick(() => {
+        channelGridRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+})
+
 // รีเซ็ตหน้า 1 เมื่อพิมพ์ค้นหา
 watch(searchQuery, () => { currentPage.value = 1 })
 
@@ -112,7 +121,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Search & Filter Bar -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div ref="channelGridRef" class="flex items-center gap-4 pt-1.5">
                     <!-- Search -->
                     <div class="flex-1 max-w-md">
                         <div class="relative group">
@@ -132,6 +141,7 @@ onMounted(() => {
                     </p>
                 </div>
             </div>
+
 
             <!-- Main Content -->
             <main>

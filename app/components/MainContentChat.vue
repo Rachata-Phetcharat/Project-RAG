@@ -4,7 +4,7 @@
 ============================================ */
 const route = useRoute()
 
-const { createSession, sendOllamaReply, loading: chatLoading } = useChat()
+const { createSession, sendOllamaReplyStream, loading: chatLoading } = useChat()
 const { render } = useMarkdown()
 const authStore = useAuthStore()
 
@@ -32,13 +32,27 @@ const state = reactive({
     message: '',
     chatHistory: [] as any[],
     sessionId: '',
-    isTyping: false
+    isTyping: false,
+    streamingText: '',
 })
 
 /* ============================================
    Refs
 ============================================ */
 const chatContainer = ref<HTMLElement | null>(null)
+let abortController: AbortController | null = null
+
+// ── User Scroll Detection ──────────────────────────────────────────────────
+// ถ้า user เลื่อนขึ้นระหว่าง stream → หยุด auto-scroll จนกว่าจะกลับมาล่างสุด
+const userHasScrolledUp = ref(false)
+const SCROLL_THRESHOLD = 80 // px จากล่างสุด ถือว่า "อยู่ล่างสุด"
+
+const onContainerScroll = () => {
+    if (!chatContainer.value) return
+    const el = chatContainer.value
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    userHasScrolledUp.value = distFromBottom > SCROLL_THRESHOLD
+}
 
 /* ============================================
    Chat Logic
@@ -66,25 +80,45 @@ const handleSendMessage = async () => {
 
     state.message = ''
     state.isTyping = true
+    state.streamingText = ''
+    userHasScrolledUp.value = false // reset เมื่อส่งข้อความใหม่
 
     await scrollToBottom('smooth')
 
+    abortController = new AbortController()
+
     try {
-        const aiResponse = await sendOllamaReply(state.sessionId, userText)
+        const fullText = await sendOllamaReplyStream(
+            state.sessionId,
+            userText,
+            (chunk) => {
+                state.streamingText += chunk
+                // เลื่อนลงก็ต่อเมื่อ user ไม่ได้เลื่อนขึ้น
+                if (!userHasScrolledUp.value) {
+                    scrollToBottom('instant')
+                }
+            },
+            abortController.signal
+        )
 
         state.chatHistory.push({
             id: Date.now() + 1,
             role: 'bot',
-            text: aiResponse,
+            text: fullText,
             copied: false
         })
+        state.streamingText = ''
 
         await scrollToBottom('smooth')
-    } catch (err) {
+    } catch (err: any) {
+        if (err?.name === 'AbortError') return
+
         state.chatHistory.pop()
         state.message = userText
+        state.streamingText = ''
     } finally {
         state.isTyping = false
+        abortController = null
     }
 }
 
@@ -127,17 +161,26 @@ onMounted(() => {
     initChatSession()
 })
 
-watch(() => route.params.id, () => {
+onBeforeUnmount(() => {
+    // ── FIX: เปลี่ยนเป็น abort เฉพาะเมื่อ component unmount จริง ๆ
+    // ไม่ abort เมื่อแค่เปลี่ยน route ภายใน layout เดียวกัน
+    // (ถ้า layout ไม่ re-mount component นี้ ก็จะไม่ถูกเรียก)
+    abortController?.abort()
+})
+
+watch(() => route.params.id, (newId, oldId) => {
+    if (newId === oldId) return
+    // abort stream ของ channel เก่า แล้วเริ่ม session ใหม่
+    abortController?.abort()
     state.chatHistory = []
+    state.streamingText = ''
+    state.isTyping = false
+    userHasScrolledUp.value = false
     initChatSession()
 })
 </script>
 
 <template>
-    <!--
-        min-w-0 + min-h-0 สำคัญมากใน flexbox
-        ป้องกัน flex child ขยายเกิน parent
-    -->
     <main class="flex-1 flex flex-col relative min-w-0 min-h-0 overflow-hidden">
         <!-- Header -->
         <div
@@ -155,11 +198,12 @@ watch(() => route.params.id, () => {
                     </h1>
                 </div>
                 <div v-if="authStore.isLoggedIn" class="flex items-center gap-2 shrink-0">
-                    <!-- ปุ่มเปิด sidebar เฉพาะ mobile/tablet (< lg) -->
                     <UButton icon="i-lucide-menu" color="neutral" variant="ghost" size="md" class="lg:hidden"
                         :badge="fileCount > 0 ? String(fileCount) : undefined" aria-label="ดูไฟล์"
                         @click="emit('open-sidebar')" />
-                    <UserMenu compact="Default" class="hidden lg:flex" />
+                    <div class="hidden lg:flex">
+                        <UserMenu compact="Default" class="hidden lg:flex" />
+                    </div>
                 </div>
                 <div v-else class="flex items-center gap-2 shrink-0">
                     <ButtomLogin />
@@ -176,7 +220,7 @@ watch(() => route.params.id, () => {
             </div>
         </div>
 
-        <!-- Empty State (ยังไม่มีไฟล์และไม่มีประวัติ) -->
+        <!-- Empty State -->
         <div v-else-if="!showChatArea"
             class="flex-1 flex flex-col items-center justify-center gap-6 sm:gap-8 px-4 text-center min-h-0">
             <div class="relative">
@@ -201,9 +245,10 @@ watch(() => route.params.id, () => {
         <div v-else class="flex flex-col flex-1 relative overflow-hidden min-h-0">
             <!-- Chat Messages -->
             <div ref="chatContainer"
-                class="flex-1 w-full overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 scroll-smooth min-h-0">
+                class="flex-1 w-full overflow-y-auto p-4 sm:p-6 space-y-6 sm:space-y-8 scroll-smooth min-h-0"
+                @scroll="onContainerScroll">
 
-                <!-- Welcome prompt when files loaded but no messages yet -->
+                <!-- Welcome prompt -->
                 <div v-if="state.chatHistory.length === 0 && !state.isTyping"
                     class="flex flex-col items-center justify-center h-full min-h-48 sm:min-h-64 gap-4 sm:gap-5 text-center animate-fade-in">
                     <div
@@ -218,63 +263,69 @@ watch(() => route.params.id, () => {
                     </div>
                 </div>
 
+                <!-- ── Completed messages ── -->
                 <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
-                    :class="['flex max-w-5xl mx-auto animate-fade-in w-full', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-                    <div :class="['max-w-[85%] sm:max-w-3xl', msg.role === 'user' ? 'w-fit' : 'w-full']">
+                    :class="['flex max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+                    <div :class="['max-w-full sm:max-w-full', msg.role === 'user' ? 'w-fit' : 'w-full']">
 
                         <!-- User Message -->
-                        <div v-if="msg.role === 'user'"
-                            class="bg-gray-200/50 dark:bg-gray-700 dark:text-white text-gray-900 px-4 py-3 rounded-lg text-sm sm:text-base font-medium">
-                            {{ msg.text }}
-                        </div>
-
-                        <!-- AI Message -->
-                        <div v-else class="group">
-                            <div class="flex gap-3 sm:gap-5 flex-row items-start">
-                                <div class="shrink-0 mt-0.5">
-                                    <UAvatar icon="i-heroicons-sparkles" size="lg" :ui="{
-                                        root: 'rounded-2xl bg-blue-500',
-                                        icon: 'text-gray-100 w-5 h-5'
-                                    }" />
-                                </div>
-                                <div
-                                    class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
-                                    <div class="markdown-body" v-html="render(msg.text)" />
-                                    <!-- Copy Button -->
-                                    <div class="flex justify-start" :class="index === lastBotIndex
-                                        ? 'opacity-100'
-                                        : 'opacity-0 group-hover:opacity-100 transition-opacity duration-200'">
-                                        <UTooltip :delay-duration="0" text="คัดลอกข้อความ" :ui="{
-                                            content: 'bg-gray-900/90 text-white dark:text-gray-900 dark:bg-gray-100 text-md rounded-md px-2 py-1'
-                                        }">
-                                            <UButton
-                                                :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
-                                                size="lg" color="neutral" variant="ghost"
-                                                class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
-                                                @click="copyMessage(msg)" />
-                                        </UTooltip>
-                                    </div>
-                                </div>
+                        <div v-if="msg.role === 'user'" class="pl-17 lg:pl-65">
+                            <div
+                                class="bg-gray-200/50 dark:bg-gray-700 dark:text-white text-gray-900 px-4 py-3 rounded-lg text-sm sm:text-base font-medium">
+                                {{ msg.text }}
                             </div>
                         </div>
 
-                    </div>
-                </div>
-
-                <!-- Typing Indicator -->
-                <div v-if="state.isTyping" class="flex justify-start animate-fade-in max-w-5xl mx-auto">
-                    <div class="flex gap-4 items-center bg-gray-100/50 dark:bg-gray-800/50 px-6 py-4 rounded-3xl">
-                        <div class="flex gap-1">
-                            <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></span>
-                            <span
-                                class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                            <span
-                                class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                        <!-- AI Message (completed) -->
+                        <div v-else class="group">
+                            <div
+                                class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
+                                <div class="markdown-body" v-html="render(msg.text)" />
+                                <!-- Copy Button -->
+                                <div class="flex justify-start" :class="index === lastBotIndex
+                                    ? 'opacity-100'
+                                    : 'opacity-0 group-hover:opacity-100 transition-opacity duration-200'">
+                                    <UTooltip :delay-duration="0" text="คัดลอกข้อความ" :ui="{
+                                        content: 'bg-gray-900/90 text-white dark:text-gray-900 dark:bg-gray-100 text-sm rounded-md px-2 py-1'
+                                    }">
+                                        <UButton
+                                            :icon="msg.copied ? 'i-heroicons-check' : 'i-heroicons-clipboard-document'"
+                                            size="lg" color="neutral" variant="ghost"
+                                            class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                                            @click="copyMessage(msg)" />
+                                    </UTooltip>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- ── Streaming bubble ── -->
+                <div v-if="state.isTyping"
+                    class="flex max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8 justify-start animate-fade-in">
+                    <div class="max-w-full sm:max-w-full">
+                        <div class="flex gap-3 sm:gap-5 flex-row items-start">
+                            <div
+                                class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
+
+                                <!-- dot loading -->
+                                <div v-if="!state.streamingText" class="flex items-center gap-1 py-1">
+                                    <span class="typing-dot" />
+                                    <span class="typing-dot" style="animation-delay: 0.15s" />
+                                    <span class="typing-dot" style="animation-delay: 0.3s" />
+                                </div>
+
+                                <!-- streaming markdown + cursor -->
+                                <div v-else class="markdown-body streaming-content"
+                                    v-html="render(state.streamingText)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
+            <!-- Input Area -->
             <div class="w-full max-w-5xl mx-auto px-3 sm:px-4">
                 <form @submit.prevent="handleSendMessage">
                     <UChatPrompt v-model="state.message" variant="soft" placeholder="ถามคำถามเกี่ยวกับเอกสาร..."
@@ -326,10 +377,6 @@ watch(() => route.params.id, () => {
     animation: fade-in 0.5s ease-out forwards;
 }
 
-/* 
-    Safe area สำหรับ iPhone (notch/home indicator)
-    env(safe-area-inset-bottom) = ความสูงของ home indicator บน iPhone X+
-*/
 .input-area-safe {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
@@ -353,10 +400,11 @@ watch(() => route.params.id, () => {
 
 /* ตัวแชท */
 :deep(.markdown-body) {
-    line-height: 1.75;
+    line-height: 1.8;
     font-size: 1rem;
     min-width: 0;
     overflow-x: hidden;
+    max-width: 100%;
 }
 
 :deep(.markdown-body p) {
@@ -380,34 +428,70 @@ watch(() => route.params.id, () => {
 :deep(.markdown-body strong) {
     font-weight: 600;
 }
+
+/* ── Typing dots ── */
+.typing-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    animation: typing-bounce 0.8s ease-in-out infinite;
+}
+
+@keyframes typing-bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
 </style>
 
-<!-- ไม่มี scoped — ใช้กับ v-html ได้โดยตรง -->
+<!-- Global styles — ใช้กับ v-html ได้โดยตรง -->
 <style>
 /* ── Code block layout ── */
 .code-block {
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    border: 1px solid #e1e4e8;
-    margin: 0.75rem 0;
-    font-size: 13px;
+    /* ใช้โทนสีเดียวกับ layout border */
+    border: 1px solid #e2e8f0;
+    margin: 1rem 0;
+    font-size: 14.5px;
+    /* ใหญ่ขึ้นจาก 13px */
     max-width: 100%;
     min-width: 0;
+    box-sizing: border-box;
+    /* subtle shadow เหมือน ChatGPT / Claude */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .code-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 14px;
-    background: #f0f2f4;
-    border-bottom: 1px solid #e1e4e8;
+    padding: 8px 16px;
+    /* โทนเดียวกับ navbar: bg-gray-50 */
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .code-lang {
-    font-size: 12px;
-    color: #57606a;
-    font-family: 'Consolas', monospace;
+    font-size: 12.5px;
+    color: #64748b;
+    /* slate-500 — ดูสะอาดกว่า GitHub gray */
+    font-family: 'Consolas', 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
 }
 
 .copy-code-btn {
@@ -415,134 +499,230 @@ watch(() => route.params.id, () => {
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    color: #57606a;
+    color: #64748b;
     background: none;
-    border: 1px solid #d0d7de;
-    padding: 2px 10px;
-    border-radius: 5px;
+    border: 1px solid #cbd5e1;
+    /* slate-300 */
+    padding: 3px 10px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.15s ease;
+    font-family: inherit;
 }
 
 .copy-code-btn:hover {
-    background: #d0d7de;
+    background: #e2e8f0;
+    color: #334155;
+    border-color: #94a3b8;
 }
 
 .copy-code-btn.copied {
-    color: #1a7f37;
-    border-color: #1a7f37;
+    color: #059669;
+    /* emerald-600 */
+    border-color: #059669;
 }
 
+/* Pre / Code */
 .code-block pre {
     margin: 0;
-    padding: 14px 16px;
+    padding: 16px 18px;
+    /* พื้นหลัง off-white อ่านง่าย */
     background: #f8fafc;
     overflow-x: auto;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .code-block pre code {
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
     background: none;
     padding: 0;
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 14.5px;
+    /* ใหญ่ขึ้น */
+    line-height: 1.7;
 }
 
+/* ── Syntax highlight (Light) — โทน VS Code Light+ ── */
+.hljs {
+    color: #1e293b;
+    /* slate-800 */
+    background: transparent;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-operator {
+    color: #7c3aed;
+    /* violet-600 — เข้ากับโทน primary */
+    font-weight: 600;
+}
+
+.hljs-string,
+.hljs-attr {
+    color: #0369a1;
+    /* sky-700 */
+}
+
+.hljs-number,
+.hljs-literal {
+    color: #d97706;
+    /* amber-600 */
+}
+
+.hljs-comment {
+    color: #94a3b8;
+    /* slate-400 */
+    font-style: italic;
+}
+
+.hljs-function,
+.hljs-title {
+    color: #0f766e;
+    /* teal-700 */
+    font-weight: 600;
+}
+
+.hljs-type,
+.hljs-class {
+    color: #c2410c;
+    /* orange-700 */
+}
+
+.hljs-variable,
+.hljs-params {
+    color: #1e293b;
+}
+
+.hljs-built_in {
+    color: #b45309;
+    /* amber-700 */
+}
+
+.hljs-tag,
+.hljs-name {
+    color: #0f766e;
+}
+
+/* Inline code */
 .inline-code {
-    font-family: 'Consolas', monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
     font-size: 0.875em;
-    background: rgba(175, 184, 193, 0.2);
+    background: #f1f5f9;
+    /* slate-100 */
     padding: 2px 6px;
-    border-radius: 4px;
-    color: #0a3069;
+    border-radius: 5px;
+    color: #7c3aed;
+    /* เข้ากับ primary accent */
+    border: 1px solid #e2e8f0;
 }
 
-/* ── Dark mode ── */
+/* ══════════════════════════════════════
+   DARK MODE
+══════════════════════════════════════ */
+/* โทน dark เดียวกับ layout: bg-neutral-800 / bg-neutral-900 */
 .dark .code-block {
-    border-color: #30363d;
+    border-color: #334155;
+    /* slate-700 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .dark .code-header {
-    background: #161b22;
-    border-color: #30363d;
+    background: #1e293b;
+    /* slate-800 — เข้ากับ neutral-800 */
+    border-color: #334155;
 }
 
 .dark .code-lang {
-    color: #8b949e;
+    color: #94a3b8;
+    /* slate-400 */
 }
 
 .dark .copy-code-btn {
-    color: #8b949e;
-    border-color: #30363d;
+    color: #94a3b8;
+    border-color: #334155;
 }
 
 .dark .copy-code-btn:hover {
-    background: #30363d;
+    background: #334155;
+    color: #e2e8f0;
+    border-color: #475569;
 }
 
 .dark .copy-code-btn.copied {
-    color: #3fb950;
-    border-color: #3fb950;
+    color: #34d399;
+    /* emerald-400 */
+    border-color: #34d399;
 }
 
 .dark .code-block pre {
-    background: #0d1117;
+    background: #0f172a;
+    /* slate-900 — เข้ากับ neutral-900 */
 }
 
-.dark .inline-code {
-    background: rgba(110, 118, 129, 0.2);
-    color: #79c0ff;
-}
-
-/* ── Syntax tokens (dark) ── */
+/* Syntax highlight (Dark) — โทน GitHub Dark / VS Code Dark+ */
 .dark .hljs {
-    color: #e6edf3;
+    color: #e2e8f0;
+    /* slate-200 */
 }
 
-.dark .hljs-keyword {
-    color: #ff7b72;
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-operator {
+    color: #c084fc;
+    /* purple-400 — vivid แต่ไม่บาดตา */
+    font-weight: 600;
 }
 
-.dark .hljs-string {
-    color: #a5d6ff;
+.dark .hljs-string,
+.dark .hljs-attr {
+    color: #7dd3fc;
+    /* sky-300 */
 }
 
-.dark .hljs-number {
-    color: #f2cc60;
+.dark .hljs-number,
+.dark .hljs-literal {
+    color: #fbbf24;
+    /* amber-400 */
 }
 
 .dark .hljs-comment {
-    color: #8b949e;
+    color: #475569;
+    /* slate-600 */
     font-style: italic;
 }
 
 .dark .hljs-function,
 .dark .hljs-title {
-    color: #d2a8ff;
+    color: #34d399;
+    /* emerald-400 */
+    font-weight: 600;
 }
 
 .dark .hljs-type,
-.dark .hljs-class,
-.dark .hljs-literal,
-.dark .hljs-attr {
-    color: #79c0ff;
-}
-
-.dark .hljs-built_in {
-    color: #ffa657;
-}
-
-.dark .hljs-tag,
-.dark .hljs-name {
-    color: #7ee787;
-}
-
-.dark .hljs-operator {
-    color: #ff7b72;
+.dark .hljs-class {
+    color: #fb923c;
+    /* orange-400 */
 }
 
 .dark .hljs-variable,
 .dark .hljs-params {
-    color: #e6edf3;
+    color: #e2e8f0;
+}
+
+.dark .hljs-built_in {
+    color: #fbbf24;
+}
+
+.dark .hljs-tag,
+.dark .hljs-name {
+    color: #34d399;
+}
+
+.dark .inline-code {
+    background: #1e293b;
+    /* slate-800 */
+    border-color: #334155;
+    color: #c084fc;
+    /* purple-400 */
 }
 </style>

@@ -29,7 +29,9 @@ watch(() => route.path, () => { isMobileOpen.value = false })
 
                     <!-- Right: desktop → UserMenu เต็ม, mobile → hamburger -->
                     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-                        <UserMenu compact="Default" class="hidden lg:flex" />
+                        <div class="hidden lg:flex">
+                            <UserMenu compact="Default" class="hidden lg:flex" />
+                        </div>
                         <UButton icon="i-lucide-menu" color="neutral" variant="ghost" size="md" class="lg:hidden"
                             aria-label="เปิดเมนู" @click="isMobileOpen = true" />
                     </div>

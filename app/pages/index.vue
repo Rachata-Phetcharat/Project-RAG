@@ -126,6 +126,15 @@ watch(selectedTab, () => {
     loadChannels()
 })
 
+// [Pagination] เลื่อนขึ้นบนเมื่อเปลี่ยนหน้า
+const channelGridRef = ref<HTMLElement | null>(null)
+
+watch(currentPage, () => {
+    nextTick(() => {
+        channelGridRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+})
+
 // ========================================
 // 6. Initial Load
 // ========================================
@@ -173,7 +182,7 @@ onMounted(() => {
             </div>
         </header>
 
-        <main>
+        <main ref="channelGridRef">
             <!-- ─── Filter Bar ─── -->
             <!-- [RESPONSIVE] ลด padding บน mobile, stack แนวตั้งบน mobile -->
             <div v-if="authStore.token"
@@ -195,8 +204,9 @@ onMounted(() => {
                             <p
                                 class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                                 พบทั้งหมด
-                                <span class="font-semibold text-blue-600 dark:text-blue-400">{{ filteredChannels.length
-                                    }}</span>
+                                <span class="font-semibold text-blue-600 dark:text-blue-400">
+                                    {{ filteredChannels.length }}
+                                </span>
                                 รายการ
                             </p>
                         </div>

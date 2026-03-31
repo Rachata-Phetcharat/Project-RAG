@@ -20,6 +20,15 @@ const currentPage = ref(1)
 // ✏️ แก้ตรงนี้เพื่อเปลี่ยนจำนวนแชนแนลที่แสดงต่อหน้า (ปัจจุบัน = 16)
 const pageSize = ref(16)
 
+// [Pagination] เลื่อนขึ้นบนเมื่อเปลี่ยนหน้า
+const channelGridRef = ref<HTMLElement | null>(null)
+
+watch(currentPage, () => {
+    nextTick(() => {
+        channelGridRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+})
+
 const loadChannels = async () => {
     errorMsg.value = ''
     try {
@@ -101,7 +110,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Search Bar -->
-                <div class="flex items-center gap-4">
+                <div ref="channelGridRef" class="flex items-center gap-4 pt-1.5">
                     <div class="flex-1 max-w-md">
                         <div class="relative group">
                             <UIcon name="i-lucide-search"

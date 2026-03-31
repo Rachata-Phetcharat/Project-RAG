@@ -162,7 +162,7 @@ const columns: TableColumn<User>[] = [
 
 const pagination = ref({
     pageIndex: 0,
-    pageSize: 10
+    pageSize: 8
 })
 
 const globalFilter = ref('')
@@ -173,6 +173,15 @@ const tableKey = ref(0)
 // ── Mobile pagination ──────────────────────────────────────────
 const mobilePage = ref(1)
 const mobilePageSize = 10
+
+// [Pagination] เลื่อนขึ้นบนเมื่อเปลี่ยนหน้า
+const channelGridRef = ref<HTMLElement | null>(null)
+
+watch(mobilePage, () => {
+    nextTick(() => {
+        channelGridRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+})
 
 watch([filterRoles, filterAccountTypes, globalFilter], () => { mobilePage.value = 1 })
 
@@ -291,6 +300,8 @@ onMounted(() => {
                 </div>
             </div>
 
+            <div class="p-1" ref="channelGridRef"></div>
+
             <!-- Toolbar -->
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
                 <div class="relative group lg:flex-1 lg:max-w-md">
@@ -299,6 +310,7 @@ onMounted(() => {
                     <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน"
                         class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm" />
                 </div>
+
 
                 <div class="flex flex-wrap items-center gap-2 lg:shrink-0">
                     <UButton color="primary" size="lg" icon="i-lucide-hard-drive" @click="isFilesizeModalOpen = true">
@@ -437,10 +449,7 @@ onMounted(() => {
                         </div>
 
                         <div v-if="mobileTotalPages > 1"
-                            class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-                            <span class="text-xs text-gray-500 dark:text-gray-400">
-                                หน้า {{ mobilePage }} / {{ mobileTotalPages }}
-                            </span>
+                            class="flex items-center justify-end px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                             <UPagination v-model:page="mobilePage" :total="filteredUserData.length"
                                 :items-per-page="mobilePageSize" />
                         </div>

@@ -44,6 +44,15 @@ const paginatedKeys = computed(() => {
     return filteredKeys.value.slice(start, start + pageSize.value)
 })
 
+// [Pagination] เลื่อนขึ้นบนเมื่อเปลี่ยนหน้า
+const channelGridRef = ref<HTMLElement | null>(null)
+
+watch(currentPage, () => {
+    nextTick(() => {
+        channelGridRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+})
+
 // จำนวนหน้าทั้งหมด
 const totalPages = computed(() => Math.ceil(filteredKeys.value.length / pageSize.value))
 
@@ -139,7 +148,7 @@ const onCreated = async () => {
 
 <template>
     <!-- Header Section -->
-    <div class="mb-8">
+    <div ref="channelGridRef" class="mb-8">
         <div class="flex items-center gap-3 mb-6">
             <div class="relative p-3 bg-blue-500 dark:bg-blue-500 rounded-xl">
                 <UIcon name="i-lucide-key-round" class="w-6 h-6 text-white dark:text-white" />
@@ -293,7 +302,7 @@ const onCreated = async () => {
                                 <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ row.name }}
                                 </p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{{ row.channel_name
-                                    }}
+                                }}
                                 </p>
                             </div>
                             <UBadge
@@ -338,7 +347,7 @@ const onCreated = async () => {
 
                 <!-- Pagination -->
                 <div v-if="totalPages > 1"
-                    class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    class="flex items-center justify-end px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                     <UPagination v-model:page="currentPage" :total="filteredKeys.length" :items-per-page="pageSize" />
                 </div>
             </div>
