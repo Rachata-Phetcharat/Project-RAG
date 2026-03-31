@@ -12,6 +12,7 @@ export interface DailyStatItem {
 
 export interface DashboardStats {
   total: number;
+  todayCount: number;
   growth: string;
   data: DailyStatItem[];
 }
@@ -67,10 +68,20 @@ export const useDashboard = () => {
 
   const buildEmptyStats = (): DashboardStats => ({
     total: 0,
+    todayCount: 0,
     growth: "+0%",
     data: [],
   });
   const buildEmptyChannel = (): ChannelStatsResult => ({ data: [], total: 0 });
+
+  const getTodayString = (): string => {
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
+  };
 
   // ─────────────────────────────────────────────
   // Fetch: Questions รายวัน (ภาพรวม)
@@ -85,12 +96,15 @@ export const useDashboard = () => {
         { method: "GET", headers: getHeaders(), query: params },
       );
 
+      const today = getTodayString();
+      const todayItem = res.find((item) => item.date === today);
       const todayVal = res.at(-1)?.count ?? 0;
       const yesterdayVal = res.at(-2)?.count ?? 0;
       const totalVal = res.reduce((sum, item) => sum + (item.count ?? 0), 0);
 
       return {
         total: totalVal,
+        todayCount: todayItem?.count ?? 0,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };
@@ -112,6 +126,8 @@ export const useDashboard = () => {
         { method: "GET", headers: getHeaders(), query: params },
       );
 
+      const today = getTodayString();
+      const todayItem = res.find((item) => item.date === today);
       const todayVal = res.at(-1)?.active_users ?? 0;
       const yesterdayVal = res.at(-2)?.active_users ?? 0;
       const totalVal = res.reduce(
@@ -121,6 +137,7 @@ export const useDashboard = () => {
 
       return {
         total: totalVal,
+        todayCount: todayItem?.active_users ?? 0,
         growth: getGrowth(todayVal, yesterdayVal),
         data: res,
       };
@@ -146,7 +163,7 @@ export const useDashboard = () => {
       const total =
         typeof res === "object" ? Number(res[key]) || 0 : Number(res) || 0;
 
-      return { total, growth: "+0%", data: [] };
+      return { total, todayCount: 0, growth: "+0%", data: [] };
     } catch {
       return buildEmptyStats();
     }

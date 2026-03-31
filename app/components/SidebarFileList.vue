@@ -463,7 +463,7 @@ const handleFileDeleted = (fileId: string | number) => {
                 </UDrawer>
 
                 <!-- Footer Progress (Mobile) -->
-                <div v-if="isOwnerOrAdmin" class="border-t border-gray-200 dark:border-gray-600 px-4 py-3 space-y-2">
+                <div class="border-t border-gray-200 dark:border-gray-600 px-4 py-3 space-y-2">
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">การใช้งาน</p>
                     <div class="flex justify-between text-xs text-gray-500">
                         <span>ไฟล์</span>

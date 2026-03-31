@@ -7,7 +7,7 @@ const isMobileOpen = ref(false)
 // Admin Navigation Menu Items
 const menuItems = computed(() => [
     {
-        label: 'แดชบอร์ด',
+        label: 'สถิติการใช้งาน',
         icon: 'i-lucide-bar-chart-3',
         to: '/admin/dashboard/home',
         color: 'bg-gray-200 dark:bg-gray-600'
@@ -19,7 +19,7 @@ const menuItems = computed(() => [
         color: 'bg-gray-200 dark:bg-gray-600'
     },
     {
-        label: 'คำขอ',
+        label: 'คำขอแชนแนล',
         icon: 'i-lucide-clipboard-list',
         to: '/admin/dashboard/pending',
         color: 'bg-gray-200 dark:bg-gray-600'
@@ -51,6 +51,9 @@ watch(() => route.path, () => {
         class="hidden lg:flex fixed top-[80px] left-0 w-64 bg-white dark:bg-neutral-800 border-r border-gray-200 dark:border-neutral-700 flex-col z-40"
         style="height: calc(100vh - 80px)">
         <nav class="flex-1 px-4 py-6 space-y-2">
+            <div class="flex items-center gap-3 px-4 py-2">
+                <div class="text-3xl font-semibold text-gray-900 dark:text-white">Dashboard</div>
+            </div>
             <NuxtLink v-for="item in menuItems" :key="item.to" :to="item.to" :class="[
                 'flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
                 isActive(item.to)

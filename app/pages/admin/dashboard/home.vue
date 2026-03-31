@@ -55,7 +55,7 @@ const formatDateThai = (date: Date) =>
 // Stats State
 // ─────────────────────────────────────────────
 
-const emptyStats = (): DashboardStats => ({ total: 0, growth: "+0%", data: [] });
+const emptyStats = (): DashboardStats => ({ total: 0, todayCount: 0, growth: "+0%", data: [] });
 
 const questionsData = ref<DashboardStats>(emptyStats());
 const usersData = ref<DashboardStats>(emptyStats());
@@ -116,8 +116,11 @@ onMounted(initDashboard);
 
 const statsCards = computed(() => [
     {
-        label: "คำถามทั้งหมด",
+        label: "ยอดคำถาม",
         value: questionsData.value.total.toLocaleString(),
+        todayValue: questionsData.value.todayCount.toLocaleString(),
+        todayLabel: "วันนี้",
+        showToday: true,
         change: questionsData.value.growth,
         showGrowth: true,
         icon: "i-lucide-message-circle-question",
@@ -127,6 +130,9 @@ const statsCards = computed(() => [
     {
         label: "ผู้ใช้งาน",
         value: usersData.value.total.toLocaleString(),
+        todayValue: usersData.value.todayCount.toLocaleString(),
+        todayLabel: "วันนี้",
+        showToday: true,
         change: usersData.value.growth,
         showGrowth: true,
         icon: "i-lucide-users",
@@ -136,6 +142,9 @@ const statsCards = computed(() => [
     {
         label: "แชนแนลสาธารณะ",
         value: publicChannelsData.value.total.toLocaleString(),
+        todayValue: null,
+        todayLabel: null,
+        showToday: false,
         change: publicChannelsData.value.growth,
         showGrowth: false,
         icon: "i-lucide-globe",
@@ -145,6 +154,9 @@ const statsCards = computed(() => [
     {
         label: "แชนแนลส่วนตัว",
         value: privateChannelsData.value.total.toLocaleString(),
+        todayValue: null,
+        todayLabel: null,
+        showToday: false,
         change: privateChannelsData.value.growth,
         showGrowth: false,
         icon: "i-lucide-lock",
@@ -154,6 +166,9 @@ const statsCards = computed(() => [
     {
         label: "คำขอรอดำเนินการ",
         value: pendingChannelsData.value.total.toLocaleString(),
+        todayValue: null,
+        todayLabel: null,
+        showToday: false,
         change: pendingChannelsData.value.growth,
         showGrowth: false,
         icon: "i-lucide-clock",
@@ -181,7 +196,7 @@ const statsCards = computed(() => [
                         </div>
                         <div>
                             <h1 class="text-3xl font-semibold text-gray-900 dark:text-white">
-                                แดชบอร์ดผู้ดูแลระบบ
+                                สถิติการใช้งาน
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                                 ภาพรวมระบบและสถิติการใช้งาน
@@ -278,9 +293,23 @@ const statsCards = computed(() => [
                                 <p class="text-3xl font-bold text-gray-900 dark:text-white origin-left inline-block">
                                     {{ stat.value }}
                                 </p>
-                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    {{ stat.label }}
-                                </p>
+                                <div class="flex justify-between item-center">
+                                    <p class="text-md font-medium text-gray-500 dark:text-gray-400">
+                                        {{ stat.label }}
+                                    </p>
+                                    <!-- Today sub-label -->
+                                    <div v-if="stat.showToday"
+                                        class="flex items-center gap-1.5  border-gray-100 dark:border-gray-700">
+                                        <span
+                                            class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                                            <UIcon name="i-lucide-sun" class="w-3 h-3" />
+                                            {{ stat.todayLabel }}:
+                                        </span>
+                                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            {{ stat.todayValue }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

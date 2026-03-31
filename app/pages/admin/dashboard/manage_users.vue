@@ -14,14 +14,38 @@ const table = useTemplateRef('table')
 const user = ref<User[]>([])
 const role = ref()
 const accountType = ref()
-const value = ref<string>('all')
 
-// USelect อาจ emit object → แปลงให้เป็น string เสมอ
-const onRoleFilterChange = (val: any) => {
-    value.value = typeof val === 'object' ? val?.value ?? 'all' : val ?? 'all'
-}
 // ── Modal: ขนาดไฟล์เริ่มต้น ───────────────────────────────────
 const isFilesizeModalOpen = ref(false)
+
+// ── Modal: ตัวกรอง ────────────────────────────────────────────
+const isFilterModalOpen = ref(false)
+const filterRoles = ref<string[]>([])
+const filterAccountTypes = ref<string[]>([])
+
+// ดึง account_type unique จาก user list โดยตรง → ไม่ต้องรอ API แยก
+const accountTypeItems = computed<{ label: string; value: string }[]>(() => {
+    const seen = new Set<string>()
+    const items: { label: string; value: string }[] = []
+    for (const u of user.value) {
+        const t = u.account_type?.trim()
+        if (t && !seen.has(t)) {
+            seen.add(t)
+            items.push({ label: t, value: t })
+        }
+    }
+    return items
+})
+
+const onApplyFilter = (filters: { roles: string[]; accountTypes: string[] }) => {
+    filterRoles.value = filters.roles
+    filterAccountTypes.value = filters.accountTypes
+    tableKey.value++
+}
+
+const activeFilterCount = computed(
+    () => filterRoles.value.length + filterAccountTypes.value.length
+)
 
 const loadUser = async () => {
     user.value = await fetchUser({ skip: 0, limit: 100000000 })
@@ -29,7 +53,6 @@ const loadUser = async () => {
 
 const itemsRole = async () => {
     const res = await fetchRole()
-    console.log('[DEBUG] fetchRole raw:', JSON.stringify(res))
     role.value = res
 }
 
@@ -100,27 +123,19 @@ const columns: TableColumn<User>[] = [
     {
         accessorKey: 'role',
         header: 'สิทธิ์',
-        cell: ({ row }) => h(resolveComponent('USelect'), {
-            modelValue: row.original.role,
-            items: roleItems.value,
-            color: 'neutral',
-            variant: 'subtle',
-            class: 'w-26',
-            disabled: row.original.username === authStore.user?.username,
-            'onUpdate:modelValue': async (val: any) => {
-                // USelect อาจ emit เป็น string หรือ { label, value } ขึ้นอยู่กับ version
-                const roleVal = typeof val === 'object' ? val?.value : val
-                if (!roleVal) return
-                row.original.role = roleVal
-                await updateRole(row.original.users_id, roleVal)
-                if (roleVal === 'user') {
-                    const defaultForType = accountType.value?.find((a: any) => a.type_name.trim() === row.original.account_type.trim())
-                    if (defaultForType) {
-                        row.original.file_size_byte = defaultForType.file_size_byte
-                    }
-                }
+        cell: ({ row }) => {
+            const colorMap: Record<string, 'error' | 'warning' | 'neutral'> = {
+                admin: 'error',
+                special: 'warning',
+                user: 'neutral',
             }
-        })
+            const color = colorMap[row.original.role] ?? 'neutral'
+            return h(resolveComponent('UBadge'), {
+                color,
+                variant: 'subtle',
+                class: 'capitalize',
+            }, () => row.original.role)
+        }
     },
     {
         accessorKey: 'file_size',
@@ -133,7 +148,6 @@ const columns: TableColumn<User>[] = [
                 h('span', { class: isAdmin ? 'text-gray-500 italic text-sm' : 'text-sm tabular-nums' },
                     isAdmin ? 'ไม่จำกัด' : `${mb} MB`
                 ),
-                // แสดงปุ่มดินสอเสมอ ยกเว้นตัวเอง
                 !isSelf ? h(resolveComponent('UButton'), {
                     icon: 'i-lucide-pencil',
                     color: 'neutral',
@@ -155,13 +169,23 @@ const globalFilter = ref('')
 
 // force UTable re-render เมื่อ filter เปลี่ยน
 const tableKey = ref(0)
-watch(value, () => { tableKey.value++ })
 
 // ── Mobile pagination ──────────────────────────────────────────
 const mobilePage = ref(1)
 const mobilePageSize = 10
 
-watch([() => value.value, globalFilter], () => { mobilePage.value = 1 })
+watch([filterRoles, filterAccountTypes, globalFilter], () => { mobilePage.value = 1 })
+
+// กรองตาม role + account_type + globalFilter
+const userData = computed(() => {
+    return user.value.filter(u => {
+        const roleOk = filterRoles.value.length === 0
+            || filterRoles.value.includes(u.role?.toLowerCase())
+        const typeOk = filterAccountTypes.value.length === 0
+            || filterAccountTypes.value.includes(u.account_type?.trim())
+        return roleOk && typeOk
+    })
+})
 
 const filteredUserData = computed(() => {
     if (!globalFilter.value.trim()) return userData.value
@@ -183,12 +207,6 @@ const mobileTotalPages = computed(() =>
     Math.ceil(filteredUserData.value.length / mobilePageSize)
 )
 
-const userData = computed(() => {
-    // spread เพื่อให้ array reference เปลี่ยนทุกครั้ง → UTable re-render
-    if (value.value === 'all') return [...user.value]
-    return user.value.filter(u => u.role?.toLowerCase() === value.value?.toLowerCase())
-})
-
 // ── Modal: แก้ไขรายคน ──────────────────────────────────────────
 const isUserEditModalOpen = ref(false)
 const editingUser = ref<User | null>(null)
@@ -198,44 +216,36 @@ const openUserEdit = (u: User) => {
     isUserEditModalOpen.value = true
 }
 
+// handleSaveUser — รับค่าจาก ModalUserEdit
+// fileSizeByte จะเป็น null เมื่อ role = user หรือ admin (Modal ไม่ส่งมา)
+// fileSizeByte จะมีค่าเมื่อ role = special
 const handleSaveUser = async (userId: number, newRole: string, fileSizeByte: number | null) => {
     const u = user.value.find(u => u.users_id === userId)
     if (!u) return
 
+    // 1. เปลี่ยน role ถ้ามีการเปลี่ยน
     if (newRole !== u.role) {
         await updateRole(userId, newRole)
         u.role = newRole
-
-        // ถ้าเปลี่ยนเป็น user → reset filesize กลับเป็น default ของ account_type
-        if (newRole === 'user') {
-            const defaultForType = accountType.value?.find((a: any) => a.type_name.trim() === u.account_type.trim())
-            if (defaultForType) {
-                await updateFileSize(userId, defaultForType.file_size_byte)
-                u.file_size_byte = defaultForType.file_size_byte
-            }
-            return // ไม่ต้องไปแก้ filesize เพิ่ม
-        }
     }
 
-    if (fileSizeByte !== null) {
-        const newMb = fileSizeByte / (1024 * 1024)
-        const oldMb = u.file_size_byte / (1024 * 1024)
-        if (newMb !== oldMb) {
+    // 2. อัปเดต filesize เฉพาะ special เท่านั้น
+    //    user/admin → ไม่ยิง changeFileSize (ป้องกัน backend เด้งกลับ special)
+    if (newRole === 'special' && fileSizeByte !== null) {
+        if (fileSizeByte !== u.file_size_byte) {
             await updateFileSize(userId, fileSizeByte)
             u.file_size_byte = fileSizeByte
-            // ถ้าแก้ filesize ในขณะที่ role ยัง user → upgrade เป็น special
-            if (newRole === 'user') {
-                await updateRole(userId, 'special')
-                u.role = 'special'
-            }
         }
+    } else if (newRole === 'user') {
+        // อัปเดต local state ให้แสดงค่า default ถูกต้อง
+        const defaultForType = accountType.value?.find(
+            (a: any) => a.type_name.trim() === u.account_type.trim()
+        )
+        u.file_size_byte = defaultForType?.file_size_byte ?? 0
+    } else if (newRole === 'admin') {
+        u.file_size_byte = 0
     }
 }
-
-const roleWithAll = computed(() => [
-    { label: 'ทั้งหมด', value: 'all' },
-    ...roleItems.value
-])
 
 const roleBadgeColor = (r: string): 'error' | 'warning' | 'neutral' => {
     const map: Record<string, 'error' | 'warning' | 'neutral'> = {
@@ -283,7 +293,6 @@ onMounted(() => {
 
             <!-- Toolbar -->
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-6">
-                <!-- Search — เต็มความกว้างบน mobile/md, ขยายได้บน lg -->
                 <div class="relative group lg:flex-1 lg:max-w-md">
                     <UIcon name="i-lucide-search"
                         class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -291,23 +300,50 @@ onMounted(() => {
                         class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm" />
                 </div>
 
-                <!-- Filters — wrap ได้บน mobile, อยู่ขวาบน lg -->
                 <div class="flex flex-wrap items-center gap-2 lg:shrink-0">
-                    <!-- ปุ่มเปิด modal ตั้งค่าขนาดไฟล์เริ่มต้น -->
                     <UButton color="primary" size="lg" icon="i-lucide-hard-drive" @click="isFilesizeModalOpen = true">
                         ขนาดไฟล์เริ่มต้น
                     </UButton>
 
                     <div class="w-px h-5 bg-gray-200 dark:bg-neutral-700" />
 
-                    <!-- Role filter -->
-                    <div
-                        class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
-                        <span class="text-xs">แสดงสิทธิ์ :</span>
-                        <USelect :model-value="value" :items="roleWithAll" color="neutral" size="sm" class="w-28"
-                            @update:model-value="onRoleFilterChange" />
-                    </div>
+                    <!-- ปุ่มตัวกรอง -->
+                    <UButton color="neutral" variant="outline" size="lg" icon="i-lucide-sliders-horizontal"
+                        class="cursor-pointer relative" @click="isFilterModalOpen = true">
+                        ตัวกรอง
+                        <span v-if="activeFilterCount > 0"
+                            class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-violet-500 text-white text-[10px] font-bold flex items-center justify-center">
+                            {{ activeFilterCount }}
+                        </span>
+                    </UButton>
                 </div>
+            </div>
+
+            <!-- Active filter chips -->
+            <div v-if="activeFilterCount > 0" class="flex flex-wrap gap-2 mb-4">
+                <span v-for="r in filterRoles" :key="'chip-r-' + r"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
+                    <UIcon name="i-lucide-shield" class="w-3 h-3" />
+                    {{ r }}
+                    <button @click="filterRoles = filterRoles.filter(x => x !== r); tableKey++"
+                        class="ml-0.5 hover:text-red-500 transition-colors">
+                        <UIcon name="i-lucide-x" class="w-3 h-3" />
+                    </button>
+                </span>
+                <span v-for="t in filterAccountTypes" :key="'chip-t-' + t"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
+                    <UIcon name="i-lucide-user-circle" class="w-3 h-3" />
+                    {{ t }}
+                    <button @click="filterAccountTypes = filterAccountTypes.filter(x => x !== t); tableKey++"
+                        class="ml-0.5 hover:text-red-500 transition-colors">
+                        <UIcon name="i-lucide-x" class="w-3 h-3" />
+                    </button>
+                </span>
+                <button @click="filterRoles = []; filterAccountTypes = []; tableKey++"
+                    class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center gap-1 px-2 py-1">
+                    <UIcon name="i-lucide-rotate-ccw" class="w-3 h-3" />
+                    ล้างทั้งหมด
+                </button>
             </div>
 
             <!-- Table Container -->
@@ -341,12 +377,14 @@ onMounted(() => {
                     </div>
                     <div>
                         <p class="text-lg font-medium text-gray-700 dark:text-gray-300">ไม่มีข้อมูลผู้ใช้</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ไม่มีผู้ใช้ในระบบ</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {{ activeFilterCount > 0 ? 'ไม่มีผู้ใช้ที่ตรงกับตัวกรองที่เลือก' : 'ไม่มีผู้ใช้ในระบบ' }}
+                        </p>
                     </div>
                 </div>
 
                 <template v-else>
-                    <!-- ── Desktop Table (sm ขึ้นไป) ─────────────────────── -->
+                    <!-- ── Desktop Table ─────────────────────── -->
                     <div class="hidden sm:block overflow-x-auto">
                         <UTable :key="tableKey" ref="table" v-model:pagination="pagination"
                             v-model:global-filter="globalFilter" :data="userData" :columns="columns"
@@ -362,9 +400,8 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <!-- ── Mobile Card List (ต่ำกว่า sm) ──────────────────── -->
+                    <!-- ── Mobile Card List ──────────────────── -->
                     <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
-                        <!-- ไม่พบผลการค้นหา -->
                         <div v-if="filteredUserData.length === 0" class="text-center py-16 px-4">
                             <UIcon name="i-lucide-search-x" class="w-10 h-10 text-gray-300 mx-auto mb-3" />
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">ไม่พบผู้ใช้ที่ค้นหา</p>
@@ -374,7 +411,6 @@ onMounted(() => {
                             </button>
                         </div>
 
-                        <!-- การ์ดแต่ละ user -->
                         <div v-for="u in mobilePaginatedData" :key="u.users_id" class="p-4 flex items-center gap-3">
                             <div class="flex-1 min-w-0 space-y-1">
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -396,12 +432,10 @@ onMounted(() => {
                                 </p>
                             </div>
 
-                            <!-- ปุ่มแก้ไข → เปิด ModalUserEdit (ซ่อนถ้าเป็นตัวเอง) -->
                             <UButton v-if="u.username !== authStore.user?.username" icon="i-lucide-pencil"
                                 color="neutral" variant="ghost" size="sm" class="shrink-0" @click="openUserEdit(u)" />
                         </div>
 
-                        <!-- Pagination มือถือ -->
                         <div v-if="mobileTotalPages > 1"
                             class="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -427,8 +461,12 @@ onMounted(() => {
         :save-handler="handleSaveDefaultFilesize" />
 
     <!-- Modal: แก้ไขรายคน -->
-    <ModalUserEdit v-model:open="isUserEditModalOpen" :user="editingUser" :role-items="role ?? []"
+    <ModalUserEdit v-model:open="isUserEditModalOpen" :user="editingUser" :role-items="roleItems"
         :is-self="editingUser?.username === authStore.user?.username"
         :default-file-size-mb="editingUser ? (accountType?.find((a: any) => a.type_name.trim() === editingUser?.account_type.trim())?.file_size_byte ?? 0) / (1024 * 1024) : 0"
         :loading="loading" :save-handler="handleSaveUser" />
+
+    <!-- Modal: ตัวกรอง -->
+    <ModalFilter v-model:open="isFilterModalOpen" :role-items="roleItems" :account-type-items="accountTypeItems"
+        :selected-roles="filterRoles" :selected-account-types="filterAccountTypes" @apply="onApplyFilter" />
 </template>

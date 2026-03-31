@@ -143,28 +143,47 @@ watch(
     { deep: true }
 );
 
+const getTodayString = (): string => {
+    const now = new Date();
+    return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0"),
+    ].join("-");
+};
+
 // ─────────────────────────────────────────────
 // Summary Cards
 // ─────────────────────────────────────────────
 
-const summaryCards = computed(() => [
-    {
-        label: "คำถามทั้งหมด",
-        value: questionsStats.value.total.toLocaleString(),
-        change: calcGrowth(questionsStats.value.data, "count"),
-        icon: "i-lucide-message-circle-question",
-        bgColor: "bg-blue-50 dark:bg-blue-900/20",
-        textColor: "text-blue-600 dark:text-blue-400",
-    },
-    {
-        label: "ผู้ใช้งานรวม",
-        value: usersStats.value.total.toLocaleString(),
-        change: calcGrowth(usersStats.value.data, "active_users"),
-        icon: "i-lucide-users",
-        bgColor: "bg-purple-50 dark:bg-purple-900/20",
-        textColor: "text-purple-600 dark:text-purple-400",
-    }
-]);
+const summaryCards = computed(() => {
+    const today = getTodayString();
+    const questionsTodayItem = questionsStats.value.data.find((item) => item.date === today);
+    const usersTodayItem = usersStats.value.data.find((item) => item.date === today);
+
+    return [
+        {
+            label: "คำถามทั้งหมด",
+            value: questionsStats.value.total.toLocaleString(),
+            todayValue: (questionsTodayItem?.count ?? 0).toLocaleString(),
+            showToday: true,
+            change: calcGrowth(questionsStats.value.data, "count"),
+            icon: "i-lucide-message-circle-question",
+            bgColor: "bg-blue-50 dark:bg-blue-900/20",
+            textColor: "text-blue-600 dark:text-blue-400",
+        },
+        {
+            label: "ผู้ใช้งานรวม",
+            value: usersStats.value.total.toLocaleString(),
+            todayValue: (usersTodayItem?.active_users ?? 0).toLocaleString(),
+            showToday: true,
+            change: calcGrowth(usersStats.value.data, "active_users"),
+            icon: "i-lucide-users",
+            bgColor: "bg-purple-50 dark:bg-purple-900/20",
+            textColor: "text-purple-600 dark:text-purple-400",
+        },
+    ];
+});
 </script>
 
 <template>
@@ -327,9 +346,22 @@ const summaryCards = computed(() => [
                         <p class="text-3xl font-bold text-gray-900 dark:text-white  origin-left inline-block">
                             {{ card.value }}
                         </p>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                            {{ card.label }}
-                        </p>
+                        <div class="flex justify-between item-center">
+                            <p class="text-md font-medium text-gray-500 dark:text-gray-400">
+                                {{ card.label }}
+                            </p>
+                            <!-- Today sub-label -->
+                            <div v-if="card.showToday"
+                                class="flex items-center gap-1.5  border-gray-100 dark:border-gray-700">
+                                <span class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                                    <UIcon name="i-lucide-sun" class="w-3 h-3" />
+                                    วันนี้:
+                                </span>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    {{ card.todayValue }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

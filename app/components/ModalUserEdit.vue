@@ -16,7 +16,7 @@ const props = defineProps<{
     user: UserItem | null
     roleItems: { label: string; value: string }[]
     isSelf: boolean
-    defaultFileSizeMb: number   // ค่า default ของ account_type นั้น
+    defaultFileSizeMb: number
     saveHandler: (userId: number, role: string, fileSizeByte: number | null) => Promise<void>
 }>()
 
@@ -24,7 +24,6 @@ const emit = defineEmits<{
     (e: 'update:open', value: boolean): void
 }>()
 
-// ── local form state ──────────────────────────────────────────
 const form = reactive({
     role: '',
     fileSizeMb: 0,
@@ -33,7 +32,6 @@ const originalRole = ref('')
 const originalFileSizeMb = ref(0)
 const isSaving = ref(false)
 
-// sync เมื่อ modal เปิด หรือ user เปลี่ยน
 watch(
     () => [props.open, props.user],
     ([isOpen]) => {
@@ -46,27 +44,33 @@ watch(
     { immediate: true }
 )
 
-// ปรับ fileSizeMb ให้สอดคล้องกับ role ที่เลือก
-watch(
-    () => form.role,
-    (newRole, oldRole) => {
-        if (newRole === oldRole) return
-        if (newRole === 'user') {
-            // เปลี่ยนเป็น user → reset เป็น default ของ account_type ทันที
-            form.fileSizeMb = props.defaultFileSizeMb
-        } else if (oldRole === 'admin') {
-            // เปลี่ยนออกจาก admin → คืนค่าเดิมของ user
-            form.fileSizeMb = originalFileSizeMb.value
-        }
+// normalize กันเผื่อ USelect emit เป็น object { label, value }
+const normalizedRole = computed(() =>
+    typeof form.role === 'object' ? (form.role as any)?.value ?? '' : form.role
+)
+
+const isAdmin = computed(() => normalizedRole.value === 'admin')
+const isUser = computed(() => normalizedRole.value === 'user')
+
+watch(normalizedRole, (newVal, oldVal) => {
+    if (newVal === oldVal) return
+    if (newVal === 'user') {
+        // user → ล็อก filesize ที่ค่า default ของ account_type, ห้ามแก้
+        form.fileSizeMb = props.defaultFileSizeMb
+    } else if (newVal === 'special') {
+        // special → คืนค่าเดิมของ user ก่อน ให้กรอกเองได้
+        form.fileSizeMb = originalFileSizeMb.value
     }
-)
+    // admin → ซ่อน field อยู่แล้ว ไม่ต้องเซ็ต fileSizeMb
+})
 
-const isAdmin = computed(() => form.role === 'admin')
-
-const isDirty = computed(() =>
-    form.role !== originalRole.value ||
-    (!isAdmin.value && form.fileSizeMb !== originalFileSizeMb.value)
-)
+const isDirty = computed(() => {
+    const roleChanged = normalizedRole.value !== originalRole.value
+    // user/admin ไม่นับ fileSizeMb เป็น dirty (ไม่ส่งค่าไปด้วย)
+    const fileSizeChanged = !isAdmin.value && !isUser.value &&
+        form.fileSizeMb !== originalFileSizeMb.value
+    return roleChanged || fileSizeChanged
+})
 
 const close = () => emit('update:open', false)
 
@@ -75,8 +79,10 @@ const onSubmit = async () => {
 
     isSaving.value = true
     try {
-        const fileSizeByte = isAdmin.value ? null : form.fileSizeMb * 1024 * 1024
-        await props.saveHandler(props.user.users_id, form.role, fileSizeByte)
+        // user/admin → null (ไม่แก้ filesize ผ่าน modal นี้)
+        // special    → ส่ง fileSizeByte ที่กรอก
+        const fileSizeByte = (isAdmin.value || isUser.value) ? null : form.fileSizeMb * 1024 * 1024
+        await props.saveHandler(props.user.users_id, normalizedRole.value, fileSizeByte)
 
         toast.add({
             title: 'บันทึกสำเร็จ!',
@@ -139,16 +145,31 @@ const onSubmit = async () => {
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                         ขนาดไฟล์สูงสุด
                     </label>
+
+                    <!-- admin: ไม่จำกัด -->
                     <div v-if="isAdmin"
                         class="flex items-center gap-2 h-10 px-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <UIcon name="i-lucide-infinity" class="w-4 h-4 text-gray-400" />
                         <span class="text-sm text-gray-500 dark:text-gray-400">ไม่จำกัด (admin)</span>
                     </div>
+
+                    <!-- user: แสดงค่า default, ปิดแก้ไข -->
+                    <div v-else-if="isUser"
+                        class="flex items-center gap-2 h-10 px-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-60">
+                        <UIcon name="i-lucide-lock" class="w-4 h-4 text-gray-400" />
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ defaultFileSizeMb }} MB (ค่าเริ่มต้นของประเภทบัญชี)
+                        </span>
+                    </div>
+
+                    <!-- special: กรอกได้ -->
                     <div v-else class="flex items-center gap-2">
-                        <UInput v-model="form.fileSizeMb" type="number" size="lg" class="flex-1" placeholder="0" />
+                        <UInput v-model="form.fileSizeMb" type="number" size="lg" class="flex-1" placeholder="0"
+                            :min="0" />
                         <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">MB</span>
                     </div>
-                    <p v-if="!isAdmin && form.fileSizeMb !== originalFileSizeMb"
+
+                    <p v-if="!isAdmin && !isUser && form.fileSizeMb !== originalFileSizeMb"
                         class="mt-1 text-xs text-amber-500 dark:text-amber-400">
                         ค่าเดิม: {{ originalFileSizeMb }} MB
                     </p>

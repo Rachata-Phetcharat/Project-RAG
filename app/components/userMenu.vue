@@ -4,11 +4,23 @@ import ButtomLogin from './ButtomLogin.vue';
 
 const authStore = useAuthStore()
 
+const isLogoutOpen = ref(false)
+const open = defineModel<boolean>('open')
+
 // compact = true → ใช้ใน Slideover header (ไม่มี padding, ไม่มี UUser label)
 // compact = false (default) → ใช้ใน main header ปกติ
 const props = defineProps<{
     compact?: string
 }>()
+
+const handleLogout = async () => {
+    await authStore.logout()
+}
+
+const openLogoutModal = () => {
+    open.value = false
+    isLogoutOpen.value = true
+}
 
 const items = computed(() => [
     [
@@ -35,9 +47,21 @@ const items = computed(() => [
     ],
     ...(authStore.role === 'admin'
         ? [[{
-            label: 'dashboard',
-            icon: 'i-lucide-gauge',
+            label: 'สถิติการใช้งาน',
+            icon: 'i-lucide-bar-chart-3',
             to: '/admin/dashboard/home'
+        }, {
+            label: 'จัดการผู้ใช้',
+            icon: 'i-lucide-users',
+            to: '/admin/dashboard/manage_users'
+        }, {
+            label: 'คำขอแชนแนล',
+            icon: 'i-lucide-clipboard-list',
+            to: '/admin/dashboard/pending'
+        }, {
+            label: 'แชนแนลทั้งหมด',
+            icon: 'i-lucide-tv-2',
+            to: '/admin/dashboard/all_channel'
         }]]
         : []
     ),
@@ -47,7 +71,7 @@ const items = computed(() => [
             icon: 'i-lucide-log-out',
             class: 'text-red-500 dark:text-red-400 cursor-pointer hover:bg-red-100/50 dark:hover:bg-red-900/50',
             onSelect: async () => {
-                await authStore.logout()
+                await openLogoutModal()
             }
         }
     ]
@@ -147,4 +171,6 @@ const items = computed(() => [
                 class="cursor-pointer transition-opacity hover:opacity-80" />
         </UDropdownMenu>
     </div>
+
+    <ModalLogout v-model:open="isLogoutOpen" @confirmed="handleLogout" />
 </template>
