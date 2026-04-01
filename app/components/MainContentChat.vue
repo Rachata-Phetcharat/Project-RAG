@@ -109,7 +109,10 @@ const handleSendMessage = async () => {
         })
         state.streamingText = ''
 
-        await scrollToBottom('smooth')
+        if (!userHasScrolledUp.value) {
+            await scrollToBottom('smooth')
+        }
+
     } catch (err: any) {
         if (err?.name === 'AbortError') return
 
@@ -303,22 +306,19 @@ watch(() => route.params.id, (newId, oldId) => {
                 <!-- ── Streaming bubble ── -->
                 <div v-if="state.isTyping"
                     class="flex max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8 justify-start animate-fade-in">
-                    <div class="max-w-full sm:max-w-full">
-                        <div class="flex gap-3 sm:gap-5 flex-row items-start">
-                            <div
-                                class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
+                    <div class="flex gap-3 sm:gap-5 flex-row items-start">
+                        <div
+                            class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
 
-                                <!-- dot loading -->
-                                <div v-if="!state.streamingText" class="flex items-center gap-1 py-1">
-                                    <span class="typing-dot" />
-                                    <span class="typing-dot" style="animation-delay: 0.15s" />
-                                    <span class="typing-dot" style="animation-delay: 0.3s" />
-                                </div>
-
-                                <!-- streaming markdown + cursor -->
-                                <div v-else class="markdown-body streaming-content"
-                                    v-html="render(state.streamingText)" />
+                            <!-- dot loading -->
+                            <div v-if="!state.streamingText" class="flex items-center gap-1 py-1">
+                                <span class="typing-dot" />
+                                <span class="typing-dot" style="animation-delay: 0.15s" />
+                                <span class="typing-dot" style="animation-delay: 0.3s" />
                             </div>
+
+                            <!-- streaming markdown + cursor -->
+                            <div v-else class="markdown-body streaming-content" v-html="render(state.streamingText)" />
                         </div>
                     </div>
                 </div>

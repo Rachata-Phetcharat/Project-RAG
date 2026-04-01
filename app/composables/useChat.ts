@@ -5,24 +5,20 @@ export const useChat = () => {
   const error = ref<string | null>(null);
   const loading = ref(false);
 
-  // Base URL สำหรับ Chat API
   const chatBase = apiBase;
 
-  // Helper function สำหรับ headers
   const getAuthHeaders = () => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
     };
-
     if (authStore.token) {
       headers.Authorization = `Bearer ${authStore.token}`;
     }
-
     return headers;
   };
 
-  // 1. สร้าง Session ใหม่ - ใช้ POST /session (ไม่ใช่ /create/session)
+  // 1. สร้าง Session ใหม่
   const createSession = async (channelId: string) => {
     loading.value = true;
     error.value = null;
@@ -35,7 +31,6 @@ export const useChat = () => {
         credentials: "include",
       });
 
-      // ดึง session_id จาก response (รองรับหลายรูปแบบ)
       const sessionId =
         data?.session_id || data?.sessions_id || data?.id || data?.sessionId;
 
@@ -59,54 +54,8 @@ export const useChat = () => {
     }
   };
 
-  // 2. ส่งข้อความแชทกับ Ollama แบบ Non-streaming (เดิม)
-  const sendOllamaReply = async (sessionId: string, message: string) => {
-    error.value = null;
-
-    try {
-      const data = await $fetch<any>(`${chatBase}/sessions/ollama-reply`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: {
-          sessions_id: sessionId,
-          message: message,
-        },
-        credentials: "include",
-      });
-
-      let replyText = "";
-
-      if (data?.ai_message?.message) {
-        replyText = data.ai_message.message;
-      } else if (typeof data === "string") {
-        replyText = data;
-      } else if (
-        data?.reply ||
-        data?.answer ||
-        data?.content ||
-        data?.message
-      ) {
-        replyText = data.reply || data.answer || data.content || data.message;
-      } else {
-        replyText = "ไม่สามารถอ่านรูปแบบการตอบกลับได้";
-      }
-
-      return replyText;
-    } catch (err: any) {
-      const errorMsg =
-        err?.data?.detail || err?.message || "เกิดข้อผิดพลาดในการสื่อสารกับ AI";
-      error.value = errorMsg;
-      throw new Error(errorMsg);
-    }
-  };
-
-  // 3. ส่งข้อความแบบ Streaming — รองรับทั้ง SSE และ plain JSON พร้อม typewriter fallback
-  //
-  //    onChunk(chunk: string)  — callback รับทีละ chunk ขณะ stream
-  //    returns: full response text
-  //
-  //    ถ้า backend รองรับ SSE (text/event-stream) จะ stream จริง
-  //    ถ้า backend ยัง return JSON ธรรมดา จะ simulate typewriter เอง
+  // 2. ส่งข้อความแบบ SSE Streaming
+  //    Backend ส่ง EventStream ทีละ token ในรูปแบบ: {"token": "xxx"}
   const sendOllamaReplyStream = async (
     sessionId: string,
     message: string,
@@ -117,7 +66,8 @@ export const useChat = () => {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Accept: "text/event-stream, application/json",
+      // บอก backend ว่าเราต้องการ event-stream
+      Accept: "text/event-stream",
     };
 
     if (authStore.token) {
@@ -128,10 +78,10 @@ export const useChat = () => {
       const response = await fetch(`${chatBase}/sessions/ollama-reply`, {
         method: "POST",
         headers,
+        // ส่งแค่ sessions_id กับ message ตาม API spec จริง
         body: JSON.stringify({
           sessions_id: sessionId,
           message: message,
-          stream: true, // บอก backend ว่าต้องการ stream
         }),
         credentials: "include",
         signal,
@@ -143,7 +93,7 @@ export const useChat = () => {
 
       const contentType = response.headers.get("content-type") || "";
 
-      // ── กรณี Backend รองรับ SSE / NDJSON streaming ──────────────────────
+      // ── กรณี Backend ตอบกลับเป็น SSE จริง ──────────────────────────────
       if (
         contentType.includes("text/event-stream") ||
         contentType.includes("application/x-ndjson")
@@ -159,32 +109,40 @@ export const useChat = () => {
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
-          buffer = lines.pop() ?? ""; // เก็บบรรทัดที่ยังไม่ครบไว้
+          buffer = lines.pop() ?? "";
 
           for (const line of lines) {
-            // SSE format: "data: {...}" หรือ "data: text"
-            const dataLine = line.startsWith("data:")
-              ? line.slice(5).trim()
-              : line.trim();
+            // SSE lines มาในรูป "data: {...}"
+            const trimmed = line.trim();
+            if (!trimmed || trimmed === "[DONE]") continue;
+
+            const dataLine = trimmed.startsWith("data:")
+              ? trimmed.slice(5).trim()
+              : trimmed;
+
             if (!dataLine || dataLine === "[DONE]") continue;
 
             try {
               const parsed = JSON.parse(dataLine);
-              // รองรับหลายรูปแบบ response
+
+              // รูปแบบที่ backend ส่งมาจริง: { "token": "xxx" }
+              // รองรับ fallback รูปแบบอื่นด้วยกัน
               const chunk =
-                parsed?.delta?.text ||
-                parsed?.delta?.content ||
-                parsed?.content ||
-                parsed?.text ||
-                parsed?.message ||
-                parsed?.chunk ||
-                "";
-              if (chunk) {
+                parsed?.token ?? // ← รูปแบบหลักจาก backend นี้
+                parsed?.delta?.text ??
+                parsed?.delta?.content ??
+                parsed?.content ??
+                parsed?.text ??
+                parsed?.message ??
+                parsed?.chunk ??
+                null;
+
+              if (chunk !== null && chunk !== undefined) {
                 fullText += chunk;
-                onChunk(chunk);
+                onChunk(String(chunk));
               }
             } catch {
-              // ถ้า parse ไม่ได้ ให้ใช้เป็น plain text chunk เลย
+              // parse ไม่ได้ → ใช้เป็น plain text เลย
               if (dataLine) {
                 fullText += dataLine;
                 onChunk(dataLine);
@@ -193,10 +151,10 @@ export const useChat = () => {
           }
         }
 
-        return fullText || "ไม่สามารถอ่านรูปแบบการตอบกลับได้";
+        return fullText || "ไม่ได้รับข้อความจาก AI";
       }
 
-      // ── กรณี Backend ยัง return JSON ปกติ → simulate typewriter ──────────
+      // ── Fallback: Backend ตอบเป็น JSON ปกติ (ไม่น่าเกิดแต่รองรับไว้) ──
       const data = await response.json();
 
       let replyText = "";
@@ -215,12 +173,11 @@ export const useChat = () => {
         replyText = "ไม่สามารถอ่านรูปแบบการตอบกลับได้";
       }
 
-      // Simulate typewriter: แบ่งเป็น chunk ~3-5 ตัวอักษรต่อ tick
+      // Simulate typewriter
       await simulateTypewriter(replyText, onChunk, signal);
-
       return replyText;
     } catch (err: any) {
-      if (err?.name === "AbortError") throw err; // ส่ง abort ต่อไป
+      if (err?.name === "AbortError") throw err;
       const errorMsg =
         err?.data?.detail || err?.message || "เกิดข้อผิดพลาดในการสื่อสารกับ AI";
       error.value = errorMsg;
@@ -228,17 +185,16 @@ export const useChat = () => {
     }
   };
 
-  // ── Helper: simulate typewriter สำหรับ backend ที่ยังไม่รองรับ stream ──
+  // Helper: simulate typewriter (fallback กรณี JSON ปกติ)
   const simulateTypewriter = (
     text: string,
     onChunk: (chunk: string) => void,
     signal?: AbortSignal,
-    chunkSize = 3, // ตัวอักษรต่อ tick
-    delayMs = 18, // ms ต่อ tick (ปรับความเร็วได้)
+    chunkSize = 3,
+    delayMs = 18,
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
       let i = 0;
-
       const tick = () => {
         if (signal?.aborted) {
           reject(new DOMException("Aborted", "AbortError"));
@@ -253,7 +209,6 @@ export const useChat = () => {
         i = end;
         setTimeout(tick, delayMs);
       };
-
       tick();
     });
   };
@@ -262,7 +217,6 @@ export const useChat = () => {
     loading,
     error,
     createSession,
-    sendOllamaReply,
     sendOllamaReplyStream,
   };
 };

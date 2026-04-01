@@ -171,7 +171,7 @@ onMounted(() => {
                 </h1>
 
                 <!-- [RESPONSIVE] Search bar เต็มความกว้างบน mobile, max-w-2xl บน desktop -->
-                <div class="pt-3 sm:pt-6 w-full sm:max-w-2xl sm:mx-0 mx-auto">
+                <div ref="channelGridRef" class="pt-3 sm:pt-6 w-full sm:max-w-2xl sm:mx-0 mx-auto">
                     <div class="relative group">
                         <UIcon name="i-lucide-search"
                             class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -182,7 +182,7 @@ onMounted(() => {
             </div>
         </header>
 
-        <main ref="channelGridRef">
+        <main>
             <!-- ─── Filter Bar ─── -->
             <!-- [RESPONSIVE] ลด padding บน mobile, stack แนวตั้งบน mobile -->
             <div v-if="authStore.token"
