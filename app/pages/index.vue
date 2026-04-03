@@ -165,18 +165,18 @@ onMounted(() => {
                         ยินดีต้อนรับสู่
                     </span>
                     <br />
-                    <span class="text-gray-900  dark:text-white">
+                    <span ref="channelGridRef" class="text-gray-900  dark:text-white">
                         KMUTNB ThinkHub
                     </span>
                 </h1>
 
                 <!-- [RESPONSIVE] Search bar เต็มความกว้างบน mobile, max-w-2xl บน desktop -->
-                <div ref="channelGridRef" class="pt-3 sm:pt-6 w-full sm:max-w-2xl sm:mx-0 mx-auto">
+                <div ref="lg:channelGridRef" class="pt-3 sm:pt-6 w-full sm:max-w-2xl sm:mx-0 mx-auto">
                     <div class="relative group">
                         <UIcon name="i-lucide-search"
                             class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                         <input v-model="searchQuery" type="text" placeholder="ค้นหาแชนแนล..."
-                            class="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
+                            class="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-base rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" />
                     </div>
                 </div>
             </div>

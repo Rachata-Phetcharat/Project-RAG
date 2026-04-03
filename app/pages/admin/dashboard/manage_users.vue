@@ -144,7 +144,7 @@ const columns: TableColumn<User>[] = [
             const isAdmin = row.original.role === 'admin'
             const isSelf = row.original.username === authStore.user?.username
             const mb = (row.original.file_size_byte / (1024 * 1024)).toFixed(0)
-            return h('div', { class: 'flex items-center gap-2' }, [
+            return h('div', { class: 'flex items-center justify-between' }, [
                 h('span', { class: isAdmin ? 'text-gray-500 italic text-sm' : 'text-sm tabular-nums' },
                     isAdmin ? 'ไม่จำกัด' : `${mb} MB`
                 ),
@@ -153,6 +153,7 @@ const columns: TableColumn<User>[] = [
                     color: 'neutral',
                     variant: 'ghost',
                     size: 'xs',
+                    class: 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors bg-gray-100 dark:bg-gray-700/30 hover:bg-gray-200 dark:hover:bg-gray-600/50 p-1 rounded',
                     onClick: () => openUserEdit(row.original)
                 }) : null
             ])
@@ -290,7 +291,7 @@ onMounted(() => {
                         </div>
                         <div>
                             <h1 class="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">
-                                จัดการผู้ใช้
+                                จัดการผู้ใช้งาน
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                                 จัดการผู้ใช้งานและสิทธิ์ในระบบ
@@ -308,7 +309,7 @@ onMounted(() => {
                     <UIcon name="i-lucide-search"
                         class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input v-model="globalFilter" type="text" placeholder="ค้นหาผู้ใช้งาน"
-                        class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm" />
+                        class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-base" />
                 </div>
 
 

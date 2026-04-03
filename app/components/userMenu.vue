@@ -51,7 +51,7 @@ const items = computed(() => [
             icon: 'i-lucide-bar-chart-3',
             to: '/admin/dashboard/home'
         }, {
-            label: 'จัดการผู้ใช้',
+            label: 'จัดการผู้ใช้งาน',
             icon: 'i-lucide-users',
             to: '/admin/dashboard/manage_users'
         }, {
@@ -83,22 +83,7 @@ const items = computed(() => [
     <div v-if="compact === 'Default'" class="flex items-center gap-4 p-4">
 
         <!-- Notification -->
-        <UPopover v-if="authStore.isLoggedIn" arrow :popper="{ placement: 'bottom-end' }">
-            <template #content>
-                <div
-                    class="flex flex-col w-80 sm:w-96 bg-white dark:bg-gray-900 overflow-hidden rounded-lg shadow-xl ring-1 ring-gray-200 dark:ring-gray-800">
-                    <div
-                        class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Notifications</h3>
-                        <span class="text-xs text-gray-500 cursor-pointer hover:text-primary">Clear all</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <UEmpty icon="i-lucide-bell-off" title="No notifications" description="You're all caught up!"
-                            class="py-8" />
-                    </div>
-                </div>
-            </template>
-        </UPopover>
+        <Notifications v-if="authStore.isLoggedIn" />
 
         <UColorModeButton class="cursor-pointer" />
 
@@ -121,22 +106,7 @@ const items = computed(() => [
     <div v-else-if="compact === 'Mobile'" class=" items-center p-4">
 
         <!-- Notification -->
-        <UPopover v-if="authStore.isLoggedIn" arrow :popper="{ placement: 'bottom-end' }">
-            <template #content>
-                <div
-                    class="flex flex-col w-80 sm:w-96 bg-white dark:bg-gray-900 overflow-hidden rounded-lg shadow-xl ring-1 ring-gray-200 dark:ring-gray-800">
-                    <div
-                        class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Notifications</h3>
-                        <span class="text-xs text-gray-500 cursor-pointer hover:text-primary">Clear all</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <UEmpty icon="i-lucide-bell-off" title="No notifications" description="You're all caught up!"
-                            class="py-8" />
-                    </div>
-                </div>
-            </template>
-        </UPopover>
+        <Notifications v-if="authStore.isLoggedIn" />
 
         <!-- Auth -->
         <ButtomLogin v-if="!authStore.isLoggedIn" />

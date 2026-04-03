@@ -17,7 +17,7 @@ const menuItems = computed(() => [
     ...(authStore.role === 'admin'
         ? [
             { label: 'แดชบอร์ด', icon: 'i-lucide-bar-chart-3', to: '/admin/dashboard/home' },
-            { label: 'จัดการผู้ใช้', icon: 'i-lucide-users', to: '/admin/dashboard/manage_users' },
+            { label: 'จัดการผู้ใช้งาน', icon: 'i-lucide-users', to: '/admin/dashboard/manage_users' },
             { label: 'คำขอแชนแนล', icon: 'i-lucide-clipboard-list', to: '/admin/dashboard/pending' },
             { label: 'แชนแนลทั้งหมด', icon: 'i-lucide-tv-2', to: '/admin/dashboard/all_channel' },
         ]

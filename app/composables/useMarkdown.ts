@@ -1,29 +1,25 @@
 import { marked, Renderer } from "marked";
 import hljs from "highlight.js";
 
-// ── Custom renderer ───────────────────────────────────────────────────────────
 const renderer = new Renderer();
 
-// Wrap <pre><code> ด้วย .code-block + copy button header
 renderer.code = ({ text, lang }) => {
-  // text ที่เข้ามาคือ raw source code (plain text) เสมอ
-  // ต้อง highlight เองแค่ครั้งเดียวที่นี่
   const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
   const highlighted = hljs.highlight(text, { language }).value;
 
-  // เก็บ raw source สำหรับปุ่ม copy (escape เฉพาะ HTML attribute)
   const escapedForAttr = text
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/`/g, "&#96;");
 
   return `
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">${language}</span>
+<div class="code-block" style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin:1rem 0;max-width:100%;min-width:0;box-sizing:border-box;">
+  <div class="code-header" style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+    <span class="code-lang" style="font-size:12.5px;color:#64748b;font-family:monospace;font-weight:500;">${language}</span>
     <button
       class="copy-code-btn"
       data-code="${escapedForAttr}"
+      style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;background:none;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;cursor:pointer;"
       onclick="
         const btn = this;
         navigator.clipboard.writeText(btn.dataset.code).then(() => {
@@ -43,7 +39,7 @@ renderer.code = ({ text, lang }) => {
       <span class="btn-label">copy</span>
     </button>
   </div>
-  <pre><code class="hljs language-${language}">${highlighted}</code></pre>
+  <pre style="margin:0;padding:16px 18px;background:#f8fafc;overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box;word-break:keep-all;"><code class="hljs language-${language}" style="font-family:'JetBrains Mono','Fira Code','Consolas',monospace;font-size:14.5px;line-height:1.7;background:none;padding:0;">${highlighted}</code></pre>
 </div>`;
 };
 
@@ -51,7 +47,6 @@ renderer.codespan = ({ text }) => `<code class="inline-code">${text}</code>`;
 
 marked.use({ renderer, breaks: true });
 
-// ── Composable ────────────────────────────────────────────────────────────────
 export const useMarkdown = () => {
   const render = (text: string): string => marked.parse(text) as string;
   return { render };

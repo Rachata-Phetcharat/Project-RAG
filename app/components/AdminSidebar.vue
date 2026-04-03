@@ -13,7 +13,7 @@ const menuItems = computed(() => [
         color: 'bg-gray-200 dark:bg-gray-600'
     },
     {
-        label: 'จัดการผู้ใช้',
+        label: 'จัดการผู้ใช้งาน',
         icon: 'i-lucide-users',
         to: '/admin/dashboard/manage_users',
         color: 'bg-gray-200 dark:bg-gray-600'

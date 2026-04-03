@@ -268,7 +268,7 @@ watch(() => route.params.id, (newId, oldId) => {
 
                 <!-- ── Completed messages ── -->
                 <div v-for="(msg, index) in state.chatHistory" :key="msg.id"
-                    :class="['flex max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+                    :class="['flex lg:max-w-245 xl:max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8', msg.role === 'user' ? 'justify-end' : 'justify-start']">
                     <div :class="['max-w-full sm:max-w-full', msg.role === 'user' ? 'w-fit' : 'w-full']">
 
                         <!-- User Message -->
@@ -305,7 +305,7 @@ watch(() => route.params.id, (newId, oldId) => {
 
                 <!-- ── Streaming bubble ── -->
                 <div v-if="state.isTyping"
-                    class="flex max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8 justify-start animate-fade-in">
+                    class="flex lg:max-w-245 xl:max-w-5xl mx-auto w-full px-1 lg:px-2 xl:px-8 justify-start animate-fade-in">
                     <div class="flex gap-3 sm:gap-5 flex-row items-start">
                         <div
                             class="space-y-3 w-full min-w-0 text-gray-800 dark:text-gray-200 leading-7 text-sm sm:text-base lg:text-lg">
@@ -333,7 +333,7 @@ watch(() => route.params.id, (newId, oldId) => {
                         class="border border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-100 dark:bg-gray-800 focus-within:ring-primary-500/20 focus-within:border-primary-400 transition-all duration-300"
                         :ui="{
                             root: 'relative',
-                            base: 'pl-4 sm:pl-6 pr-12 sm:pr-14 py-3 sm:py-4 text-sm sm:text-base'
+                            base: 'pl-4 sm:pl-6 pr-12 sm:pr-14 py-3 sm:py-4 text-base sm:text-base'
                         }">
                         <template #trailing>
                             <div class="absolute right-3 sm:right-4 bottom-auto top-0 flex items-center h-full">
