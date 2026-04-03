@@ -30,7 +30,7 @@ const loginWithSSO = () => {
         <ButtomMockLogin v-if="isDev" />
 
         <!-- ปุ่ม Token Login (Username/Password) -->
-        <ButtomTokenLogin v-if="isDev" />
+        <ButtomTokenLogin />
 
         <UButton label="เข้าสู่ระบบ" icon="i-lucide-log-in" color="primary" size="lg" block @click="loginWithSSO" />
     </div>
