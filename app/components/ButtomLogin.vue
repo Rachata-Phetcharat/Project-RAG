@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const isDev = import.meta.dev // true เฉพาะตอน nuxt dev
+
 const loginWithSSO = () => {
     const config = {
         baseURL: 'https://sso.kmutnb.ac.th/auth/authorize',
@@ -23,6 +25,13 @@ const loginWithSSO = () => {
 <template>
     <div class="flex lg:flex-row gap-4 p-4">
         <UColorModeButton class="cursor-pointer" />
+
+        <!-- ปุ่ม Mock Login — แสดงเฉพาะ Development mode -->
+        <ButtomMockLogin v-if="isDev" />
+
+        <!-- ปุ่ม Token Login (Username/Password) -->
+        <ButtomTokenLogin v-if="isDev" />
+
         <UButton label="เข้าสู่ระบบ" icon="i-lucide-log-in" color="primary" size="lg" block @click="loginWithSSO" />
     </div>
 </template>

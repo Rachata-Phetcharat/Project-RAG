@@ -34,7 +34,6 @@ export const useAuthStore = defineStore("auth", () => {
   ================================ */
   const isLoggedIn = computed(() => Boolean(token.value && user.value));
 
-  // Getter สำหรับ Role โดยตรง
   const role = computed(() => user.value?.role ?? "guest");
 
   const accountType = computed(() => user.value?.account_type ?? "guest");
@@ -52,10 +51,9 @@ export const useAuthStore = defineStore("auth", () => {
   const loginWithSSO = async (code: string, type: string) => {
     isLoading.value = true;
     try {
-      // ยิงไปที่ Endpoint ของคุณที่รองรับ SSO
       const response: any = await $fetch(`${apiBase}/auth/kmutnb-sso/login`, {
         method: "POST",
-        body: { code, type }, // ส่ง JSON { "code": "...", "type": "..." } ตาม Swagger
+        body: { code, type },
       });
 
       const accessToken =
@@ -64,8 +62,6 @@ export const useAuthStore = defineStore("auth", () => {
       if (!accessToken) throw new Error("ไม่ได้รับ Access Token");
 
       token.value = accessToken;
-
-      // หลังจากได้ Token ให้ดึง Profile (ซึ่งควรจะมีข้อมูล Role จาก DB ของคุณรวมอยู่ด้วย)
       await fetchUser();
 
       return { success: true };
@@ -81,8 +77,57 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   /**
+   * loginWithMock:
+   * ใช้สำหรับ Development เท่านั้น — เรียก POST /auth/mock-login
+   * Backend คืน access token (string) กลับมาโดยตรง
+   */
+  const loginWithMock = async () => {
+    isLoading.value = true;
+    try {
+      // ดึงเป็น raw text ก่อน เพื่อหลีกเลี่ยงปัญหา $fetch parse JSON string แล้วได้ค่าไม่ตรง
+      const raw = await $fetch<string>(`${apiBase}/auth/mock-login`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      });
+
+      // Backend ส่ง JSON string เช่น "eyJhbGci..." (มี quotes ครอบ) หรือ plain string
+      let accessToken: string | undefined;
+      if (typeof raw === "string") {
+        // กรณี $fetch strip quotes ให้แล้ว → ได้ string ตรง ๆ
+        accessToken = raw.trim().replace(/^"|"$/g, ""); // ลบ quotes เผื่อไว้
+      } else if (typeof raw === "object" && raw !== null) {
+        // กรณี backend เปลี่ยนเป็น object ภายหลัง
+        accessToken =
+          (raw as any)?.access_token ||
+          (raw as any)?.local_access_token ||
+          (raw as any)?.token;
+      }
+
+      if (!accessToken) throw new Error("ไม่ได้รับ Mock Access Token");
+
+      token.value = accessToken;
+      await fetchUser();
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Mock Login Error:", error);
+      // log raw response เพื่อ debug ได้ง่าย
+      console.debug(
+        "Mock Login raw response type issue — check /auth/mock-login response body",
+      );
+      return {
+        success: false,
+        error: error?.data?.detail || error?.message || "Mock Login ล้มเหลว",
+      };
+    } finally {
+      isLoading.value = false;
+    }
+  };
+  // *********
+
+  /**
    * fetchUser:
-   * ดึงข้อมูลผู้ใช้จาก Token (Backend ควรจะ Return ทั้งข้อมูล SSO และ Role จาก DB มาให้)
+   * ดึงข้อมูลผู้ใช้จาก Token
    */
   const fetchUser = async () => {
     if (!token.value) return;
@@ -95,7 +140,6 @@ export const useAuthStore = defineStore("auth", () => {
         },
       });
 
-      // Mapping ข้อมูลที่ได้ลงใน State user
       user.value = response;
     } catch (error: any) {
       if (error?.statusCode === 401) {
@@ -112,7 +156,6 @@ export const useAuthStore = defineStore("auth", () => {
 
   const logout = async (redirect = true) => {
     try {
-      // ยิง SSO Logout ก่อน (ถ้ามี token อยู่)
       if (token.value) {
         await $fetch(`${apiBase}/auth/kmutnb-sso/logout`, {
           method: "POST",
@@ -122,7 +165,6 @@ export const useAuthStore = defineStore("auth", () => {
         });
       }
     } catch (error) {
-      // ถึง SSO logout จะ error ก็ยังล้าง local state ต่อ
       console.error("SSO Logout Error:", error);
     } finally {
       token.value = null;
@@ -143,6 +185,7 @@ export const useAuthStore = defineStore("auth", () => {
     accountType,
     displayName,
     loginWithSSO,
+    loginWithMock,
     fetchUser,
     checkSession,
     logout,
