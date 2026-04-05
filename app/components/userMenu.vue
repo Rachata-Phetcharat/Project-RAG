@@ -83,7 +83,7 @@ const items = computed(() => [
     <div v-if="compact === 'Default'" class="flex items-center gap-4 p-4">
 
         <!-- Notification -->
-        <Notifications v-if="authStore.isLoggedIn" />
+        <!-- <Notifications v-if="authStore.isLoggedIn" /> -->
 
         <UColorModeButton class="cursor-pointer" />
 
@@ -106,7 +106,7 @@ const items = computed(() => [
     <div v-else-if="compact === 'Mobile'" class=" items-center p-4">
 
         <!-- Notification -->
-        <Notifications v-if="authStore.isLoggedIn" />
+        <!-- <Notifications v-if="authStore.isLoggedIn" /> -->
 
         <!-- Auth -->
         <ButtomLogin v-if="!authStore.isLoggedIn" />

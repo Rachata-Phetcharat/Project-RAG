@@ -12,6 +12,8 @@ const {
     stopRealtime,
     formatTime,
     resolveNotifType,
+    isReadByRole,
+    isAdmin,
     NOTIF_CONFIG,
 } = useNotification();
 
@@ -20,13 +22,12 @@ const currentSkip = ref(0);
 const PAGE_LIMIT = 10;
 const hasMore = ref(true);
 
-// ── Start real-time เมื่อ login ──────────────────────────────────────────
-// useSSE: true → backend /events/stream/{user_id} พร้อมแล้ว
+// ── Start long polling เมื่อ login ────────────────────────────────────────
 watch(
     () => authStore.isLoggedIn,
     async (loggedIn) => {
         if (loggedIn) {
-            await startRealtime(true); // true = SSE
+            await startRealtime();
         } else {
             stopRealtime();
         }
@@ -41,7 +42,6 @@ const onOpen = async (val: boolean) => {
         currentSkip.value = 0;
         hasMore.value = true;
         await fetchNotifications(0, PAGE_LIMIT);
-        // ถ้าได้น้อยกว่า limit แสดงว่าหมดแล้ว
         hasMore.value = notifications.value.length >= PAGE_LIMIT;
     }
 };
@@ -60,23 +60,50 @@ const loadMore = async () => {
     currentSkip.value += PAGE_LIMIT;
     const prevCount = notifications.value.length;
     await fetchNotifications(currentSkip.value, PAGE_LIMIT, true);
-    // ถ้าไม่มีรายการเพิ่มขึ้น แสดงว่าหมดแล้ว
     hasMore.value = notifications.value.length > prevCount;
 };
 
+// ── Description ตาม role ──────────────────────────────────────────────────
 const getItemDescription = (n: any) => {
     const type = resolveNotifType(n);
+
+    // admin เห็น: ใครขอ + สถานะ
+    if (isAdmin.value) {
+        switch (type) {
+            case "pending":
+                return `มีคำขอเปลี่ยนเป็นสาธารณะ (requested_by: #${n.requested_by})`;
+            case "approved_public":
+                return `อนุมัติแล้ว → Public`;
+            case "approved_private":
+                return `เปลี่ยนกลับเป็น Private${n.decision_reason ? ": " + n.decision_reason : ""}`;
+            case "rejected":
+                return `ปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
+            default:
+                return `มีการเปลี่ยนแปลง`;
+        }
+    }
+
+    // user เห็น: สถานะของคำขอตัวเอง
     switch (type) {
+        case "pending":
+            return `คำขอของคุณกำลังรอการพิจารณา`;
         case "approved_public":
-            return `เปลี่ยนเป็น Public แล้ว`;
+            return `คำขอของคุณได้รับการอนุมัติ → Public แล้ว`;
         case "approved_private":
             return `ถูก Admin เปลี่ยนกลับเป็น Private${n.decision_reason ? ": " + n.decision_reason : ""}`;
         case "rejected":
-            return `ถูกปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
-        case "pending":
-            return `รอการพิจารณา`;
+            return `คำขอของคุณถูกปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
         default:
             return `มีการเปลี่ยนแปลง`;
+    }
+};
+
+const getBadgeLabel = (type: string) => {
+    switch (type) {
+        case "approved_public": return "อนุมัติ";
+        case "approved_private": return "Private";
+        case "rejected": return "ปฏิเสธ";
+        default: return "รอดำเนินการ";
     }
 };
 
@@ -109,6 +136,9 @@ onUnmounted(() => stopRealtime());
                         <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
                             การแจ้งเตือน
                         </h3>
+                        <!-- Role badge -->
+                        <UBadge :label="isAdmin ? 'Admin' : 'ของฉัน'" :color="isAdmin ? 'warning' : 'info'"
+                            variant="subtle" size="sm" />
                         <transition name="badge-pop">
                             <UBadge v-if="hasUnread" :label="String(unreadCount)" color="error" variant="solid"
                                 size="sm" />
@@ -136,10 +166,10 @@ onUnmounted(() => stopRealtime());
                 <TransitionGroup v-else name="notif-list" tag="div"
                     class="flex flex-col max-h-[420px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                     <div v-for="item in notifications" :key="item.event_id"
-                        class="flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer" :class="item.is_read
+                        class="flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer" :class="isReadByRole(item)
                             ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/60'
                             : 'bg-primary-50/40 dark:bg-primary-900/10 hover:bg-primary-50/70 dark:hover:bg-primary-900/20'
-                            " @click="!item.is_read && handleMarkAsRead(item.event_id)">
+                            " @click="!isReadByRole(item) && handleMarkAsRead(item.event_id)">
 
                         <!-- Icon -->
                         <div class="mt-0.5 shrink-0">
@@ -158,25 +188,21 @@ onUnmounted(() => stopRealtime());
                                     {{ item.channel_title }}
                                 </p>
                                 <UBadge :color="NOTIF_CONFIG[resolveNotifType(item)].color" variant="subtle" size="sm"
-                                    class="shrink-0" :label="resolveNotifType(item) === 'approved_public' ? 'อนุมัติ'
-                                        : resolveNotifType(item) === 'approved_private' ? 'Private'
-                                            : resolveNotifType(item) === 'rejected' ? 'ปฏิเสธ'
-                                                : 'รอดำเนินการ'
-                                        " />
+                                    class="shrink-0" :label="getBadgeLabel(resolveNotifType(item))" />
                             </div>
 
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                                 {{ getItemDescription(item) }}
                             </p>
-                            <!-- 
+
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
                                 {{ formatTime(item.created_at) }}
-                            </p> -->
+                            </p>
                         </div>
 
                         <!-- Unread dot -->
                         <div class="shrink-0 mt-1.5">
-                            <span v-if="!item.is_read" class="block w-2 h-2 rounded-full bg-primary-500" />
+                            <span v-if="!isReadByRole(item)" class="block w-2 h-2 rounded-full bg-primary-500" />
                         </div>
                     </div>
                 </TransitionGroup>
