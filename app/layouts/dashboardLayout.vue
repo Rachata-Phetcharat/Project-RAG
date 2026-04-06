@@ -9,7 +9,7 @@ watch(() => route.path, () => { isMobileOpen.value = false })
 </script>
 
 <template>
-    <div class="flex flex-col h-screen overflow-hidden bg-white dark:bg-neutral-900">
+    <div class="flex flex-col min-h-screen bg-white dark:bg-neutral-900">
         <UToaster />
 
         <!-- ── Navbar ── -->
@@ -39,8 +39,11 @@ watch(() => route.path, () => { isMobileOpen.value = false })
             </div>
         </nav>
 
+
         <!-- ── Main ── -->
-        <main class="flex-1 overflow-y-auto bg-white dark:bg-neutral-900 transition-colors duration-300">
+        <main class="flex bg-white dark:bg-neutral-900 transition-colors duration-300">
+            <AdminSidebar />
+
             <slot />
         </main>
 
