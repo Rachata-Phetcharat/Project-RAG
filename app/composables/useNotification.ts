@@ -1,4 +1,8 @@
 // composables/useNotification.ts
+// npm install event-source-polyfill
+// npm install -D @types/event-source-polyfill
+
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 export interface NotificationEvent {
   event_id: number;
@@ -37,9 +41,9 @@ export const NOTIF_CONFIG: Record<
 const notifications = ref<NotificationEvent[]>([]);
 const loading = ref(false);
 
-// Long Polling controller
-let longPollController: AbortController | null = null;
-let longPollActive = false;
+// SSE instance (EventSourcePolyfill รองรับ Authorization header)
+let eventSource: EventSourcePolyfill | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ── Pagination config ──────────────────────────────────────────────────────
 const PAGE_LIMIT = 10;
@@ -94,7 +98,7 @@ export const useNotification = () => {
     return date.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
   };
 
-  // ── Merge helper: รักษา read state เดิมไว้ ───────────────────────────────
+  // ── Merge helper: รักษา read state เดิม (optimistic) ไว้ ─────────────────
   const mergeWithExisting = (
     incoming: NotificationEvent[],
   ): NotificationEvent[] => {
@@ -106,7 +110,6 @@ export const useNotification = () => {
       if (!prev) return n;
       return {
         ...n,
-        // ถ้า optimistic update ไปแล้ว (true) ให้คงค่านั้นไว้
         is_user_read: prev.is_user_read || n.is_user_read,
         is_admin_read: prev.is_admin_read || n.is_admin_read,
       };
@@ -209,91 +212,98 @@ export const useNotification = () => {
     }
   };
 
-  // ── Long Polling ──────────────────────────────────────────────────────────
+  // ── SSE via EventSourcePolyfill ───────────────────────────────────────────
   /**
-   * Long Polling loop:
-   * 1. GET /events/list/{user_id}?skip=0&limit=10
-   * 2. backend ค้าง response ไว้จนมีข้อมูลใหม่ (หรือ timeout ~30s)
-   * 3. client ได้ response → merge → loop ใหม่ทันที
-   * 4. ถ้า abort / error → รอ 3s แล้ว retry
+   * EventSourcePolyfill แก้ปัญหา native EventSource ที่ส่ง Authorization header ไม่ได้
    *
-   * หมายเหตุ: backend ต้องรองรับ long-poll timeout บน endpoint นี้
-   * ถ้า backend ยังไม่รองรับ ให้ใช้ endpoint แยก เช่น /events/poll/{user_id}
+   * Flow:
+   * 1. เชื่อมต่อ GET /events/stream/{user_id} พร้อม Authorization header
+   * 2. รับ event "notification" → ถ้าใหม่ → unshift, ถ้า decision เปลี่ยน → merge
+   * 3. รับ event "ping" → ไม่ทำอะไร (กัน heartbeat timeout)
+   * 4. onerror → close → reconnect หลัง 10s อัตโนมัติ
    */
-  const startLongPolling = () => {
+  const startSSE = () => {
     if (!authStore.isLoggedIn || !authStore.user?.users_id) return;
-    if (longPollActive) return;
+    if (eventSource) return; // ป้องกัน connect ซ้ำ
 
-    longPollActive = true;
-    const userId = authStore.user.users_id;
+    const url = `${apiBase}/events/stream/${authStore.user.users_id}`;
 
-    const poll = async () => {
-      while (longPollActive) {
-        longPollController = new AbortController();
-        const signal = longPollController.signal;
+    eventSource = new EventSourcePolyfill(url, {
+      headers: {
+        Authorization: `Bearer ${authStore.token ?? ""}`,
+      },
+      // heartbeatTimeout: ควรมากกว่า ping interval ของ backend (default polyfill: 45000ms)
+      heartbeatTimeout: 60_000,
+    });
 
-        try {
-          const data = await $fetch<NotificationEvent[]>(
-            `${apiBase}/events/list/${userId}`,
-            {
-              headers: getHeaders(),
-              query: { skip: 0, limit: PAGE_LIMIT },
-              signal,
-            },
-          );
-
-          if (!longPollActive) break;
-
-          const incoming = data ?? [];
-          const currentIds = new Set(
-            notifications.value.map((n) => n.event_id),
-          );
-          const hasNew = incoming.some((n) => !currentIds.has(n.event_id));
-
-          // ตรวจสถานะที่เปลี่ยน (เช่น pending → approved)
-          const hasChanged = incoming.some((n) => {
-            const existing = notifications.value.find(
-              (e) => e.event_id === n.event_id,
-            );
-            return existing && existing.decision !== n.decision;
-          });
-
-          if (hasNew || hasChanged) {
-            notifications.value = mergeWithExisting(incoming);
-          }
-        } catch (e: any) {
-          if (e?.name === "AbortError") break;
-          // network error / timeout → retry หลัง 3s
-          console.warn("[LongPoll] error, retry in 3s", e);
-          await new Promise((r) => setTimeout(r, 3_000));
-        }
-
-        // loop ทันที (ไม่ delay) — backend จะ hold request แทน
-        // ถ้า backend ยังเป็น short-poll ให้เพิ่ม delay: await new Promise(r => setTimeout(r, 5_000));
-        await new Promise((r) => setTimeout(r, 5_000));
+    eventSource.onopen = () => {
+      console.log("[SSE] Connected via EventSourcePolyfill");
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
       }
     };
 
-    poll();
+    // รับ notification ใหม่จาก backend
+    eventSource.addEventListener(
+      "notification" as any,
+      ((e: MessageEvent) => {
+        try {
+          const newNotif: NotificationEvent = JSON.parse(e.data);
+
+          const existing = notifications.value.find(
+            (n) => n.event_id === newNotif.event_id,
+          );
+
+          if (!existing) {
+            // notification ใหม่ → เพิ่มขึ้นหน้าสุด
+            notifications.value.unshift(newNotif);
+          } else if (existing.decision !== newNotif.decision) {
+            // สถานะเปลี่ยน (pending → approved / rejected) → merge อัปเดต
+            notifications.value = mergeWithExisting(
+              notifications.value.map((n) =>
+                n.event_id === newNotif.event_id ? newNotif : n,
+              ),
+            );
+          }
+        } catch (err) {
+          console.error("[SSE] parse error:", err);
+        }
+      }) as EventListener,
+    );
+
+    // ping frame จาก backend — prevent heartbeat timeout เฉยๆ
+    eventSource.addEventListener("ping" as any, (() => {}) as EventListener);
+
+    eventSource.onerror = (err) => {
+      console.warn("[SSE] Connection error, reconnecting in 10s", err);
+      stopSSE();
+      reconnectTimer = setTimeout(() => {
+        if (authStore.isLoggedIn) startSSE();
+      }, 10_000);
+    };
   };
 
-  const stopLongPolling = () => {
-    longPollActive = false;
-    if (longPollController) {
-      longPollController.abort();
-      longPollController = null;
+  const stopSSE = () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
     }
-    console.log("[LongPoll] Stopped");
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+      console.log("[SSE] Disconnected");
+    }
   };
 
   // ── Init ──────────────────────────────────────────────────────────────────
   const startRealtime = async () => {
-    await fetchNotifications(); // โหลดครั้งแรก
-    startLongPolling();
+    await fetchNotifications(); // โหลดครั้งแรกด้วย REST
+    startSSE(); // แล้วเปิด SSE รับ real-time
   };
 
   const stopRealtime = () => {
-    stopLongPolling();
+    stopSSE();
   };
 
   return {
@@ -318,7 +328,7 @@ export const useNotification = () => {
     // realtime
     startRealtime,
     stopRealtime,
-    startLongPolling,
-    stopLongPolling,
+    startSSE,
+    stopSSE,
   };
 };

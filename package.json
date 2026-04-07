@@ -26,6 +26,7 @@
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "eslint": "^9.39.1",
+    "event-source-polyfill": "^1.0.31",
     "highlight.js": "^11.11.1",
     "marked": "^17.0.5",
     "marked-highlight": "^2.2.3",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.88",
+    "@types/event-source-polyfill": "^1.0.5",
     "@types/node": "^25.0.7"
   }
 }

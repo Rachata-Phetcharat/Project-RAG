@@ -155,21 +155,8 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   const logout = async (redirect = true) => {
-    try {
-      if (token.value) {
-        await $fetch(`${apiBase}/auth/kmutnb-sso/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token.value}`,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("SSO Logout Error:", error);
-    } finally {
-      token.value = null;
-      user.value = null;
-    }
+    token.value = null;
+    user.value = null;
 
     if (redirect) {
       await navigateTo("/", { replace: true });
