@@ -34,7 +34,13 @@
     background-color: #808080;
 }
 
-/* ─── Dark mode ─── */
+/* ── Dark mode ─── */
+.dark {
+    --code-bg: #0d1117;
+    --code-header-bg: #161b22;
+    --code-border: transparent;
+}
+
 .dark * {
     scrollbar-color: #4a4a4a transparent;
 }
@@ -120,7 +126,7 @@
 
 /* ── Code block: Dark mode ── */
 .dark .code-block {
-    border-color: #30363d;
+    border-color: transparent;
 }
 
 .dark .code-header {

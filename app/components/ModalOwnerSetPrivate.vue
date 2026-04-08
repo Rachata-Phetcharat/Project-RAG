@@ -1,0 +1,90 @@
+<script setup lang="ts">
+const { ownerSetPrivateChannel, loading } = useChannel()
+const toast = useToast()
+
+const props = defineProps<{
+    open: boolean
+    item: {
+        channels_id: number
+        title: string
+    }
+}>()
+
+const emit = defineEmits<{
+    (e: 'update:open', value: boolean): void
+    (e: 'confirmed'): void
+}>()
+
+const close = () => {
+    emit('update:open', false)
+}
+
+const handleConfirm = async () => {
+    try {
+        await ownerSetPrivateChannel(props.item.channels_id)
+
+        toast.add({
+            title: 'ตั้งค่าเป็นส่วนตัวเรียบร้อยแล้ว',
+            description: `แชนแนล "${props.item.title}" ถูกตั้งเป็นส่วนตัวแล้ว`,
+            icon: 'i-lucide-lock',
+            color: 'success'
+        })
+
+        emit('confirmed')
+        close()
+    } catch (e: any) {
+        toast.add({
+            title: 'ดำเนินการไม่สำเร็จ',
+            description: e?.data?.detail || e?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+            icon: 'i-lucide-x-circle',
+            color: 'error'
+        })
+    }
+}
+</script>
+
+<template>
+    <UModal :open="open" @update:open="emit('update:open', $event)" :ui="{
+        content: 'sm:max-w-md',
+        overlay: 'backdrop-blur-sm'
+    }">
+        <template #header>
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg">
+                    <UIcon name="i-lucide-lock" class="w-6 h-6 text-white" />
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ตั้งเป็นส่วนตัว</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">ยืนยันการปิดการเข้าถึงแชนแนลนี้</p>
+                </div>
+            </div>
+        </template>
+
+        <template #body>
+            <div
+                class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50">
+                <p class="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                    คุณกำลังจะตั้งแชนแนล
+                    <span class="font-black underline decoration-emerald-400">"{{ item.title }}"</span>
+                    ให้เป็นส่วนตัว เฉพาะคุณเท่านั้นที่จะสามารถเข้าถึงเนื้อหาได้
+                </p>
+            </div>
+        </template>
+
+        <template #footer>
+            <div class="flex gap-3 justify-end w-full">
+                <UButton size="lg" variant="ghost" color="neutral" class="cursor-pointer font-bold" @click="close"
+                    :disabled="loading">
+                    ยกเลิก
+                </UButton>
+
+                <UButton size="lg" color="success" @click="handleConfirm" :disabled="loading"
+                    class="cursor-pointer px-6 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                    <UIcon v-if="loading" name="i-heroicons-arrow-path" class="animate-spin" />
+                    <span>{{ loading ? 'กำลังดำเนินการ...' : 'ยืนยันการตั้งเป็นส่วนตัว' }}</span>
+                </UButton>
+            </div>
+        </template>
+    </UModal>
+</template>

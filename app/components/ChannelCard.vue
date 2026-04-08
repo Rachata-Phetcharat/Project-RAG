@@ -53,7 +53,10 @@ const modals = ref({
     delete: false,
     edit: false,
     detail: false,
-    rejected: false
+    rejected: false,
+    forcePrivate: false,
+    forcePublic: false,
+    setPrivate: false
 })
 
 const channelToDelete = computed(() => {
@@ -167,11 +170,9 @@ const handleCancelRequest = () => handleAction(
     'ไม่สามารถยกเลิกคำขอได้'
 )
 
-const handleSetPrivate = () => handleAction(
-    async () => { await ownerSetPrivateChannel(props.item.channels_id) },
-    'ตั้งค่าเป็นส่วนตัวเรียบร้อยแล้ว',
-    'ดำเนินการไม่สำเร็จ'
-)
+const handleSetPrivate = () => {
+    modals.value.setPrivate = true
+}
 
 /* =============================== */
 /* Status Switch (Admin)           */
@@ -186,15 +187,23 @@ watch(() => props.item.status, (newStatus) => {
 watch(isPublic, async (val, oldVal) => {
     if (statusLoading.value || val === (props.item.status === 'public')) return
 
+    // Admin toggle to private → open modal for reason input instead of calling API directly
+    if (isAdmin.value && !val) {
+        isPublic.value = oldVal // revert switch visually until confirmed
+        modals.value.forcePrivate = true
+        return
+    }
+
+    // Admin toggle to public → open confirm modal instead of calling API directly
+    if (isAdmin.value && val) {
+        isPublic.value = oldVal // revert switch visually until confirmed
+        modals.value.forcePublic = true
+        return
+    }
+
     statusLoading.value = true
     try {
-        if (isAdmin.value) {
-            if (val) {
-                await adminforceSetPublicChannel(props.item.channels_id)
-            } else {
-                await adminforceSetPrivateChannel(props.item.channels_id)
-            }
-        } else {
+        if (!isAdmin.value) {
             if (val) {
                 if (props.item.status === 'private') {
                     await requestPublicChannel(props.item.channels_id)
@@ -457,4 +466,19 @@ const dropdownItems = computed<DropdownMenuItem[][]>(() => {
         channels_id: props.item.channels_id,
         title: props.item.title
     }" @rejected="emit('load')" />
+
+    <ModalAdminForcePrivate v-model:open="modals.forcePrivate" :item="{
+        channels_id: props.item.channels_id,
+        title: props.item.title
+    }" @confirmed="emit('load')" />
+
+    <ModalAdminForcePublic v-model:open="modals.forcePublic" :item="{
+        channels_id: props.item.channels_id,
+        title: props.item.title
+    }" @confirmed="emit('load')" />
+
+    <ModalOwnerSetPrivate v-model:open="modals.setPrivate" :item="{
+        channels_id: props.item.channels_id,
+        title: props.item.title
+    }" @confirmed="emit('load')" />
 </template>

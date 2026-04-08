@@ -51,6 +51,9 @@ watch(() => route.path, () => { open.value = false })
                     class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-neutral-700">
                     <span class="font-bold text-gray-800 dark:text-gray-100">{{ title }}</span>
                     <div class="flex items-center gap-2">
+                        <!-- Notification -->
+                        <Notifications v-if="authStore.isLoggedIn" />
+
                         <UColorModeButton class="cursor-pointer" />
                         <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm"
                             @click="open = false" />

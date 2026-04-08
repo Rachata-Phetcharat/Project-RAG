@@ -220,13 +220,13 @@ export const useChannel = () => {
     }
   };
 
-  const adminforceSetPrivateChannel = async (id: number) => {
+  const adminforceSetPrivateChannel = async (id: number, reason: string) => {
     loading.value = true;
     try {
       return await $fetch(`${apiBase}/channels/${id}/admin-forced-private`, {
         method: "POST",
         headers: getHeaders(),
-        body: { approve: true },
+        body: { approve: true, reason },
       });
     } finally {
       loading.value = false;

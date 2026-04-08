@@ -81,7 +81,7 @@ const handleSubmit = async () => {
                     <UIcon name="i-heroicons-x-circle" class="w-6 h-6 text-white" />
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ปฏิเสธคำขอเผยแพร่</h3>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ปฏิเสธคำขอ</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">ระบุเหตุผลที่ไม่อนุมัติคำขอนี้</p>
                 </div>
             </div>
@@ -107,7 +107,7 @@ const handleSubmit = async () => {
         </template>
 
         <template #footer>
-            <div class="flex gap-3 justify-end w-full">
+            <div class="flex gap-3 justify-start w-full">
                 <UButton size="lg" variant="ghost" color="neutral" class="cursor-pointer font-bold" @click="close"
                     :disabled="loading">
                     ยกเลิก

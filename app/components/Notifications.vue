@@ -17,10 +17,37 @@ const {
     NOTIF_CONFIG,
 } = useNotification();
 
+const { fetchUser } = useUser();
+
+interface User {
+    users_id: number
+    username: string
+    name: string
+    role: string
+    account_type: string
+    file_size_byte: number
+}
+
 const isOpen = ref(false);
 const currentSkip = ref(0);
 const PAGE_LIMIT = 10;
 const hasMore = ref(true);
+const users = ref<User[]>([]);
+
+
+const loadUser = async () => {
+    users.value = await fetchUser({ skip: 0, limit: 100000 })
+}
+
+// หา username จาก requested_by id
+const getUserName = (userId: number) => {
+    const user = users.value.find(u => u.users_id === userId)
+    return user?.name ?? `#${userId}` // fallback เป็น id ถ้าหาไม่เจอ
+}
+
+onMounted(async () => {
+    await loadUser()
+})
 
 // ── Start long polling เมื่อ login ────────────────────────────────────────
 watch(
@@ -71,11 +98,11 @@ const getItemDescription = (n: any) => {
     if (isAdmin.value) {
         switch (type) {
             case "pending":
-                return `มีคำขอเปลี่ยนเป็นสาธารณะ (requested_by: #${n.requested_by})`;
+                return `มีคำขอเปลี่ยนเป็นสาธารณะ`;
             case "approved_public":
-                return `อนุมัติแล้ว → Public`;
+                return `อนุมัติแล้ว โดย ${getUserName(n.decided_by)}`;
             case "approved_private":
-                return `เปลี่ยนกลับเป็น Private${n.decision_reason ? ": " + n.decision_reason : ""}`;
+                return `เปลี่ยนกลับเป็น Private`;
             case "rejected":
                 return `ปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
             default:
@@ -88,9 +115,9 @@ const getItemDescription = (n: any) => {
         case "pending":
             return `คำขอของคุณกำลังรอการพิจารณา`;
         case "approved_public":
-            return `คำขอของคุณได้รับการอนุมัติ → Public แล้ว`;
+            return `คำขอได้รับการอนุมัติแล้ว โดย ${getUserName(n.decided_by)}`;
         case "approved_private":
-            return `ถูก Admin เปลี่ยนกลับเป็น Private${n.decision_reason ? ": " + n.decision_reason : ""}`;
+            return `คุณเปลี่ยนกลับเป็น Private`;
         case "rejected":
             return `คำขอของคุณถูกปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
         default:
@@ -191,8 +218,13 @@ onUnmounted(() => stopRealtime());
                                     class="shrink-0" :label="getBadgeLabel(resolveNotifType(item))" />
                             </div>
 
+
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                                 {{ getItemDescription(item) }}
+                            </p>
+
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                {{ getUserName(item.requested_by) }}
                             </p>
 
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">

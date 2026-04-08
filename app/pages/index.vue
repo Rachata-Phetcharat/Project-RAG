@@ -9,6 +9,8 @@ const authStore = useAuthStore()
 const {
     fetchMyChannels,
     fetchPublicChannels,
+    createChannel,
+    updateChannel,
     loading
 } = useChannel()
 
@@ -19,6 +21,17 @@ const toast = useToast()
 // ========================================
 const channels = ref<any[]>([])
 const searchQuery = ref('')
+const isCreateModalOpen = ref(false)
+
+const handleCreate = async (data: { title: string; description: string }) => {
+    const id = await createChannel(data)
+    await loadChannels()
+}
+
+const handleEdit = async (id: number, data: { title: string; description: string }) => {
+    await updateChannel(id, data)
+    await loadChannels()
+}
 
 const selectedTab = useState('channel-tab', () => 'my_channels')
 
@@ -45,15 +58,22 @@ const pageSize = ref(16)
 // รีเซ็ตหน้า 1 เมื่อพิมพ์ค้นหาหรือเปลี่ยน tab
 watch(searchQuery, () => { currentPage.value = 1 })
 
+// ถ้าเป็น my_channels ให้เผื่อ 1 slot ให้ Create Card เสมอ
+const effectivePageSize = computed(() =>
+    authStore.isLoggedIn && selectedTab.value === 'my_channels'
+        ? pageSize.value - 1
+        : pageSize.value
+)
+
 // channels ที่แสดงในหน้านี้ (คำนวณจาก filteredChannels + currentPage)
 const paginatedChannels = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
+    const start = (currentPage.value - 1) * effectivePageSize.value
+    const end = start + effectivePageSize.value
     return filteredChannels.value.slice(start, end)
 })
 
 // จำนวนหน้าทั้งหมด (คำนวณจาก filteredChannels)
-const totalPages = computed(() => Math.ceil(filteredChannels.value.length / pageSize.value))
+const totalPages = computed(() => Math.ceil(filteredChannels.value.length / effectivePageSize.value))
 
 // ========================================
 // 3. Tab Configuration
@@ -153,9 +173,6 @@ onMounted(() => {
         <!-- ─── Header ─── -->
         <!-- [RESPONSIVE] ลด mb, text ขนาดเล็กลงบนมือถือ, text-center เฉพาะ mobile -->
         <header class="mb-8 sm:mb-12 lg:mb-16 relative">
-            <!-- <div
-                class="absolute inset-0 bg-linear-to-r from-blue-600/10 to-indigo-600/10 dark:from-blue-500/20 dark:to-indigo-500/20 rounded-3xl blur-3xl -z-10">
-            </div> -->
             <!-- [RESPONSIVE] text-center เฉพาะ mobile, left บน md ขึ้นไป -->
             <div class="text-center sm:text-left space-y-3 sm:space-y-4">
 
@@ -254,6 +271,35 @@ onMounted(() => {
                     <!-- [RESPONSIVE] grid ให้ card เต็มความกว้าง ไม่ล้น column -->
                     <div
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 w-full">
+                        <!-- Create Card — อยู่ slot แรก เฉพาะ my_channels เท่านั้น -->
+                        <button v-if="authStore.isLoggedIn && selectedTab === 'my_channels'" type="button"
+                            @click="isCreateModalOpen = true"
+                            class="group relative overflow-hidden bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-2xl p-8 w-full hidden sm:flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+                            <div
+                                class="absolute inset-0 bg-linear-to-br from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 transition-all duration-300">
+                            </div>
+                            <div class="relative z-10 flex flex-col items-center gap-4">
+                                <div class="relative">
+                                    <div
+                                        class="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300">
+                                    </div>
+                                    <div
+                                        class="relative w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                        <UIcon name="i-lucide-plus" class="w-8 h-8 text-white" />
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <p
+                                        class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                        สร้างแชนแนลใหม่
+                                    </p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        เพิ่มแชนแนลเพื่อแบ่งปันความรู้
+                                    </p>
+                                </div>
+                            </div>
+                        </button>
+
                         <div v-for="channel in paginatedChannels" :key="channel.channels_id" class="min-w-0 w-full">
                             <ChannelCard :item="channel" @load="loadChannels" />
                         </div>
@@ -262,7 +308,7 @@ onMounted(() => {
                     <!-- Pagination -->
                     <div v-if="totalPages > 1" class="flex justify-center mt-6 sm:mt-10">
                         <UPagination v-model:page="currentPage" :total="filteredChannels.length"
-                            :items-per-page="pageSize" />
+                            :items-per-page="effectivePageSize" />
                     </div>
                 </div>
 
@@ -296,7 +342,7 @@ onMounted(() => {
                         </p>
 
                         <UButton v-if="selectedTab === 'my_channels'" label="สร้างแชนแนลใหม่" color="primary" size="md"
-                            class="mt-5 sm:mt-6" icon="i-lucide-plus" to="/channel">
+                            class="mt-5 sm:mt-6" icon="i-lucide-plus" @click="isCreateModalOpen = true">
                             <template #trailing>
                                 <UIcon name="i-lucide-sparkles" class="w-4 h-4" />
                             </template>
@@ -314,4 +360,8 @@ onMounted(() => {
             class="hidden sm:block fixed bottom-20 left-20 w-64 h-64 lg:w-96 lg:h-96 bg-linear-to-br from-purple-400 to-pink-400 rounded-full opacity-10 blur-3xl -z-10 pointer-events-none">
         </div>
     </div>
+
+    <!-- Modal -->
+    <ModalChannelForm v-model:open="isCreateModalOpen" mode="create" :loading="loading" :create-handler="handleCreate"
+        :edit-handler="handleEdit" />
 </template>
