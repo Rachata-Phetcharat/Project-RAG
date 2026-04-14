@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { NotificationEvent } from "~/composables/useNotification";
+
 const authStore = useAuthStore();
 const {
     notifications,
@@ -20,12 +22,12 @@ const {
 const { fetchUser } = useUser();
 
 interface User {
-    users_id: number
-    username: string
-    name: string
-    role: string
-    account_type: string
-    file_size_byte: number
+    users_id: number;
+    username: string;
+    name: string;
+    role: string;
+    account_type: string;
+    file_size_byte: number;
 }
 
 const isOpen = ref(false);
@@ -34,22 +36,21 @@ const PAGE_LIMIT = 10;
 const hasMore = ref(true);
 const users = ref<User[]>([]);
 
-
 const loadUser = async () => {
-    users.value = await fetchUser({ skip: 0, limit: 100000 })
-}
+    users.value = (await fetchUser({ skip: 0, limit: 100000 })) ?? [];
+};
 
-// หา username จาก requested_by id
-const getUserName = (userId: number) => {
-    const user = users.value.find(u => u.users_id === userId)
-    return user?.name ?? `#${userId}` // fallback เป็น id ถ้าหาไม่เจอ
-}
+const getUserName = (userId: number | null | undefined): string => {
+    if (!userId) return "ไม่ระบุ";
+    const user = users.value.find((u) => u.users_id === userId);
+    return user?.name ?? `#${userId}`;
+};
 
 onMounted(async () => {
-    await loadUser()
-})
+    await loadUser();
+});
 
-// ── Start long polling เมื่อ login ────────────────────────────────────────
+// ── Start SSE เมื่อ login ─────────────────────────────────────────────────
 watch(
     () => authStore.isLoggedIn,
     async (loggedIn) => {
@@ -62,7 +63,7 @@ watch(
     { immediate: true },
 );
 
-// เมื่อเปิด popover → refresh ข้อมูล (reset pagination)
+// เมื่อเปิด popover → refresh + reset pagination
 const onOpen = async (val: boolean) => {
     isOpen.value = val;
     if (val) {
@@ -81,7 +82,6 @@ const handleMarkAllAsRead = async () => {
     await markAllAsRead();
 };
 
-// ── Load more (pagination) ────────────────────────────────────────────────
 const loadMore = async () => {
     if (loading.value || !hasMore.value) return;
     currentSkip.value += PAGE_LIMIT;
@@ -90,47 +90,155 @@ const loadMore = async () => {
     hasMore.value = notifications.value.length > prevCount;
 };
 
-// ── Description ตาม role ──────────────────────────────────────────────────
-const getItemDescription = (n: any) => {
-    const type = resolveNotifType(n);
+// ─────────────────────────────────────────────────────────────────────────────
+// resolveScenario: แปลง fields จาก backend → scenario ที่แน่นอน
+// อ้างอิง backend logic จาก channel.py ทุก endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+type Scenario =
+    | "user_requested"          // user กด request-public → pending รอ admin
+    | "user_cancelled"          // user กด cancel-request → กลับเป็น private
+    | "admin_approved"          // admin moderate-public → approve
+    | "admin_rejected"          // admin moderate-public → reject
+    | "admin_forced_public"     // admin force-public (ไม่ผ่าน request flow)
+    | "admin_forced_private"    // admin force-private (จาก public/pending)
+    | "owner_set_private"       // owner กด owner-set-private
+    | "unknown";
 
-    // admin เห็น: ใครขอ + สถานะ
+const resolveScenario = (n: NotificationEvent): Scenario => {
+    const { old_status, new_status, decision, requested_by, decided_by } = n;
+
+    // 1. user กด request-public: pending → (new_status=public, decision=null)
+    if (new_status === "public" && !decision) return "user_requested";
+
+    // 2. user กด cancel-request: pending → private, decision=rejected, decided_by = requested_by (ตัวเอง)
+    if (
+        old_status === "pending" &&
+        new_status === "private" &&
+        decision === "rejected" &&
+        decided_by === requested_by
+    )
+        return "user_cancelled";
+
+    // 3. admin moderate approve: pending → public, decision=approved
+    if (old_status === "pending" && new_status === "public" && decision === "approved")
+        return "admin_approved";
+
+    // 4. admin moderate reject: pending → private, decision=rejected, decided_by ≠ requested_by
+    if (
+        old_status === "pending" &&
+        new_status === "private" &&
+        decision === "rejected" &&
+        decided_by !== requested_by
+    )
+        return "admin_rejected";
+
+    // 5. admin force-public: private → public, decision=approved (ไม่ผ่าน request flow)
+    if (old_status === "private" && new_status === "public" && decision === "approved")
+        return "admin_forced_public";
+
+    // 6. admin force-private: public/pending → private, decision=approved, decided_by ≠ requested_by
+    if (
+        (old_status === "public" || old_status === "pending") &&
+        new_status === "private" &&
+        decision === "approved" &&
+        decided_by !== requested_by
+    )
+        return "admin_forced_private";
+
+    // 7. owner set-private: public → private, decision=approved, decided_by = requested_by
+    if (
+        old_status === "public" &&
+        new_status === "private" &&
+        decision === "approved" &&
+        decided_by === requested_by
+    )
+        return "owner_set_private";
+
+    return "unknown";
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getItemDescription: ข้อความแสดงตาม scenario + role
+// ─────────────────────────────────────────────────────────────────────────────
+const getItemDescription = (n: NotificationEvent): string => {
+    const scenario = resolveScenario(n);
+    const reason = n.decision_reason ? ` — "${n.decision_reason}"` : "";
+    const requester = getUserName(n.requested_by);
+    const decider = getUserName(n.decided_by);
+
     if (isAdmin.value) {
-        switch (type) {
-            case "pending":
-                return `มีคำขอเปลี่ยนเป็นสาธารณะ`;
-            case "approved_public":
-                return `อนุมัติแล้ว โดย ${getUserName(n.decided_by)}`;
-            case "approved_private":
-                return `เปลี่ยนกลับเป็น Private`;
-            case "rejected":
-                return `ปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
+        // ── Admin view ──────────────────────────────────────────────────────
+        switch (scenario) {
+            case "user_requested":
+                return `${requester} ส่งคำขอเปลี่ยนเป็นสาธารณะ`;
+            case "user_cancelled":
+                return `${requester} ยกเลิกคำขอแล้ว`;
+            case "admin_approved":
+                return `${decider} อนุมัติคำขอจาก ${requester} แล้ว`;
+            case "admin_rejected":
+                return `${decider} ปฏิเสธคำขอจาก ${requester}${reason}`;
+            case "admin_forced_public":
+                return `${decider} บังคับเปลี่ยนเป็นสาธารณะ`;
+            case "admin_forced_private":
+                return `${decider} บังคับเปลี่ยนกลับเป็น Private${reason}`;
+            case "owner_set_private":
+                return `${requester} เปลี่ยนแชนแนลกลับเป็น Private`;
             default:
-                return `มีการเปลี่ยนแปลง`;
+                return `มีการเปลี่ยนแปลงสถานะ`;
         }
     }
 
-    // user เห็น: สถานะของคำขอตัวเอง
-    switch (type) {
-        case "pending":
-            return `คำขอของคุณกำลังรอการพิจารณา`;
-        case "approved_public":
-            return `คำขอได้รับการอนุมัติแล้ว โดย ${getUserName(n.decided_by)}`;
-        case "approved_private":
-            return `คุณเปลี่ยนกลับเป็น Private`;
-        case "rejected":
-            return `คำขอของคุณถูกปฏิเสธ${n.decision_reason ? ": " + n.decision_reason : ""}`;
+    // ── User view ───────────────────────────────────────────────────────────
+    switch (scenario) {
+        case "user_requested":
+            return `คุณส่งคำขอเปลี่ยนเป็นสาธารณะแล้ว กำลังรอ Admin พิจารณา`;
+        case "user_cancelled":
+            return `คุณยกเลิกคำขอแล้ว แชนแนลกลับเป็น Private`;
+        case "admin_approved":
+            return `${decider} อนุมัติแล้ว แชนแนลเป็นสาธารณะแล้ว`;
+        case "admin_rejected":
+            return `${decider} ปฏิเสธคำขอ${reason}`;
+        case "admin_forced_public":
+            return `${decider} เปลี่ยนแชนแนลของคุณเป็นสาธารณะ`;
+        case "admin_forced_private":
+            return `${decider} เปลี่ยนแชนแนลของคุณกลับเป็น Private${reason}`;
+        case "owner_set_private":
+            return `คุณเปลี่ยนแชนแนลกลับเป็น Private แล้ว`;
         default:
-            return `มีการเปลี่ยนแปลง`;
+            return `มีการเปลี่ยนแปลงสถานะ`;
     }
 };
 
-const getBadgeLabel = (type: string) => {
-    switch (type) {
-        case "approved_public": return "อนุมัติ";
-        case "approved_private": return "Private";
-        case "rejected": return "ปฏิเสธ";
-        default: return "รอดำเนินการ";
+// ─────────────────────────────────────────────────────────────────────────────
+// getBadgeLabel + getBadgeColor: แสดง badge ตาม scenario จริง
+// ─────────────────────────────────────────────────────────────────────────────
+const getBadgeLabel = (n: NotificationEvent): string => {
+    const scenario = resolveScenario(n);
+    switch (scenario) {
+        case "user_requested": return "รอพิจารณา";
+        case "user_cancelled": return "ยกเลิกแล้ว";
+        case "admin_approved": return "อนุมัติ";
+        case "admin_rejected": return "ปฏิเสธ";
+        case "admin_forced_public": return "บังคับ Public";
+        case "admin_forced_private": return "บังคับ Private";
+        case "owner_set_private": return "ตั้งเป็น Private";
+        default: return "เปลี่ยนแปลง";
+    }
+};
+
+const getBadgeColor = (
+    n: NotificationEvent,
+): "success" | "error" | "warning" | "info" | "neutral" => {
+    const scenario = resolveScenario(n);
+    switch (scenario) {
+        case "user_requested": return "info";
+        case "user_cancelled": return "neutral";
+        case "admin_approved": return "success";
+        case "admin_rejected": return "error";
+        case "admin_forced_public": return "success";
+        case "admin_forced_private": return "warning";
+        case "owner_set_private": return "neutral";
+        default: return "neutral";
     }
 };
 
@@ -142,7 +250,6 @@ onUnmounted(() => stopRealtime());
         <!-- ── Bell Button ── -->
         <UButton color="neutral" variant="ghost" icon="i-lucide-bell" class="relative cursor-pointer"
             :aria-label="`Notifications${hasUnread ? ` (${unreadCount} unread)` : ''}`">
-            <!-- Badge ตัวเลข: แสดงเฉพาะตอนมี unread -->
             <transition name="badge-pop">
                 <span v-if="hasUnread" key="badge"
                     class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-900">
@@ -160,10 +267,7 @@ onUnmounted(() => stopRealtime());
                 <div
                     class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
                     <div class="flex items-center gap-2">
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
-                            การแจ้งเตือน
-                        </h3>
-                        <!-- Role badge -->
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">การแจ้งเตือน</h3>
                         <UBadge :label="isAdmin ? 'Admin' : 'ของฉัน'" :color="isAdmin ? 'warning' : 'info'"
                             variant="subtle" size="sm" />
                         <transition name="badge-pop">
@@ -193,10 +297,10 @@ onUnmounted(() => stopRealtime());
                 <TransitionGroup v-else name="notif-list" tag="div"
                     class="flex flex-col max-h-[420px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                     <div v-for="item in notifications" :key="item.event_id"
-                        class="flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer" :class="isReadByRole(item)
+                        class="flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer"
+                        :class="isReadByRole(item)
                             ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/60'
-                            : 'bg-primary-50/40 dark:bg-primary-900/10 hover:bg-primary-50/70 dark:hover:bg-primary-900/20'
-                            " @click="!isReadByRole(item) && handleMarkAsRead(item.event_id)">
+                            : 'bg-primary-50/40 dark:bg-primary-900/10 hover:bg-primary-50/70 dark:hover:bg-primary-900/20'" @click="!isReadByRole(item) && handleMarkAsRead(item.event_id)">
 
                         <!-- Icon -->
                         <div class="mt-0.5 shrink-0">
@@ -214,17 +318,14 @@ onUnmounted(() => stopRealtime());
                                 <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
                                     {{ item.channel_title }}
                                 </p>
-                                <UBadge :color="NOTIF_CONFIG[resolveNotifType(item)].color" variant="subtle" size="sm"
-                                    class="shrink-0" :label="getBadgeLabel(resolveNotifType(item))" />
+                                <!-- Badge แสดง scenario จริง ไม่ใช่แค่ decision -->
+                                <UBadge :color="getBadgeColor(item)" variant="subtle" size="sm" class="shrink-0"
+                                    :label="getBadgeLabel(item)" />
                             </div>
 
-
+                            <!-- Description แยกตาม scenario + role -->
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                                 {{ getItemDescription(item) }}
-                            </p>
-
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                {{ getUserName(item.requested_by) }}
                             </p>
 
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
@@ -261,7 +362,6 @@ onUnmounted(() => stopRealtime());
 </template>
 
 <style scoped>
-/* Badge pop animation */
 .badge-pop-enter-active {
     animation: badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -282,7 +382,6 @@ onUnmounted(() => stopRealtime());
     }
 }
 
-/* Notification list slide-in */
 .notif-list-enter-active {
     transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
