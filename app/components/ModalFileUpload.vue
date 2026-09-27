@@ -8,6 +8,7 @@ const props = defineProps<{
     currentUsedSizeMB: number
     allowedSize: number
     isUploading: boolean
+    uploadProgress?: number
     loading?: boolean
 }>()
 
@@ -24,6 +25,11 @@ const authStore = useAuthStore()
 const isOpen = computed({
     get: () => props.modelValue,
     set: (val) => emit('update:modelValue', val)
+})
+
+const progressValue = computed(() => {
+    const value = props.uploadProgress ?? 0
+    return Math.min(100, Math.max(0, value))
 })
 
 /* ============================================
@@ -88,7 +94,7 @@ const handleFileChange = (event: any) => {
                             <div class="flex items-center gap-4 text-sm text-gray-500">
                                 <div class="flex items-center gap-1.5">
                                     <UIcon name="i-heroicons-document-text" class="w-4 h-4" />
-                                    <span>PDF หรือ TEXT</span>
+                                    <span>PDF หรือ TEXT และอัพได้ไม่เกิน 50 MB ต่อไฟล์</span>
                                 </div>
                             </div>
                         </div>
@@ -105,6 +111,15 @@ const handleFileChange = (event: any) => {
                             <p class="text-gray-700 dark:text-gray-200 font-medium text-lg">
                                 กำลังอัปโหลด...
                             </p>
+                            <div class="w-72 max-w-full space-y-2 px-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">ความคืบหน้า</span>
+                                    <span class="text-xs font-bold tabular-nums text-primary-600 dark:text-primary-400">
+                                        {{ progressValue }}%
+                                    </span>
+                                </div>
+                                <UProgress :model-value="progressValue" :max="100" color="primary" size="md" />
+                            </div>
                         </div>
 
                         <!-- File Input -->

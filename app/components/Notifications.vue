@@ -43,7 +43,7 @@ const loadUser = async () => {
 const getUserName = (userId: number | null | undefined): string => {
     if (!userId) return "ไม่ระบุ";
     const user = users.value.find((u) => u.users_id === userId);
-    return user?.name ?? `#${userId}`;
+    return user?.name ?? `ADMIN`;
 };
 
 onMounted(async () => {

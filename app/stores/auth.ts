@@ -149,9 +149,9 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   const checkSession = async () => {
-    if (user.value) return true;
-    if (token.value) await fetchUser();
-    return isLoggedIn.value;
+     if (user.value) return true;
+     if (token.value) await fetchUser();
+     return isLoggedIn.value;
   };
 
   const logout = async (redirect = true) => {

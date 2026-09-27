@@ -72,7 +72,7 @@ const onSubmit = async () => {
         )
         toast.add({
             title: 'บันทึกสำเร็จ!',
-            description: 'อัปเดตขนาดไฟล์เริ่มต้นแล้ว',
+            description: 'อัปเดตขนาดพื้นที่จัดเก็บเริ่มต้นแล้ว',
             icon: 'i-lucide-check-circle',
             color: 'success',
         })
@@ -102,8 +102,10 @@ const onSubmit = async () => {
                     <UIcon name="i-lucide-hard-drive" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ขนาดไฟล์เริ่มต้น</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">กำหนดขนาดไฟล์สูงสุดของแต่ละประเภทบัญชี</p>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ขนาดพื้นที่จัดเก็บเริ่มต้น</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        กำหนดขนาดพื้นที่จัดเก็บสูงสุดของแต่ละประเภทบัญชี
+                    </p>
                 </div>
             </div>
         </template>

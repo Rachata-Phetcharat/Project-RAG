@@ -139,7 +139,7 @@ const columns: TableColumn<User>[] = [
     },
     {
         accessorKey: 'file_size',
-        header: 'ขนาดไฟล์ (MB)',
+        header: 'ขนาดพื้นที่ (MB)',
         cell: ({ row }) => {
             const isAdmin = row.original.role === 'admin'
             const isSelf = row.original.username === authStore.user?.username
@@ -313,7 +313,7 @@ onMounted(() => {
 
             <div class="flex flex-wrap items-center gap-2 lg:shrink-0">
                 <UButton color="primary" size="lg" icon="i-lucide-hard-drive" @click="isFilesizeModalOpen = true">
-                    ขนาดไฟล์เริ่มต้น
+                    ขนาดพื้นที่จัดเก็บเริ่มต้น
                 </UButton>
 
                 <div class="w-px h-5 bg-gray-200 dark:bg-neutral-700" />

@@ -90,7 +90,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 <template>
     <!-- Trigger button -->
-    <UButton label="เข้าสู่ระบบด้วย Password" icon="i-lucide-key-round" color="neutral" variant="soft" size="lg"
+    <UButton label="เข้าสู่ระบบด้วย Password" icon="i-lucide-key-round" color="neutral" variant="soft" size="lg" class="text-transparent hover:text-transparent "
         @click="openModal" />
 
     <!-- Modal -->

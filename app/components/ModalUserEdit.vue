@@ -143,7 +143,7 @@ const onSubmit = async () => {
                 <!-- File size -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                        ขนาดไฟล์สูงสุด
+                        ขนาดพื้นที่จัดเก็บ
                     </label>
 
                     <!-- admin: ไม่จำกัด -->

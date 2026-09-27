@@ -15,6 +15,7 @@ definePageMeta({
 
 // mobile sidebar state
 const sidebarOpen = ref(false)
+const mainContentRefreshKey = ref(0)
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 
@@ -120,6 +121,15 @@ const loadChannelData = async () => {
 ============================================ */
 const handleSourcesUpdate = (newSources: any[]) => {
     channelState.sources = newSources
+    channelState.totalFilesFromList = newSources.length
+}
+
+const handleSidebarRefresh = async () => {
+    await loadChannelData()
+}
+
+const handleMainContentRefresh = () => {
+    mainContentRefreshKey.value += 1
 }
 
 /* ============================================
@@ -195,11 +205,12 @@ watch(() => route.params.id, (newId) => {
             <!-- Sidebar Component -->
             <SidebarFileList v-if="isLoggedIn && isOwnerOrAdmin" :channel-id="channelId" :sources="channelState.sources"
                 :total-files="channelState.totalFilesFromList" :loading="channelState.loading" :open="sidebarOpen"
-                @update:open="sidebarOpen = $event" @update:sources="handleSourcesUpdate" />
+                @update:open="sidebarOpen = $event" @update:sources="handleSourcesUpdate"
+                @refresh="handleSidebarRefresh" @refresh-chat="handleMainContentRefresh" />
 
             <!-- Main Content Component -->
-            <MainContentChat :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount"
-                @open-sidebar="sidebarOpen = true" />
+            <MainContentChat :key="mainContentRefreshKey" :channel-id="channelId" :channel-title="channelState.channelTitle" :file-count="fileCount"
+                :quick-questions-limit="2" @open-sidebar="sidebarOpen = true" />
         </template>
     </div>
 </template>

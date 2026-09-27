@@ -2,6 +2,13 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  
+  vite: {
+    server: {
+      allowedHosts: ["thinkhub.kmutnb.ac.th"]
+    }
+  },
+
   app: {
     head: {
       title: "KMUTNB ThinkHub",
@@ -30,6 +37,6 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    preset: "vercel",
+    preset: "node-server",
   },
 });

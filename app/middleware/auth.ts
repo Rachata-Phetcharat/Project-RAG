@@ -1,12 +1,16 @@
+// middleware/auth.ts
 import { useAuthStore } from "~/stores/auth";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const auth = useAuthStore();
-  await auth.checkSession();
+  if (import.meta.server) return;
 
-  // ถ้าไม่มี Token (ยังไม่ล็อกอิน)
+  const auth = useAuthStore();
+
+  if (!auth.user && auth.token) {
+    await auth.fetchUser();
+  }
+
   if (!auth.token) {
-    // ให้ดีดกลับไปหน้า Login
     return navigateTo("/");
   }
 });

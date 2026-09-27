@@ -1,3 +1,5 @@
+import axios from "axios";
+
 // Types สำหรับ Response
 interface FileItem {
   files_id: string;
@@ -27,6 +29,7 @@ export const useFileChannel = () => {
   const apiBase = config.public.apiBase;
   const authStore = useAuthStore();
   const loading = ref(false);
+  const uploadProgress = ref(0);
   const error = ref<string | null>(null);
 
   // ฟังก์ชันสำหรับดึง Header (เพื่อลดความซ้ำซ้อนในการเขียน Authorization)
@@ -67,7 +70,11 @@ export const useFileChannel = () => {
    * อัปโหลดไฟล์แบบ Multipart
    * POST /files/upload
    */
-  const uploadFiles = async (channelId: string, files: File[]) => {
+  const uploadFiles = async (
+    channelId: string,
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ) => {
     if (!files || files.length === 0) {
       throw new Error("กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์");
     }
@@ -77,16 +84,31 @@ export const useFileChannel = () => {
     files.forEach((file) => formData.append("files", file));
 
     loading.value = true;
+    uploadProgress.value = 0;
     error.value = null;
     try {
-      return await $fetch<UploadResponse>(`${apiBase}/files/upload`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: formData,
-      });
+      const response = await axios.post<UploadResponse>(
+        `${apiBase}/files/upload`,
+        formData,
+        {
+          headers: getHeaders(),
+          onUploadProgress: (event) => {
+            if (!event.total) return;
+            const rawPercent = Math.round((event.loaded / event.total) * 100);
+            const pendingPercent = rawPercent >= 100 ? 99 : rawPercent;
+            uploadProgress.value = pendingPercent;
+            onProgress?.(pendingPercent);
+          },
+        },
+      );
+
+      uploadProgress.value = 100;
+      onProgress?.(100);
+      return response.data;
     } catch (err: any) {
+      uploadProgress.value = 0;
       const errorMessage =
-        err?.data?.message || err?.message || "เกิดข้อผิดพลาด";
+        err?.response?.data?.message || err?.message || "เกิดข้อผิดพลาด";
       error.value = errorMessage;
       throw err;
     } finally {
@@ -163,6 +185,7 @@ export const useFileChannel = () => {
 
   return {
     loading,
+    uploadProgress,
     error,
     // Methods
     listFiles,

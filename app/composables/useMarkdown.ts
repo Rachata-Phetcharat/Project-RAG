@@ -22,14 +22,28 @@ renderer.code = ({ text, lang }) => {
       style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;background:none;border:1px solid #cbd5e1;padding:3px 10px;border-radius:6px;cursor:pointer;"
       onclick="
         const btn = this;
-        navigator.clipboard.writeText(btn.dataset.code).then(() => {
+        const text = btn.dataset.code;
+        const onSuccess = () => {
           btn.classList.add('copied');
           btn.querySelector('.btn-label').textContent = 'copied!';
           setTimeout(() => {
             btn.classList.remove('copied');
             btn.querySelector('.btn-label').textContent = 'copy';
           }, 2000);
-        });
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(onSuccess);
+        } else {
+          const el = document.createElement('textarea');
+          el.value = text;
+          el.style.position = 'fixed';
+          el.style.opacity = '0';
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          onSuccess();
+        }
       "
     >
       <svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>

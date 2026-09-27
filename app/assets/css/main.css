@@ -163,7 +163,8 @@
 
 /* ── Syntax tokens ── */
 .hljs {
-    background: transparent;
+    background: transparent !important;
+    background-color: transparent !important;
 }
 
 .dark .hljs {

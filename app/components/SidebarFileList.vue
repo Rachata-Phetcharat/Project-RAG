@@ -7,12 +7,13 @@ const toast = useToast()
 const authStore = useAuthStore()
 
 // ลบ fetchPublicChannels, fetchMyChannels, fetchAllChannels ออก เพราะ parent โหลดให้แล้ว
-const { loading, error, uploadFiles, downLoadFile, deleteFile } = useFileChannel()
+const { loading, uploadProgress, error, uploadFiles, downLoadFile, deleteFile } = useFileChannel()
 
 const emit = defineEmits<{
     'update:sources': [sources: any[]]
     'update:open': [value: boolean]
     'refresh': []
+    'refresh-chat': []
 }>()
 
 // [RESPONSIVE] รับ open state จาก parent สำหรับ mobile slideover
@@ -51,6 +52,17 @@ const isOwnerOrAdmin = computed(() => {
 const state = reactive({
     isModalOpen: false,
     isUploading: false,
+    shouldRefreshOnClose: false,
+})
+
+watch(() => state.isModalOpen, (isOpen, wasOpen) => {
+    // รีเฟรชเฉพาะเมื่อมีการอัปโหลดสำเร็จในรอบที่เปิด modal นี้
+    if (wasOpen && !isOpen) {
+        if (state.shouldRefreshOnClose) {
+            emit('refresh')
+        }
+        state.shouldRefreshOnClose = false
+    }
 })
 
 const deleteModalState = reactive({
@@ -98,6 +110,7 @@ const handleOpenModal = () => {
         })
         return
     }
+    state.shouldRefreshOnClose = false
     state.isModalOpen = true
 }
 
@@ -139,9 +152,7 @@ const handleFileUpload = async (files: File[]) => {
     try {
         state.isUploading = true
         await uploadFiles(channelId.value, files)
-
-        // ✅ emit ให้ parent reload แทนที่จะ fetch เอง
-        emit('refresh')
+        state.shouldRefreshOnClose = true
 
         toast.add({
             title: 'สำเร็จ',
@@ -193,6 +204,7 @@ const handleFileDeleted = (fileId: string | number) => {
     // ✅ emit ให้ parent อัปเดต sources แทน
     const updated = sources.value.filter((f: any) => f.files_id !== fileId)
     emit('update:sources', updated)
+    emit('refresh-chat')
 }
 
 // ✅ ลบ loadChannelData(), onMounted, และ watch ออกทั้งหมด เพราะ parent จัดการแล้ว
@@ -217,7 +229,7 @@ const handleFileDeleted = (fileId: string | number) => {
             <!-- Upload Button → ModalFileUpload -->
             <ModalFileUpload v-model="state.isModalOpen" :file-count="fileCount"
                 :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize" :is-uploading="state.isUploading"
-                :loading="loading" @upload="handleFileUpload">
+                :upload-progress="uploadProgress" :loading="loading" @upload="handleFileUpload">
                 <UButton block icon="i-heroicons-plus" color="primary" size="lg"
                     :disabled="loading || state.isUploading" @click.prevent="handleOpenModal">
                     <span class="flex items-center gap-2 text-md">เพิ่มแหล่งที่มา</span>
@@ -254,7 +266,7 @@ const handleFileDeleted = (fileId: string | number) => {
                 :style="{ animationDelay: `${index * 50}ms` }">
                 <div class="flex items-center gap-3 truncate flex-1 min-w-0">
                     <div
-                        class="w-10 h-10 rounded-lg bg-linear-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        class="w-10 h-10 rounded-lg bg-linear-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <UIcon name="i-heroicons-document-text"
                             class="w-5 h-5 text-primary-600 dark:text-primary-400" />
                     </div>
@@ -354,7 +366,8 @@ const handleFileDeleted = (fileId: string | number) => {
                 <div class="px-3 pt-3">
                     <ModalFileUpload v-model="state.isModalOpen" :file-count="fileCount"
                         :current-used-size-m-b="currentUsedSizeMB" :allowed-size="allowedSize"
-                        :is-uploading="state.isUploading" :loading="loading" @upload="handleFileUpload">
+                        :is-uploading="state.isUploading" :upload-progress="uploadProgress" :loading="loading"
+                        @upload="handleFileUpload">
                         <UButton block icon="i-heroicons-plus" color="primary" size="lg"
                             :disabled="loading || state.isUploading"
                             class="cursor-pointer font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"

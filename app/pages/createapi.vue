@@ -10,6 +10,7 @@ const { apiKeys, fetchApiKeys, revokeApiKey, refreshApiKeys, loading } = useCrea
 const UBadge = resolveComponent('UBadge')
 
 const isCreateModalOpen = ref(false)
+const isHowToModalOpen = ref(false)
 const searchQuery = ref('')
 
 const isDeleteModalOpen = ref(false)
@@ -60,6 +61,7 @@ interface ApiKeyRow {
     key_id: number
     name: string
     channel_name: string
+    channel_id: string
     channel_status: string
     key_hint: string
     created_at: string
@@ -73,6 +75,10 @@ const columns: TableColumn<ApiKeyRow>[] = [
     {
         accessorKey: 'channel_name',
         header: 'ชื่อ Channel',
+    },
+    {
+        accessorKey: 'channel_id',
+        header: 'channel_id',
     },
     {
         accessorKey: 'key_hint',
@@ -110,10 +116,27 @@ const revealedId = ref<number | null>(null)
 const copiedId = ref<string | null>(null)
 
 const copyText = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text)
-    copiedId.value = id
-    setTimeout(() => (copiedId.value = null), 2000)
-    toast.add({ title: 'คัดลอกแล้ว!', icon: 'i-lucide-check-circle', color: 'success', duration: 1500 })
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text)
+        } else {
+            const el = document.createElement('textarea')
+            el.value = text
+            el.style.position = 'fixed'
+            el.style.opacity = '0'
+            document.body.appendChild(el)
+            el.select()
+            document.execCommand('copy')
+            document.body.removeChild(el)
+        }
+
+        copiedId.value = id
+        setTimeout(() => (copiedId.value = null), 2000)
+        toast.add({ title: 'คัดลอกแล้ว!', icon: 'i-lucide-check-circle', color: 'success', duration: 1500 })
+
+    } catch {
+        toast.add({ title: 'คัดลอกไม่สำเร็จ', icon: 'i-lucide-x-circle', color: 'error', duration: 1500 })
+    }
 }
 
 const refresh = async (key_id: number) => {
@@ -144,6 +167,7 @@ const handleRevoke = async (id: string | number) => {
 const onCreated = async () => {
     await fetchApiKeys()
 }
+
 </script>
 
 <template>
@@ -181,11 +205,19 @@ const onCreated = async () => {
                 </p>
             </div>
 
-            <UButton size="lg" label="สร้าง API Key" color="primary" @click="isCreateModalOpen = true">
-                <template #leading>
-                    <UIcon name="i-lucide-plus-circle" class="w-5 h-5" />
-                </template>
-            </UButton>
+            <div class="flex items-center gap-2">
+                <UButton size="lg" label="วิธีใช้ API" color="neutral" variant="soft"
+                    @click="isHowToModalOpen = true">
+                    <template #leading>
+                        <UIcon name="i-lucide-book-open" class="w-5 h-5" />
+                    </template>
+                </UButton>
+                <UButton size="lg" label="สร้าง API Key" color="primary" @click="isCreateModalOpen = true">
+                    <template #leading>
+                        <UIcon name="i-lucide-plus-circle" class="w-5 h-5" />
+                    </template>
+                </UButton>
+            </div>
         </div>
     </div>
 
@@ -299,10 +331,11 @@ const onCreated = async () => {
                         <!-- ชื่อ Key + สถานะ -->
                         <div class="flex items-start justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ row.name }}
+                                <p class="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                    {{ row.name }}
                                 </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{{ row.channel_name
-                                }}
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                    {{ row.channel_name }}
                                 </p>
                             </div>
                             <UBadge
@@ -364,6 +397,7 @@ const onCreated = async () => {
 
     <!-- Modals -->
     <ModalCreateApi v-model:open="isCreateModalOpen" @created="onCreated" />
+        <ModalHowToApi v-model:open="isHowToModalOpen" />
     <ModalDelete v-model:open="isDeleteModalOpen"
         :item="deleteTarget ? { id: deleteTarget.id, name: deleteTarget.name } : null" title="คุณต้องการลบ API Key"
         description="การลบ API Key จะทำให้แอปพลิเคชันที่ใช้ Key นี้ไม่สามารถเข้าถึง API ได้อีก"

@@ -245,6 +245,23 @@ export const useChannel = () => {
     }
   };
 
+  const fetchQuickQuestions = async (channelId: string) => {
+    if (!channelId) return [];
+
+    loading.value = true;
+    try {
+      return await $fetch(`${apiBase}/channels/quick-questions/list/`, {
+        method: "GET",
+        headers: getHeaders(),
+        query: {
+          channel_id: channelId,
+        },
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     loading,
     fetchMyChannels,
@@ -261,5 +278,6 @@ export const useChannel = () => {
     adminforceSetPublicChannel,
     adminforceSetPrivateChannel,
     fetchChannelDetail,
+    fetchQuickQuestions,
   };
 };

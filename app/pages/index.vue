@@ -210,6 +210,7 @@ onMounted(() => {
                     <div class="flex items-center gap-3">
                         <!-- [RESPONSIVE] ไอคอนเล็กลงนิดบน mobile -->
                         <div
+			    style="padding-bottom: 2.448%;"
                             class="p-2.5 sm:p-3 bg-linear-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg shrink-0">
                             <UIcon name="i-lucide-layout-grid" class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                         </div>

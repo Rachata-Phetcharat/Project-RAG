@@ -5,16 +5,20 @@
 const route = useRoute()
 
 const { createSession, sendOllamaReplyStream, loading: chatLoading } = useChat()
+const { fetchQuickQuestions } = useChannel()
 const { render } = useMarkdown()
 const authStore = useAuthStore()
 
 /* ============================================
    Props
 ============================================ */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     channelTitle: string
     fileCount: number
-}>()
+    quickQuestionsLimit?: number
+}>(), {
+    quickQuestionsLimit: 3,
+})
 
 const emit = defineEmits<{ 'open-sidebar': [] }>()
 
@@ -24,6 +28,10 @@ const emit = defineEmits<{ 'open-sidebar': [] }>()
 const channelId = computed(() => route.params.id as string)
 const canSendMessage = computed(() => state.message.trim().length > 0)
 const showChatArea = computed(() => props.fileCount > 0 || state.chatHistory.length > 0)
+const quickQuestionsLimitValue = computed(() => {
+    const parsed = Number(props.quickQuestionsLimit)
+    return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 3
+})
 
 /* ============================================
    State Management
@@ -34,6 +42,8 @@ const state = reactive({
     sessionId: '',
     isTyping: false,
     streamingText: '',
+    quickQuestions: [] as string[],
+    quickQuestionsLoading: false,
 })
 
 /* ============================================
@@ -66,10 +76,58 @@ const initChatSession = async () => {
     }
 }
 
-const handleSendMessage = async () => {
-    if (!canSendMessage.value || state.isTyping) return
+const normalizeQuickQuestions = (data: any): string[] => {
+    if (Array.isArray(data)) {
+        return data.filter((item) => typeof item === 'string' && item.trim().length > 0)
+    }
 
-    const userText = state.message.trim()
+    const candidate = data?.questions || data?.quick_questions || data?.data
+    if (Array.isArray(candidate)) {
+        return candidate.filter((item) => typeof item === 'string' && item.trim().length > 0)
+    }
+
+    return []
+}
+
+const pickRandomQuickQuestions = (questions: string[], limit: number): string[] => {
+    if (questions.length <= limit) return questions
+
+    const shuffled = [...questions]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = shuffled[i]!
+        shuffled[i] = shuffled[j]!
+        shuffled[j] = temp
+    }
+
+    return shuffled.slice(0, limit)
+}
+
+const loadQuickQuestions = async () => {
+    if (!channelId.value) {
+        state.quickQuestions = []
+        return
+    }
+
+    state.quickQuestionsLoading = true
+    try {
+        const data = await fetchQuickQuestions(channelId.value)
+        const normalizedQuestions = normalizeQuickQuestions(data)
+        state.quickQuestions = pickRandomQuickQuestions(normalizedQuestions, quickQuestionsLimitValue.value)
+    } catch (err) {
+        console.error('Load quick questions failed:', err)
+        state.quickQuestions = []
+    } finally {
+        state.quickQuestionsLoading = false
+    }
+}
+
+const submitMessage = async (presetMessage?: string) => {
+    if (state.isTyping) return
+
+    const sourceMessage = presetMessage ?? state.message
+    const userText = sourceMessage.trim()
+    if (!userText) return
 
     state.chatHistory.push({
         id: Date.now(),
@@ -125,12 +183,35 @@ const handleSendMessage = async () => {
     }
 }
 
+const handleSendMessage = async () => {
+    await submitMessage()
+}
+
+const handleQuickQuestion = async (question: string) => {
+    await submitMessage(question)
+}
+
 /* ============================================
    Copy Logic
 ============================================ */
 const copyMessage = async (msg: any) => {
     try {
-        await navigator.clipboard.writeText(msg.text)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            // Modern API (HTTPS only)
+            await navigator.clipboard.writeText(msg.text)
+        } else {
+            // Fallback สำหรับ HTTP หรือ browser เก่า
+            const el = document.createElement('textarea')
+            el.value = msg.text
+            el.style.position = 'fixed'
+            el.style.opacity = '0'
+            document.body.appendChild(el)
+            el.focus()
+            el.select()
+            document.execCommand('copy')
+            document.body.removeChild(el)
+        }
+
         msg.copied = true
         setTimeout(() => {
             msg.copied = false
@@ -162,6 +243,7 @@ const scrollToBottom = async (behavior: 'smooth' | 'instant' = 'smooth') => {
 ============================================ */
 onMounted(() => {
     initChatSession()
+    loadQuickQuestions()
 })
 
 onBeforeUnmount(() => {
@@ -180,6 +262,12 @@ watch(() => route.params.id, (newId, oldId) => {
     state.isTyping = false
     userHasScrolledUp.value = false
     initChatSession()
+    loadQuickQuestions()
+})
+
+watch(() => props.quickQuestionsLimit, (newLimit, oldLimit) => {
+    if (newLimit === oldLimit) return
+    loadQuickQuestions()
 })
 </script>
 
@@ -194,7 +282,7 @@ watch(() => route.params.id, (newId, oldId) => {
                         @click="$router.back()"
                         class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-xl shrink-0"
                         aria-label="ย้อนกลับ" />
-                    <div class="w-1 h-6 sm:h-8 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 shrink-0">
+                    <div class="w-1 h-6 sm:h-8 rounded-full bg-linear-to-b from-primary-500 to-primary-600 shrink-0">
                     </div>
                     <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                         {{ channelTitle }}
@@ -263,6 +351,36 @@ watch(() => route.params.id, (newId, oldId) => {
                         <p class="text-gray-500 dark:text-gray-400 text-sm sm:text-base max-w-xs sm:max-w-sm px-4">
                             เอกสารพร้อมแล้ว ถามมาได้เลยครับ 😊
                         </p>
+                    </div>
+
+                    <div v-if="state.quickQuestionsLoading"
+                        class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
+                        <span>กำลังโหลดคำถามแนะนำ...</span>
+                    </div>
+
+                    <div v-else-if="state.quickQuestions.length > 0"
+                        class="w-full max-w-3xl flex flex-wrap justify-center gap-2 sm:gap-3 px-2">
+                        <UButton v-for="(question, questionIndex) in state.quickQuestions"
+                            :key="`${question}-${questionIndex}`" color="success" variant="subtle"
+                            size="md" :disabled="state.isTyping" class="rounded-xl whitespace-normal text-left h-auto"
+                            :ui="{
+                                base: 'whitespace-normal text-left leading-5 py-2.5 px-3 h-auto'
+                            }" @click="handleQuickQuestion(question)">
+                            {{ question }}
+                        </UButton>
+                        <UButton 
+                            icon="i-heroicons-sparkles"
+                            color="success" 
+                            variant="subtle"
+                            size="md" 
+                            :disabled="state.isTyping" 
+                            class="rounded-xl whitespace-normal text-left h-auto shine-btn"
+                            :ui="{
+                                base: 'whitespace-normal text-left leading-5 py-2.5 px-3 h-auto'
+                            }" @click="handleQuickQuestion('สรุปภาพรวม')">
+                            <span>สรุปภาพรวม</span>
+                        </UButton>
                     </div>
                 </div>
 
@@ -724,5 +842,54 @@ watch(() => route.params.id, (newId, oldId) => {
     border-color: #334155;
     color: #c084fc;
     /* purple-400 */
+}
+
+.shine-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-btn span {
+  position: relative;
+  z-index: 2;
+}
+
+.shine-btn::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -100px;
+  width: 30px;
+  height: 200%;
+  
+  /* 🌈 gradient แสง */
+  background: linear-gradient(
+    120deg,
+    transparent,
+
+    rgb(34, 197, 94),
+    rgb(255, 255, 255),
+    rgb(34, 197, 94),
+    transparent
+  );
+
+  transform: rotate(25deg);
+
+  filter: blur(18px);
+  opacity: 0.9;
+  transition: left 1s ease;
+  z-index: 1;
+}
+
+.shine-btn:hover::after {
+  left: 160%;
+}
+
+.shine-btn::after {
+  background-size: 200% 100%;
+}
+.shine-btn:hover::after {
+  left: 150%;
+  background-position: 100% 0;
 }
 </style>
